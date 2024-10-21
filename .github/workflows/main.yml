@@ -1,0 +1,42 @@
+name: Deploy Backend Application
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-backend:
+    name: Deploy Backend to EC2
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Backend Code
+      id: checkout # Add ID to reference step status
+      uses: actions/checkout@v3
+
+    - name: Clone or Update Backend Repository on EC2
+      id: clone_repo # Add ID to reference step status
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+      run: |
+        echo "${SSH_PRIVATE_KEY}" > private-key.pem
+        chmod 400 private-key.pem
+        ssh -o StrictHostKeyChecking=no -i private-key.pem ec2-user@13.232.117.141 << 'EOF'
+          if [ ! -d "/home/ec2-user/med_one/.git" ]; then
+            rm -rf /home/ec2-user/med_one # Remove the directory if it's not a valid git repo
+            git clone https://github.com/chaaviesol/medone-backend.git /home/ec2-user/med_one
+          else
+            cd /home/ec2-user/med_one
+            git stash || echo "No changes to stash"
+            git pull origin main
+          fi
+          cd /home/ec2-user/med_one
+          npm install
+          npx prisma generate
+          pm2 restart server.js
+        EOF
+
+    - name: Cleanup SSH Key
+      id: cleanup # Add ID to reference step status
+      run: rm private-key.pem
