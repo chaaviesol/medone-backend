@@ -12,11 +12,9 @@ jobs:
 
     steps:
     - name: Checkout Backend Code
-      id: checkout # Add ID to reference step status
       uses: actions/checkout@v3
 
     - name: Clone or Update Backend Repository on EC2
-      id: clone_repo # Add ID to reference step status
       env:
         SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
       run: |
@@ -38,5 +36,4 @@ jobs:
         EOF
 
     - name: Cleanup SSH Key
-      id: cleanup # Add ID to reference step status
       run: rm private-key.pem
