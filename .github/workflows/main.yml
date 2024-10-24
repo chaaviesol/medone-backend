@@ -29,9 +29,18 @@ jobs:
             git stash || echo "No changes to stash"
             git pull origin main
           fi
+
+          # Load NVM and use Node.js 20
+          source ~/.nvm/nvm.sh
+          nvm install 20
+          nvm use 20
+
+          # Install dependencies and generate Prisma client
           cd /home/ec2-user/med_one
           npm install
           npx prisma generate
+          
+          # Restart the application using pm2
           pm2 restart server.js
         EOF
 
