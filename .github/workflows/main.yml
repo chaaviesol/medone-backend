@@ -21,15 +21,15 @@ jobs:
         echo "${SSH_PRIVATE_KEY}" > private-key.pem
         chmod 400 private-key.pem
         ssh -o StrictHostKeyChecking=no -i private-key.pem ec2-user@13.232.117.141 << 'EOF'
-          if [ ! -d "/home/ec2-user/med_one/.git" ]; then
-            rm -rf /home/ec2-user/med_one # Remove the directory if it's not a valid git repo
-            git clone https://github.com/chaaviesol/medone-backend.git /home/ec2-user/med_one
+          if [ ! -d "/home/ec2-user/med-one/.git" ]; then
+            rm -rf /home/ec2-user/med-one # Remove the directory if it's not a valid git repo
+            git clone https://github.com/chaaviesol/medone-backend.git /home/ec2-user/med-one
           else
-            cd /home/ec2-user/med_one
+            cd /home/ec2-user/med-one
             git stash || echo "No changes to stash"
             git pull origin main
           fi
-          cd /home/ec2-user/med_one
+          cd /home/ec2-user/med-one
           npm install
           npx prisma generate
           pm2 restart server.js
