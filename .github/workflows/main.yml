@@ -21,17 +21,24 @@ jobs:
         echo "${SSH_PRIVATE_KEY}" > private-key.pem
         chmod 400 private-key.pem
         ssh -o StrictHostKeyChecking=no -i private-key.pem ec2-user@13.232.117.141 << 'EOF'
+          # Clone or update repository
           if [ ! -d "/home/ec2-user/med_one/.git" ]; then
             rm -rf /home/ec2-user/med_one # Remove the directory if it's not a valid git repo
             git clone https://github.com/chaaviesol/medone-backend.git /home/ec2-user/med_one
           else
             cd /home/ec2-user/med_one
+            git config pull.rebase false # Choose how to reconcile divergent branches
             git stash || echo "No changes to stash"
             git pull origin main
           fi
 
-          # Load NVM and use Node.js 20
-          source ~/.nvm/nvm.sh
+          # Install NVM if not present and load Node.js 20
+          if [ ! -d "$HOME/.nvm" ]; then
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+          fi
+
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           nvm install 20
           nvm use 20
 
@@ -40,8 +47,9 @@ jobs:
           npm install
           npx prisma generate
           
-          # Restart the application using pm2
-          pm2 restart server.js
+          # Check for PM2 processes and restart server
+          pm2 list
+          pm2 restart server.js || pm2 start server.js
         EOF
 
     - name: Cleanup SSH Key
