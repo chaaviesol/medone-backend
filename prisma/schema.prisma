@@ -10,12 +10,49 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
+model doctor_details{
+  id                         Int    @id @default(autoincrement())
+  name                       String?
+  second_name                String?
+  phone_no                   String?
+  phone_office               String?
+  email                      String?
+  password                   String?
+  image                      Json?
+  education_qualification    String?
+  additional_qualification   String?
+  specialization             String?
+  additional_speciality      String?
+  type                       String?
+  gender                     String?
+  address                    Json?
+  experience                 Int?
+  about                      String?
+  rating                     String?
+  datetime                   DateTime
+  updatedDate                DateTime?
+  registration_no            String?
+  featured_partner           Boolean?
+  sector                     String?
+  pincode                    Int?
+  status                     String?
+  query                      Boolean?
+  expert_opinion             Boolean?
+  video_consultaion          Boolean?
+  doctor_hospitalId          doctor_hospital[]
+  interacteduser             doctor_interacteduser[]
+  last_active                DateTime?
+  feedback                   doctor_feedback[]
+  doctor_remarks             doctor_remarks[]
+}
+
  model hospital_details{
   id                         Int  @id @default(autoincrement())
-  name                       String? 
+  name                       String?
   address                    Json?
   licence_no                 String?
-  rating                     Float?
+  rating                     String?
   feature                    Json?
   datetime                   DateTime
   photo                      Json?
@@ -32,10 +69,62 @@ datasource db {
   updatedDate                DateTime?  
   last_active                DateTime?  
   status                     String?  
-  featured_partner           Boolean?   
-                                                       
- 
+  featured_partner           Boolean?                                                        
+  doctor_hospital_id         doctor_hospital[]
+  interacteduser             hospital_interacteduser[]
+  feedback                   hospital_feedback[]
  }
+
+  model doctor_hospital{
+    id                       Int @id @default(autoincrement())
+    hospital_id              Int?
+    hospitalid               hospital_details? @relation(fields: [hospital_id],references: [id])
+    doctor_id                Int
+    doctorId                 doctor_details @relation(fields: [doctor_id],references: [id])
+    days_timing              Json?
+    consultation_fees        String?
+    datetime                 DateTime
+    updated_date             DateTime?
+    isavailable              Boolean?
+
+  }
+
+  model pharmacy_details{
+    id                       Int @id @default(autoincrement())
+    name                     String?
+    phone_no                 String?
+    address                  String?
+    lisence_no               String?
+    datetime                 DateTime
+    email                    String?
+    pincode                  Int?
+    created_by               Int?    
+  }
+
+  model lab_details{
+    id                       Int  @id @default(autoincrement())
+    name                     String?
+    phone_no                 String?
+    address                  Json?
+    timing                   Json?
+    license_no               String?
+    email                    String?
+    password                 String?
+    status                   String?
+    rating                   String?
+    datetime                 DateTime
+    photo                    Json?
+    about                    String?
+    services                 Json?
+    features                 Json?
+    featured_partner         Boolean?
+    pincode                  String?
+    last_active              DateTime?
+    updatedDate              DateTime?
+    interacteduser           lab_interacteduser[]
+    offerid                  offer_data[]
+    feedback                 lab_feedback[]
+  }
 
   model user_details{
     id                      Int @id @default(autoincrement())
@@ -51,15 +140,409 @@ datasource db {
     last_active             DateTime?
     status                  String?
     image                   String? 
-    health_condition        String?
+    health_condition        Json?
     height                  String?
     weight                  String?
     googleId                String?               
+    userId                  quotation[]
+    interactedLabuser       lab_interacteduser[]
+    interactedDoctoruser    doctor_interacteduser[]
+    interactedHospitaluser  hospital_interacteduser[]
+    labsearchdata           lab_searchdata[]
+    labfeedback             lab_feedback[]
+    doctorsearchdata        doctor_searchdata[]
+    doctorfeedback          doctor_feedback[]
+    hospitalfeedback        hospital_feedback[]
+    hospitalsearchdata      hospital_searchdata[]
+    customer_cart           customer_cart[]
+    sales_order             sales_order[]
+    second_opinion_data     second_opinion_data[]
+    query_data              query_data[]
     daily_routine           dailyRoutine[]
     medicine_timetable      medicine_timetable[]
   }
 
-  model dailyRoutine{
+  model quotation{
+    id                      Int @id @default(autoincrement())
+    user_id                 Int
+    userid                  user_details @relation(fields: [user_id],references: [id]) 
+    file                    Json
+    datetime                DateTime
+    accepted_pharmacy       Int?
+  }
+ 
+
+  model specialization_data{
+    id                       Int @id @default(autoincrement())
+    spec_name                String?
+  }
+
+
+  model pincode_data{
+    id                      Int @id @default(autoincrement())
+    state                   String?
+    pincode                 Int?
+    district                String?
+    postname                String?
+  }
+
+  model chat_data{
+    id                      Int @id @default(autoincrement())
+    name                    String?
+    contact_no              String?
+    created_date            DateTime
+    type                    String?
+    remarks                 String?
+    st_modifiedDate         DateTime?
+    scheduled_Date          DateTime?
+    status                  String?
+  }
+
+  model lab_interacteduser{
+    id                     Int @id @default(autoincrement())
+    user_id                Int
+    userid                 user_details @relation(fields: [user_id],references: [id])
+    lab_id                 Int
+    labId                  lab_details @relation(fields:[lab_id],references:[id])
+    viewcount              Int?
+    consultcount           Int?
+    status                 String?
+    created_date           DateTime?
+    st_modifiedDate        DateTime?
+  }
+
+  model doctor_interacteduser{
+    id                     Int @id @default(autoincrement())
+    user_id                Int
+    userid                 user_details @relation(fields:[user_id],references:[id])
+    doctor_id              Int
+    doctorid               doctor_details @relation(fields:[doctor_id],references:[id]) 
+    viewcount              Int?
+    consultcount           Int?
+    status                 String?
+    created_date           DateTime?
+    st_modifiedDate        DateTime?              
+  }
+
+model hospital_interacteduser{
+  id                       Int @id @default(autoincrement())
+  user_id                  Int
+  userid                   user_details @relation(fields:[user_id],references:[id])
+  hospital_id              Int
+  hospitalid               hospital_details @relation(fields:[hospital_id],references:[id])
+  viewcount                Int?
+  consultcount             Int?
+  status                   String?
+  created_date             DateTime?
+  st_modifiedDate        DateTime?
+}
+
+model offer_data {
+  id                       Int  @id @default(autoincrement())
+  lab_id                   Int
+  labid                    lab_details @relation(fields:[lab_id],references:[id])
+  offer_name               String?      
+  offer_code               String? @unique(map: "offercode_unique")
+  discount_type            String?      
+  discount                 Int?
+  start_date               DateTime?    
+  end_date                 DateTime?    
+  text                     String?      
+  status                   String?      
+  created_date             DateTime?    
+  created_by               Int?  
+}
+
+model doctor_feedback {
+  id                       Int  @id @default(autoincrement())
+  doctor_id                Int
+  doctorid                 doctor_details @relation(fields:[doctor_id],references:[id])
+  user_id                  Int
+  userid                   user_details @relation(fields: [user_id],references: [id])
+  message                  String?
+  rating                   Int?
+  status                   String?
+  created_date             DateTime
+  modified_date            DateTime?
+
+
+}
+
+model hospital_feedback {
+  id                       Int  @id @default(autoincrement())
+  hospital_id              Int
+  hospitalid               hospital_details @relation(fields:[hospital_id],references:[id])
+  user_id                  Int
+  userid                   user_details @relation(fields: [user_id],references: [id])
+  message                  String?
+  rating                   Int?
+  status                   String?
+  created_date             DateTime
+  modified_date            DateTime?
+
+}
+
+model lab_feedback {
+  id                       Int  @id @default(autoincrement())
+  lab_id                   Int
+  labid                    lab_details @relation(fields:[lab_id],references:[id])
+  user_id                  Int
+  userid                   user_details @relation(fields: [user_id],references: [id])
+  message                  String?
+  rating                   Int?
+  status                   String?
+  created_date             DateTime
+  modified_date            DateTime?
+
+}
+
+model doctor_searchdata {
+  id                       Int  @id @default(autoincrement())
+  user_id                  Int?
+  userid                   user_details? @relation(fields: [user_id],references: [id])
+  type                     String?
+  speciality               String?
+  created_date             DateTime
+}
+
+model hospital_searchdata {
+  id                       Int  @id @default(autoincrement())
+  user_id                  Int?
+  userid                   user_details? @relation(fields: [user_id],references: [id])
+  type                     String?
+  speciality               String?
+  created_date             DateTime
+}
+
+model lab_searchdata {
+  id                       Int  @id @default(autoincrement())
+  user_id                  Int?
+  userid                   user_details ?@relation(fields: [user_id],references: [id])
+  type                     String?
+  speciality               String?
+  created_date             DateTime
+}
+
+model CategoryManager {
+  id                Int       @id @default(autoincrement())
+  main_type         String?
+  type              String?
+  department        Json?
+  services          Json?
+  features          Json?
+  created_date      DateTime?
+  modified_date     DateTime?
+}
+
+model admin_details{
+  id                  Int @id @default(autoincrement())
+  adm_id              String?
+  adm_type            String?
+  name                String?
+  emailid             String?
+  phone_no            String?
+  password            String?
+  is_active           String?
+  created_date        DateTime?
+  created_by          String?
+  modified_date       DateTime?
+  user_access         String?
+}
+
+
+model adm_notification {
+  id              Int       @id @default(autoincrement())
+  text            String?   
+  sender          Int?
+  read            String?   
+  type            String?   
+  created_date    DateTime? 
+  modified_by     Int?
+  modified_date   DateTime? 
+}
+
+model type_notification {
+  id              Int       @id @default(autoincrement())
+  category        String?
+  text            String?   
+  receiver_id     Int?
+  read            String?   
+  type            String?   
+  created_date    DateTime? 
+  created_by      Int?
+  modified_date   DateTime? 
+}
+
+model generic_product {
+  id                                                                      Int                     @id @default(autoincrement())
+  name                                                                    String?                  
+  description                                                             String?                  
+  category                                                                Json?                                   
+  created_by                                                              String?                  
+  created_date                                                            DateTime?                
+  is_active                                                               String?                  
+  updated_by                                                              String?                  
+  updated_date                                                            DateTime?              
+  images                                                                  Json?
+  mrp                                                                     Int?  
+  brand                                                                   String?                  
+  customer_cart                                                           customer_cart[]
+  sales_list                                                              sales_list[]  
+}
+
+
+model customer_cart {
+  id                     Int            @id @default(autoincrement())
+  user_id                Int
+  prod_id                Int
+  quantity               Int
+  userid                 user_details ?@relation(fields: [user_id],references: [id])
+  generic_prodid         generic_product ?@relation(fields: [prod_id],references: [id])
+  created_date           DateTime? 
+}
+
+model sales_list {
+  id              Int               @id @default(autoincrement())
+  sales_id        Int?
+  product_id      Int?
+  order_qty       Int?
+  net_amount      Int?
+  pharmacy_name   String?         
+  created_date    DateTime?                     
+  sales_order     sales_order?  @relation(fields: [sales_id], references: [sales_id])
+  generic_prodid  generic_product? @relation(fields: [product_id],references: [id])
+}
+
+model sales_order {
+  sales_id               Int                      @id @default(autoincrement())
+  so_number              String?                  @unique(map: "so_number") 
+  total_amount           Decimal?                 @db.Decimal(10, 2)                              
+  so_status              String? 
+  order_type             String?               
+  remarks                String? 
+  delivery_address       String?                
+  delivery_date          DateTime?                              
+  created_date           DateTime?              
+  updated_by             Int?                 
+  updated_date           DateTime?
+  contact_no             String?              
+  customer_id            Int?   
+  pincode                Int?
+  prescription_image     Json?   
+  patient_name           String?          
+  sales_list             sales_list[]
+  sales_invoice          sales_invoice[]
+  users                  user_details? @relation(fields: [customer_id],references: [id])
+}
+
+
+model second_opinion_data{
+  id                     Int                      @id @default(autoincrement()) 
+  report_image           Json?
+  patient_name           String?
+  doctor_name            String?
+  department             String?
+  alternative_number     String?
+  remarks                String?
+  doctor_remarks         String?
+  status                 String?
+  user_id                Int?                 
+  created_date           DateTime?              
+  updated_by             String?                 
+  updated_date           DateTime? 
+  users                  user_details? @relation(fields: [user_id],references: [id])
+}
+
+
+model query_data{
+  id                     Int                      @id @default(autoincrement()) 
+  department             String?
+  query                  String?
+  status                 String?
+  user_id                Int? 
+  doctor_remarksid       Int?                
+  created_date           DateTime?              
+  updated_by             String?                 
+  updated_date           DateTime? 
+  doctor_remarks         doctor_remarks[]
+  users                  user_details? @relation(fields: [user_id],references: [id])
+}
+
+model doctor_remarks{
+  id                     Int                      @id @default(autoincrement())  
+  query_id               Int?
+  queryid                query_data? @relation(fields:[query_id],references:[id])
+  doctor_id              Int?    
+  doctor_remarks         String?
+  created_date           DateTime? 
+  doctorid               doctor_details? @relation(fields:[doctor_id],references:[id])
+}
+
+
+
+model productcategory{
+  id                     Int                      @id @default(autoincrement()) 
+  category               String?                 
+  image                  String?
+  status                 Boolean?
+  created_date           DateTime?
+  created_by             Int?
+  modified_date          DateTime?
+  
+}
+
+model campaigns {
+  id            Int          @id @default(autoincrement())
+  name          String?      
+  coupon_code   String?      @unique(map: "coupon_code") 
+  product_id    Json?
+  discount_type String?      
+  discount      Int?
+  start_date    DateTime?    
+  end_date      DateTime?    
+  image         String?      
+  status        String?      
+  created_date  DateTime?    
+  created_by    Int? 
+}
+
+model sales_invoice{
+  id                   Int          @id @default(autoincrement())
+  sales_id             Int?
+  invoice_no           String?
+  created_date         DateTime?
+  sold_by              String?
+  medication_details   String?  
+  sales_order          sales_order?  @relation(fields: [sales_id], references: [sales_id])
+}
+
+model career{
+  id                   Int          @id @default(autoincrement())
+  name                 String?
+  type                 String?
+  department           String?
+  specialization       String?
+  experience           String?
+  qualification        String?
+  preferred_location   Json?
+  year_of_passout      String?
+  phone_no             String?
+  gender               String?
+  status               String?      
+  created_date         DateTime?    
+}
+
+model home_services{
+  id                   Int          @id @default(autoincrement())
+  name                 String?  
+  phone_no             String?
+  type                 String?
+  status               String?      
+  created_date         DateTime? 
+
+}
+
+model dailyRoutine{
   id                    Int           @id @default(autoincrement())
   userId                Int?
   routine               Json?
@@ -82,6 +565,7 @@ model medicine_timetable {
   takingQuantity        String?
   daysInterval          String? 
   created_date          DateTime?
+  active_status         String?
   user_id               user_details? @relation(fields: [userId],references: [id])
 }
 
@@ -105,19 +589,19 @@ model medicines{
   
 }
 
-model generic_product {
-  id                                                                      Int                     @id @default(autoincrement())
-  name                                                                    String?                  
-  description                                                             String?                  
-  category                                                                Json?                                   
-  created_by                                                              String?                  
-  created_date                                                            DateTime?                
-  is_active                                                               String?                  
-  updated_by                                                              String?                  
-  updated_date                                                            DateTime?              
-  images                                                                  Json?
-  mrp                                                                     Int?  
-  brand                                                                   String?                  
+model career_category{
+    id                     Int                      @id @default(autoincrement())
+    type                   String?                 
+    department             String?
+    speciality             Json?
+    created_date           DateTime?
+    modified_date          DateTime?
 }
 
- 
+model notification{
+  id                     Int                       @id @default(autoincrement())
+  user_id                Int?
+  message                String?
+  status                 String?
+  
+   }
