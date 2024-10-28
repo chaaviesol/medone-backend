@@ -37,7 +37,7 @@
     "winston": "^3.13.0"
   },
   "devDependencies": {
-    "prisma": "^5.10.2"
+    "prisma": "^5.21.1"
   },
   "keywords": [],
   "description": ""

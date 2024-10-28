@@ -317,6 +317,7 @@ async function insertData(data) {
 /////////////////////////////////////////////////////////////
 
 const addUsers = async (request, response) => {
+  // console.log(first)
   const secretKey = process.env.ENCRYPTION_KEY;
   const safeDecrypt = (text, key) => {
     try {

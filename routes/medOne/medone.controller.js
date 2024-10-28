@@ -147,6 +147,7 @@ const addUserData = async(request,response)=>{
 const userLogin = async (request, response) => {
   console.log("userloginnnn");
   const { email, password } = request.body;
+  console.log({request})
   const safeDecrypt = (text, key) => {
     try {
       return decrypt(text, key);
@@ -188,6 +189,7 @@ const userLogin = async (request, response) => {
 
     // Fetch all users (or use findUnique)
     const users = await prisma.user_details.findMany();
+    console.log({users})
     let user = null;
 
     for (const dbUser of users) {
