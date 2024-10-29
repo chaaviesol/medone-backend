@@ -1199,6 +1199,10 @@ const getMedicationHistory = async(request,response)=>{
       }
     })
     console.log({medicationHistory})
+    for(let i=0; i<medicationHistory.length; i++){
+      const timeTableId = medicationHistory[i].timetable_id
+      console.log({timeTableId})
+    }
     return response.status(200).json({
       error:false,
       success:true,
@@ -1273,6 +1277,357 @@ const refillNotification = async(request,response)=>{
   }
 }
 
+const realTimeNotification = async (request, response) => {
+  try {
+    const { userId } = request.body;
+
+    // Retrieve user's routine
+    const getRoutine = await prisma.dailyRoutine.findFirst({
+      where: { userId: userId },
+    });
+    console.log("getRoutine----->",getRoutine.routine[0])
+    if (!getRoutine || !getRoutine.routine[0]) {
+      return response.status(400).json({
+        error: true,
+        success: false,
+        message: "Routine not found.",
+      });
+    }
+
+    const { breakfast, lunch, dinner } = getRoutine.routine[0];
+    console.log({breakfast, lunch, dinner})
+    // Retrieve user's medicine timetable
+    const getMedicineTT = await prisma.medicine_timetable.findMany({
+      where: { userId: userId },
+    });
+    console.log({getMedicineTT})
+    // Set current time in IST and get current period
+    const currentTimeUTC = new Date();
+    console.log({currentTimeUTC})
+    const currentTimeIST = new Date(currentTimeUTC.getTime());
+    const currentHours = currentTimeIST.getHours();
+     console.log({currentHours})
+
+    let currentMeal = null;
+    if (currentHours >= 5 && currentHours < 11) {
+      currentMeal = "Morning";
+    } else if (currentHours >= 11 && currentHours < 17) {
+      currentMeal = "lunch";
+    } else if (currentHours >= 17 && currentHours < 24) {
+      currentMeal = "dinner";
+    }
+    console.log({currentMeal})
+
+    if (!currentMeal) {
+      return response.status(200).json({
+        error: false,
+        success: true,
+        message: "No meals scheduled for this time.",
+      });
+    }
+
+// Parse meal times in HH:MM AM/PM format and convert to UTC format with IST timings
+const parseMealTime = (mealTime) => {
+  const date = new Date();
+  const [time, modifier] = mealTime.split(' ');
+  let [hours, minutes] = time.split(':').map(Number);
+
+  // Convert 12-hour format to 24-hour format based on AM/PM
+  if (modifier === 'PM' && hours < 12) hours += 12;
+  else if (modifier === 'AM' && hours === 12) hours = 0;
+
+  // Set time in IST and then convert to UTC
+  date.setHours(hours - 5);  // Adjusting hours to get UTC equivalent of IST time
+  date.setMinutes(minutes - 30); // Adjusting minutes to get UTC equivalent of IST time
+  date.setSeconds(0);
+  date.setMilliseconds(0);
+
+  return date;
+};
+
+
+
+const mealTimes = {
+  Morning: parseMealTime(breakfast),
+  Lunch: parseMealTime(lunch),
+  Dinner: parseMealTime(dinner),
+};
+
+// Display the meal times in UTC (Zulu format)
+console.log({mealTimes});
+
+
+
+
+    // Create notifications based on medicine schedule
+    const notifications = [];
+    for (const med of getMedicineTT) {
+      console.log("hhhhhhhhh")
+      const timings = Object.values(med.timing[0])
+      
+      if (timings.includes(currentMeal)) {
+        console.log("uunnnunuu")
+        let medicineTime;
+        if(currentMeal === "Morning"){
+        medicineTime =  getRoutine.routine[0].breakfast
+        } else if(currentMeal === "lunch"){
+          medicineTime =  getRoutine.routine[0].lunch
+        }else{
+          medicineTime =  getRoutine.routine[0].dinner
+        }
+        console.log({medicineTime})
+        // const mealTime = mealTimes[currentMeal];
+        // console.log({mealTime})
+        // const notificationTime = new Date(mealTime);
+        // console.log({notificationTime})
+        // // Adjust notification time if it's "Before food"
+        // if (med.afterFd_beforeFd === "Before food") {
+        //   notificationTime.setMinutes(mealTime.getMinutes() - 30);
+        // }
+    
+        // Log the mealTime and notificationTime for each medicine
+        // console.log(`Meal Time for ${currentMeal}:`, mealTime.toLocaleString('en-IN', { hour: 'numeric', minute: 'numeric', hour12: true }));
+        // console.log(`Notification Time for ${med.medicine[0].name} (${med.afterFd_beforeFd}):`, notificationTime.toLocaleString('en-IN', { hour: 'numeric', minute: 'numeric', hour12: true }));
+        const message = `Time to take ${med.medicine[0].name} - ${med.afterFd_beforeFd} ${currentMeal}`
+        notifications.push({
+          userId,
+          medicineId: med.id,
+          message
+          // notificationTime,
+        });
+
+        const addNotification = await prisma.notification.create({
+          data:{
+            user_id:userId,
+            message:message,
+            status:"Not seen"
+          }
+        })
+        console.log({addNotification})
+      }
+    }
+    
+
+    response.status(200).json({
+      error: false,
+      success: true,
+      message: "Notifications generated successfully",
+      notifications,
+    });
+
+  } catch (error) {
+    console.log({ error });
+    response.status(500).json({ message: error.message });
+    logger.error(`Internal server error: ${error.message} in realTimeNotification API`);
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+//get notification
+const getNotification = async(request,response)=>{
+  const{userId} = request.body
+  try{
+    const notification = await prisma.notification.findMany({
+      where:{
+        user_id:userId
+      }
+    })
+    console.log({notification})
+    response.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull",
+      data:notification
+    })
+  }catch (error) {
+    console.log({ error });
+    response.status(500).json({ message: error.message });
+    logger.error(`Internal server error: ${error.message} in getnotification API`);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+//add status
+const addSeenStatus = async(request,response)=>{
+  try{
+    const{ user_id,notification_id} = request.body
+    
+    const addStatus = await prisma.notification.update({
+      where:{
+        user_id:user_id,
+        id:notification_id
+      },
+      data:{
+        status:"Seen"
+      }
+    })
+    console.log({addStatus})
+    response.status(200).json({
+      error:false,
+      success:true,
+      message:"Succesfull",
+      data:addStatus
+    })
+  }catch (error) {
+    console.log({ error });
+    response.status(500).json({ message: error.message });
+    logger.error(`Internal server error: ${error.message} in getnotification API`);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+// const realTimeNotification = async (request, response) => {
+//   try {
+//     const { userId } = request.body;
+
+//     // Retrieve user's routine
+//     const getRoutine = await prisma.dailyRoutine.findFirst({
+//       where: { userId: userId },
+//     });
+
+//     if (!getRoutine || !getRoutine.routine[0]) {
+//       return response.status(400).json({
+//         error: true,
+//         success: false,
+//         message: "Routine not found.",
+//       });
+//     }
+
+//     // Extract timings from routine
+//     const { breakfast, lunch, dinner } = getRoutine.routine[0];
+//     console.log({ breakfast, lunch, dinner });
+
+//     // Set current time in IST
+//     const currentTimeUTC = new Date();
+//     const currentTime = new Date(currentTimeUTC.getTime()); // Adjust to IST
+//     console.log({ currentTime: currentTime.toLocaleString() }); // Outputs current time
+
+//     // Function to convert meal time strings to Date objects
+//     const parseMealTime = (mealTime) => {
+//       const date = new Date();
+//       const [time, modifier] = mealTime.split(' '); // Split time and AM/PM
+//       let [hours, minutes] = time.split(':').map(Number); // Split hours and minutes
+      
+//       // Convert to 24-hour format
+//       if (modifier === 'PM' && hours < 12) {
+//         hours += 12;
+//       } else if (modifier === 'AM' && hours === 12) {
+//         hours = 0;
+//       }
+
+//       date.setHours(hours);
+//       date.setMinutes(minutes);
+//       date.setSeconds(0);
+//       date.setMilliseconds(0);
+
+//       return date;
+//     };
+
+//     // Use consistent casing for meal times
+//     const mealTimes = {
+//       Morning: parseMealTime(breakfast),
+//       Lunch: parseMealTime(lunch), // Change to 'Lunch' with uppercase 'L'
+//       Dinner: parseMealTime(dinner), // Change to 'Dinner' with uppercase 'D'
+//     };
+
+//     console.log({ mealTimes });
+
+//     const getMedicineTT = await prisma.medicine_timetable.findMany({
+//       where: { userId: userId },
+//     });
+
+//     const notifications = [];
+
+//     // Determine current meal period
+//     let currentMeal;
+//     if (currentTime >= mealTimes.Morning && currentTime < mealTimes.Lunch) {
+//       currentMeal = "Morning";
+//     } else if (currentTime >= mealTimes.Lunch && currentTime < mealTimes.Dinner) {
+//       currentMeal = "lunch"; // Change to 'Lunch' with uppercase 'L'
+//     } else {
+//       currentMeal = "dinner"; // Change to 'Dinner' with uppercase 'D'
+//     }
+//     console.log({ currentMeal });
+
+//     // Process each medicine and its specified timings
+//     // for (const med of getMedicineTT) {
+//     for(let i=0; i<getMedicineTT.length; i++){
+//       const timingArray = getMedicineTT[i].timing; // Access the first object in the timing array
+//       console.log({ timingArray });
+
+//       // Iterate over the timingArray and check for the current meal
+//       // for (const [key, timing] of Object.entries(timingArray)) {
+//         // Use 'Lunch' instead of 'lunch' for comparison
+//         for(let j=0;j<timingArray.length;j++){
+//           const timing = timingArray[j]
+//           console.log({timing})
+//         // const standardizedTiming = timing.charAt(0).toUpperCase() + timing.slice(1); // Capitalize the first letter
+//         // console.log({standardizedTiming})
+//         // Check if the current meal matches any timing in the timingArray
+//         if (timing === currentMeal) {
+//           // const mealTime = mealTimes[standardizedTiming];
+//           // let notificationTime = new Date(mealTime); // Initialize notification time based on meal time
+
+//           // Adjust notification time based on before/after food
+//           // if (med.afterFd_beforeFd === "Before food") {
+//           //   notificationTime.setMinutes(mealTime.getMinutes() - 30); // Notify 30 mins before
+//           // } else {
+//           //   notificationTime.setMinutes(mealTime.getMinutes()); // Notify at meal time
+//           // }
+
+//           // Ensure the notification time is set correctly
+//           // notificationTime.setHours(mealTime.getHours());
+
+//           // Check if the notification time is in the future (greater than current time)
+//           // if (notificationTime > currentTime) {
+//             // Push the notification details only if the meal timing is valid
+//             notifications.push({
+//               userId,
+//               // medicineId: med.id,
+//               message: `Time to take ${med.medicine[0].name} - ${med.afterFd_beforeFd} ${standardizedTiming}`,
+//               // notificationTime,
+//             });
+//           // }
+//         }
+//       }
+//     }
+
+//     console.log({ notifications });
+
+//     // Send response with notifications
+//     response.status(200).json({
+//       error: false,
+//       success: true,
+//       message: "Notifications generated successfully",
+//       notifications,
+//     });
+//   } catch (error) {
+//     console.log({ error });
+//     response.status(500).json({ message: error.message });
+//   } finally {
+//     await prisma.$disconnect();
+//   }
+// };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1291,5 +1646,8 @@ module.exports = {addUserData,
   getUserSchedule,
   addStatus,
   getMedicationHistory,
-  refillNotification
+  refillNotification,
+  realTimeNotification,
+  getNotification,
+  addSeenStatus
 }

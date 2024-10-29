@@ -14,7 +14,10 @@ const {addUserData,
     getUserSchedule,
     addStatus,
     getMedicationHistory,
-    refillNotification
+    refillNotification,
+    realTimeNotification,
+    getNotification,
+    addSeenStatus
 } = require('./medone.controller')
 const medoneRouter = express.Router();
 const auth = require("../../middleware/Auth/auth");
@@ -38,9 +41,9 @@ medoneRouter.post('/getuserschedule',getUserSchedule)
 medoneRouter.post('/addStatus',addStatus)
 medoneRouter.post('/medicationhistory',getMedicationHistory)
 medoneRouter.post('/refillnotification',refillNotification)
-
-
-
+medoneRouter.post('/realtimenotification',realTimeNotification)
+medoneRouter.post('/getnotification',getNotification)
+medoneRouter.post('/addSeenStatus',addSeenStatus)
 
 
 
