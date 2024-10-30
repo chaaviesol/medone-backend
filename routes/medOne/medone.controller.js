@@ -1451,6 +1451,7 @@ const realTimeNotification = async (request, response) => {
   console.log({request})
   try {
     const { userId } = request.body;
+    process.env.TZ = 'Asia/Kolkata';
 
     // Retrieve user's routine
     const getRoutine = await prisma.dailyRoutine.findFirst({
