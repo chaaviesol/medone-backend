@@ -354,6 +354,18 @@ const addRoutine = async(request,response)=>{
       userId,
       routine 
     } = request.body
+    const findExistingRoutine = await prisma.dailyRoutine.findMany({
+      where:{
+        userId:userId
+      }
+    })
+    if(findExistingRoutine){
+      return response.status(400).json({
+        error:true,
+        success:false,
+        message:"Already created a routine"
+      })
+    }
 
     const addRoutine = await prisma.dailyRoutine.create({
      data:{
@@ -1786,6 +1798,75 @@ const addSeenStatus = async(request,response)=>{
 
 
 
+//edit user profile
+const editUserProfile = async(request,response)=>{
+  try{
+    const secretKey = process.env.ENCRYPTION_KEY;
+    
+  const safeDecrypt = (text, key) => {
+    try {
+      return decrypt(text, key);
+    } catch (err) {
+      return text;
+    }
+  };
+
+    const {userId,name,dob,gender,health_condition,height,weight} = request.body
+    if(!userId){
+      return response.status(404).json({
+        error:true,
+        success:false,
+        message:"User id is null..."
+      })
+    }
+    const encryptname   = encrypt(name, secretKey)
+    const encryptgender = encrypt(gender, secretKey)
+    const encryptdob    = encrypt(dob, secretKey)
+
+    const userData = await prisma.user_details.updateMany({
+      where:{
+         id:userId
+      },
+      data:{
+        name:encryptname,
+        ageGroup:encryptdob,
+        gender:encryptgender,
+        height:height,
+        weight:weight,
+        health_condition:health_condition
+      }
+    })
+    if(!userData){
+      return response.status(404)({
+        error:true, 
+        success:false,
+        message:"User not found"
+      })
+    }
+
+    const decryptedname = safeDecrypt(userData.name, secretKey);
+    const decryptedageGroup = safeDecrypt(userData?.ageGroup, secretKey);
+    const decryptgender = safeDecrypt(userData?.gender, secretKey);
+
+    userData.name = decryptedname;
+    userData.ageGroup = decryptedageGroup;
+    userData.gender = decryptgender;
+
+    return response.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull",
+      data:userData
+    })
+
+  }catch (error) {
+    console.log({ error });
+    response.status(500).json(error.message);
+    logger.error(`Internal server error: ${error.message} in medone-userprofile api`);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
 
 
 
@@ -1821,5 +1902,6 @@ module.exports = {addUserData,
   refillNotification,
   realTimeNotification,
   getNotification,
-  addSeenStatus
+  addSeenStatus,
+  editUserProfile
 }

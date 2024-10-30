@@ -17,7 +17,8 @@ const {addUserData,
     refillNotification,
     realTimeNotification,
     getNotification,
-    addSeenStatus
+    addSeenStatus,
+    editUserProfile
 } = require('./medone.controller')
 const medoneRouter = express.Router();
 const auth = require("../../middleware/Auth/auth");
@@ -44,7 +45,7 @@ medoneRouter.post('/refillnotification',refillNotification)
 medoneRouter.post('/realtimenotification',realTimeNotification)
 medoneRouter.post('/getnotification',getNotification)
 medoneRouter.post('/addSeenStatus',addSeenStatus) 
-
+medoneRouter.post('/edituserprofile',editUserProfile)
 
 
 
