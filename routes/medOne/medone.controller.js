@@ -1278,6 +1278,7 @@ const refillNotification = async(request,response)=>{
 }
 
 const realTimeNotification = async (request, response) => {
+  console.log({request})
   try {
     const { userId } = request.body;
 
