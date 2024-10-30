@@ -43,7 +43,8 @@ medoneRouter.post('/medicationhistory',getMedicationHistory)
 medoneRouter.post('/refillnotification',refillNotification)
 medoneRouter.post('/realtimenotification',realTimeNotification)
 medoneRouter.post('/getnotification',getNotification)
-medoneRouter.post('/addSeenStatus',addSeenStatus)
+medoneRouter.post('/addSeenStatus',addSeenStatus) 
+// addSeenstatus
 
 
 
