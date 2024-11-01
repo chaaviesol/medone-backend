@@ -460,46 +460,50 @@ const addNewMedicine = async (request, response) => {
     const { name, category, userId } = request.body;
 
     const findMedicine = await prisma.medicines.findMany({
-      where:{
-       name:name 
-      }
-    })
-    const medName = findMedicine[0].name
-    console.log({medName})
-    if (medName) {
+      where: {
+        name: name,
+      },
+    });
+
+    if (findMedicine.length > 0) { // Check if any medicine is found
+      const medName = findMedicine[0].name;
+      console.log({ medName });
       return response.status(200).json({
         error: false,
         success: true,
-        message: "Medicine already in the list......"
+        message: "Medicine already in the list......",
       });
-    }else{
-    const addMedicine = await prisma.medicines.create({
-      data: {
-        name: name,
-        status: "Pending",
-        created_date: istDate,
-        created_by: userId,
-        category: category
-      }
-    });
+    } else {
+      const addMedicine = await prisma.medicines.create({
+        data: {
+          name: name,
+          status: "Pending",
+          created_date: istDate,
+          created_by: userId,
+          category: category,
+        },
+      });
 
-    console.log({ addMedicine });
-   
-    response.status(200).json({
-      error: false,
-      success: true,
-      message: "Successfully added the medicine",
-      data: addMedicine
-    });
-  }
+      console.log({ addMedicine });
+
+      response.status(200).json({
+        error: false,
+        success: true,
+        message: "Successfully added the medicine",
+        data: addMedicine,
+      });
+    }
   } catch (error) {
     console.log({ error });
     response.status(500).json({ error: true, message: error.message });
-    logger.error(`Internal server error: ${error.message} in medone-addnewmedicine api`);
+    logger.error(
+      `Internal server error: ${error.message} in medone-addnewmedicine api`
+    );
   } finally {
     await prisma.$disconnect();
   }
 };
+
 
 
 const addMedicineSchedule = async(request,response)=>{
