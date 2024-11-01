@@ -359,7 +359,8 @@ const addRoutine = async(request,response)=>{
         userId:userId
       }
     })
-    if(findExistingRoutine){
+    console.log({findExistingRoutine})
+    if(findExistingRoutine.length > 0){
       return response.status(400).json({
         error:true,
         success:false,
