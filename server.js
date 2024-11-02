@@ -10,6 +10,8 @@ const authRouter = require("./routes/Auth/authRouters");
 const HospitalRouter = require("./routes/hospital/hospital.routes");
 const UserRouter = require("./routes/user/user.routes");
 const medoneRouter = require("./routes/medOne/medone.routes");
+// const router = require("./routes/notification/notification.routes");
+
 server.use(
   cors({
     origin: "*",
@@ -25,6 +27,7 @@ server.use("/auth", authRouter);
 server.use("/hospital", HospitalRouter);
 server.use("/user", UserRouter);
 server.use("/medone",medoneRouter)
+// server.use('/notification',router)
 
 if (process.env.NODE_ENV === "development") {
   server.listen(PORT, () => {

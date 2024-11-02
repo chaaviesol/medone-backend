@@ -92,6 +92,7 @@ model medicine_timetable {
   daysInterval          String? 
   created_date          DateTime?
   active_status         String?
+  app_flag              Boolean?
   user_id               user_details? @relation(fields: [userId],references: [id])
 }
 
@@ -119,7 +120,7 @@ model notification{
   user_id                Int?
   message                String?
   status                 String?
-  // created_date           DateTime @default(now())
+  created_date           DateTime @default(now())
 }
 
 model hospital_details{
