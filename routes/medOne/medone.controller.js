@@ -1936,8 +1936,8 @@ const addToken = async(request,response)=>{
       }
     })
     console.log({findUser})
-    const usertoken = findUser.token
-    console.log({usertoken})
+    // const usertoken = findUser.token
+    // console.log({usertoken})
     if(!usertoken){
     const addUsertoken = await prisma.user_details.updateMany({
       where:{
