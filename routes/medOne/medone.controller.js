@@ -1938,7 +1938,7 @@ const addToken = async(request,response)=>{
     console.log({findUser})
     // const usertoken = findUser.token
     // console.log({usertoken})
-    if(!usertoken){
+    // if(!usertoken){
     const addUsertoken = await prisma.user_details.updateMany({
       where:{
         id:id
@@ -1951,9 +1951,10 @@ const addToken = async(request,response)=>{
     return response.status(200).json({
       error:false,
       success:true,
-      message:"successfully added token"
+      message:"successfully added token",
+      data:addUsertoken
     })
-  }
+  // }
 
   }catch (error) {
     console.log({ error });
