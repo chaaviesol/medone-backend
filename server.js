@@ -39,63 +39,105 @@ if (process.env.NODE_ENV === "development") {
 }
 
 
-const sendNotification =(token,  title, message)=>{
-  const payload ={
-    notification:{
-      title:title,
-      body:message
-    } 
-  }
 
-  admin.messaging().sendToDevice(token, payload)
-.then(response =>{
-  console.log("Successfully sended the notification----->",response)
-  }).catch(error =>{
-    console.log("Error sending notification----->",error)
-  })
-}   
 
-  const timeToCron = (time) => {
-    const [hours, minutes] = time.split(':');
-    return `${minutes} ${hours} * * *`;
+
+
+
+
+
+
+
+
+
+const sendNotification = async (token, title, message) => {
+  const messagePayload = {
+    token: token,
+    notification: {
+      title: title,
+      body: message
+    },
+    android: {
+      priority: "high"
+    },
+    apns: {
+      payload: {
+        aps: {
+          contentAvailable: true
+        }
+      }
+    }
   };
 
-  const scheduleNotificationForUser = async(userId)=>{
-    try{
-      const user = await prisma.user_details.findMany({
-        where:{
-          id:userId
-        }
-      })
-      if(!user){
-        console.log("user not found")
-        return
+  try {
+    const response = await admin.messaging().send(messagePayload);
+    console.log("Successfully sent the notification ----->", response);
+    return "Notification sent successfully!";
+  } catch (error) {
+    console.error("Error sending notification ----->", error);
+    return `Failed to send notification: ${error.message}`;
+  }
+};
+
+const scheduleNotificationForUser = async (userId) => {
+  try {
+    const user = await prisma.user_details.findUnique({
+      where: {
+        id: userId
       }
-      const notificationTime = user.notificationTime; 
-      const cronTime = timeToCron(notificationTime);
-      console.log(`Scheduling notification for ${user.name} at ${notificationTime} (${cronTime})`);
-      
-      cron.schedule(cronTime, () => {
-        console.log(`Sending notification for ${user.name} at ${notificationTime}`);
-        sendNotification(user.token, "Reminder", "This is your scheduled notification!");
-      }, {
-        scheduled: true,
-        timezone: "Asia/Kolkata"  // Set your timezone
-      });
+    });
 
-    }catch(error){
-    console.log("error in schedule------>",error)
-
-
+    if (!user) {
+      console.log("User not found");
+      return "User not found";
     }
-}
 
+    const getNotification = await prisma.notification.findMany({
+      where: {
+        user_id: userId
+      }
+    });
 
-server.post('/add-user', async (req, res) => {
-  const { name, notificationTime, fcmToken } = req.body;
-  const newUser = await prisma.user.create({
-    data: { name, notificationTime, fcmToken }
-  });
-  scheduleNotificationForUser(newUser.id); // Schedule notification after adding user
-  res.status(201).json(newUser);
+    for (let notification of getNotification) {
+      const message = notification.message;
+      console.log("Sending notification with message:", message);
+
+      // Send the notification
+      const notificationResponse = await sendNotification(user.token, "Reminder", message);
+      console.log(notificationResponse);
+    }
+
+    return "Notifications scheduled successfully!";
+  } catch (error) {
+    console.error("Error in scheduleNotificationForUser:", error);
+    return "Error scheduling notifications";
+  }
+};
+
+server.post('/send-notification', async (req, res) => {
+  const { userId } = req.body;
+
+  try {
+    const getNotification = await prisma.notification.findMany({
+      where: {
+        user_id: userId
+      }
+    });
+    console.log({ getNotification });
+
+    const notificationMessage = await scheduleNotificationForUser(userId);
+
+    res.status(200).json({
+      error: false,
+      success: true,
+      message: notificationMessage,
+      data: getNotification
+    });
+  } catch (error) {
+    console.error("Error in /send-notification:", error);
+    res.status(500).json({
+      error: true,
+      message: "Failed to send notification"
+    });
+  }
 });

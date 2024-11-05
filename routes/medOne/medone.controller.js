@@ -1448,7 +1448,7 @@ const getMedicationHistory = async(request,response)=>{
 const refillNotification = async(request,response)=>{
   try{
     const {userId} = request.body
-     
+    
     const findMedicines = await prisma.medicine_timetable.findMany({
       where:{
         userId:userId
@@ -1468,7 +1468,7 @@ const refillNotification = async(request,response)=>{
       const medicationData = await prisma.medication_records.count({
         where:{
           timetable_id:timeTable_id,
-          taken_status:"Taken"
+          taken_status:"Yes"
         },
         
       })
@@ -1476,14 +1476,27 @@ const refillNotification = async(request,response)=>{
 
       const remainingQuantity = quantity - medicationData
       console.log({remainingQuantity})
+      const message =`Refill needed for medicine ${findMedicines[i].medicine[0].name}, only 25% remaining.`
       if (remainingQuantity <= 3) {
         notifications.push({
           medicineId: timeTable_id,
-          message: `Refill needed for medicine ${findMedicines[i].medicine[0].name}, only 25% remaining.`,
+          message:message
+          // message: `Refill needed for medicine ${findMedicines[i].medicine[0].name}, only 25% remaining.`,
         });
+        const addNotification = await prisma.notification.create({
+          data:{
+            user_id:userId,
+            message:message,
+            status:"Not seen",
+            // data:clg
+  
+          }
+        })
+        console.log({addNotification})
       }
      
       medicineCount.push(medicationData)
+     
     }
     return response.status(200).json({
       error:false,
