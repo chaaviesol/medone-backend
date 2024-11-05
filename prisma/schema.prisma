@@ -34,7 +34,9 @@ datasource db {
     health_condition        Json?
     height                  String?
     weight                  String?
-    googleId                String?               
+    googleId                String?   
+     token                   String?  
+    notificationTime        String?               
     // userId                  quotation[]
     // interactedLabuser       lab_interacteduser[]
     // interactedDoctoruser    doctor_interacteduser[]

@@ -1923,6 +1923,47 @@ const editUserProfile = async(request,response)=>{
 
 
 
+//api for storing token
+const addToken = async(request,response)=>{
+  try{
+    const{
+      id,
+      token
+    } = request.body
+    const findUser = await prisma.user_details.findFirst({
+      where:{
+        id:id
+      }
+    })
+    console.log({findUser})
+    const usertoken = findUser.token
+    console.log({usertoken})
+    if(!usertoken){
+    const addUsertoken = await prisma.user_details.updateMany({
+      where:{
+        id:id
+      },
+      data:{
+        token:token
+      }
+    })
+    console.log({addUsertoken})
+    return response.status(200).json({
+      error:false,
+      success:true,
+      message:"successfully added token"
+    })
+  }
+
+  }catch (error) {
+    console.log({ error });
+    response.status(500).json(error.message);
+    logger.error(`Internal server error: ${error.message} in medone-userprofile api`);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
 
 
 
@@ -1956,5 +1997,6 @@ module.exports = {addUserData,
   realTimeNotification,
   getNotification,
   addSeenStatus,
-  editUserProfile
+  editUserProfile,
+  addToken
 }
