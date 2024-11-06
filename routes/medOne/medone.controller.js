@@ -91,9 +91,11 @@ const addUserData = async(request,response)=>{
             dob,
             health_condition,
             height,
-            weight
+            weight,
+            
         } = request.body
-    
+        const userimg = request.file?.location || request.body.image;
+        console.log({userimg})
     const findUser = await prisma.user_details.findMany({
         where:{
            id:userid
@@ -122,8 +124,8 @@ const addUserData = async(request,response)=>{
                 ageGroup:encryptdob,
                 health_condition:health_condition,
                 height:height,
-                weight:weight
-
+                weight:weight,
+                image:userimg
             }
         })
         console.log({addingUserDetails})
@@ -1094,7 +1096,7 @@ const notifyMedicineSchedule = async (request, response) => {
 
     // Sort notifications by time of day
     notifications.sort((a, b) => {
-      const timeOrder = { Morning: 1, Lunch: 2, Dinner: 3 };
+      const timeOrder = { Morning: 1, lunch: 2, dinner: 3 };
       return timeOrder[a.timeOfDay] - timeOrder[b.timeOfDay];
     });
 

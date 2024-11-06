@@ -23,11 +23,11 @@ const {addUserData,
 } = require('./medone.controller')
 const medoneRouter = express.Router();
 const auth = require("../../middleware/Auth/auth");
+const { upload } = require("../../middleware/Uploadimage");
 
 
 
-
-medoneRouter.post('/addUserData',addUserData)
+medoneRouter.post('/addUserData',upload.single("image"),addUserData)
 medoneRouter.post('/userLogin',userLogin)
 medoneRouter.post('/addRoutine',addRoutine)
 medoneRouter.post('/getUserRoutine',getUserRoutine)
