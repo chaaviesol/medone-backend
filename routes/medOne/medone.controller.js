@@ -1084,7 +1084,7 @@ const notifyMedicineSchedule = async (request, response) => {
         }
       }
     }
-    
+  //checking whether the notification is null or not 
     if (notifications.length === 0) {
       console.log("No notifications scheduled.");
       return response.status(404).json({
@@ -1982,8 +1982,6 @@ const addToken = async(request,response)=>{
     await prisma.$disconnect();
   }
 }
-
-
 
 
 

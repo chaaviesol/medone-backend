@@ -60,7 +60,7 @@ const sendNotification = async (token, title, message) => {
     android: {
       priority: "high"
     },
-    apns: {
+    apns: {  //apple push notification service
       payload: {
         aps: {
           contentAvailable: true
