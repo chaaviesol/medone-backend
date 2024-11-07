@@ -1030,7 +1030,10 @@ const notifyMedicineSchedule = async (request, response) => {
         where: {
           userId: userid,
           timetable_id: id,
-          status: 'Taken',
+          // status: 'Taken',
+          status: {
+            in: ['Taken', 'Skipped'],
+          }, 
           created_date: {
             gte: new Date(todayDate + "T00:00:00.000Z"),
             lt: new Date(todayDate + "T23:59:59.999Z"),
