@@ -26,6 +26,25 @@ cron.schedule('0 0 * * *', async () => {
   }
 });
 
+//for running the morning notification
+cron.schedule('0 8 * * *', () => {
+  console.log("Running morning notification job...");
+  realTimeNotification(/* request, response */);
+});
+
+//for running the luch time notification
+cron.schedule('0 12 * * *', () => {
+  console.log("Running lunch notification job...");
+  realTimeNotification(/* request, response */);
+});
+
+//for running the dinner time notification
+cron.schedule('0 12 * * *', () => {
+  console.log("Running dinner notification job...");
+  realTimeNotification(/* request, response */);
+});
+
+
 const logger = winston.createLogger({
     level: "info",
     format: winston.format.combine(
@@ -1397,13 +1416,12 @@ const addStatus = async(request,response)=>{
       message:"SuccessFull",
       data:addResponse
     })
-  }catch(err){
-    console.log({err})
-    response.status(404).json({
-      error:true,
-      success:false,
-      message:"Internal server error"
-    })
+  }catch (error) {
+    console.log({ error });
+    response.status(500).json(error.message);
+    logger.error(`Internal server error: ${error.message} in medone-addStatus api`);
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
@@ -1728,7 +1746,7 @@ const addSeenStatus = async(request,response)=>{
   }catch (error) {
     console.log({ error });
     response.status(500).json({ message: error.message });
-    logger.error(`Internal server error: ${error.message} in getnotification API`);
+    logger.error(`Internal server error: ${error.message} in addSeenStatus API`);
   } finally {
     await prisma.$disconnect();
   }
@@ -1933,7 +1951,7 @@ const editUserProfile = async(request,response)=>{
   }catch (error) {
     console.log({ error });
     response.status(500).json(error.message);
-    logger.error(`Internal server error: ${error.message} in medone-userprofile api`);
+    logger.error(`Internal server error: ${error.message} in medone-edituserprofile api`);
   } finally {
     await prisma.$disconnect();
   }
@@ -1977,12 +1995,11 @@ const addToken = async(request,response)=>{
   }catch (error) {
     console.log({ error });
     response.status(500).json(error.message);
-    logger.error(`Internal server error: ${error.message} in medone-userprofile api`);
+    logger.error(`Internal server error: ${error.message} in medone-addToken api`);
   } finally {
     await prisma.$disconnect();
   }
 }
-
 
 
 
