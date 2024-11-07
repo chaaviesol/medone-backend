@@ -27,7 +27,7 @@ cron.schedule('0 0 * * *', async () => {
 });
 
 //for running the morning notification
-cron.schedule('0 8 * * *', () => {
+cron.schedule('0 5 * * *', () => {
   console.log("Running morning notification job...");
   realTimeNotification(/* request, response */);
 });
@@ -39,7 +39,7 @@ cron.schedule('0 12 * * *', () => {
 });
 
 //for running the dinner time notification
-cron.schedule('0 12 * * *', () => {
+cron.schedule('0 18 * * *', () => {
   console.log("Running dinner notification job...");
   realTimeNotification(/* request, response */);
 });
