@@ -94,6 +94,7 @@ function convertTimeTo24Hour(timeStr) {
   }
 
 const addUserData = async(request,response)=>{
+console.log({request})
     const secretKey = process.env.ENCRYPTION_KEY;
     const safeDecrypt = (text, key) => {
       try {
@@ -115,7 +116,9 @@ const addUserData = async(request,response)=>{
         } = request.body
         const userimg = request.file?.location || request.body.image;
         console.log({userimg})
-    const findUser = await prisma.user_details.findMany({
+        
+
+      const findUser = await prisma.user_details.findMany({
         where:{
            id:userid
         }
@@ -1091,16 +1094,41 @@ const notifyMedicineSchedule = async (request, response) => {
         }
     console.log({notifyTimeOfDay})
         console.log("Calculated notificationTime for", notifyTimeOfDay, ":", notificationTime);
-    
+
+  
+        // if (notificationTime && !isNaN(notificationTime)) {
+        //   notifications.push({
+        //     medicine_timetableID: id,
+        //     medicine: medicine.medicine[0].name,
+        //     medicine_type: medicine.medicine_type,
+        //     notificationTime: notificationTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+        //     timeOfDay: notifyTimeOfDay,
+        //   });
+        // }
         if (notificationTime && !isNaN(notificationTime)) {
+          const notificationDateTimeIST = notificationTime.toLocaleString('en-IN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true,
+            timeZone: 'Asia/Kolkata'
+          });
+        
+          const notificationDateTimeISO = new Date(notificationTime.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })).toISOString();
+        
           notifications.push({
             medicine_timetableID: id,
             medicine: medicine.medicine[0].name,
             medicine_type: medicine.medicine_type,
-            notificationTime: notificationTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+            notificationDateTimeIST, // Full datetime in IST format
+            notificationDateTimeISO, // ISO format adjusted to IST
             timeOfDay: notifyTimeOfDay,
           });
         }
+        
       }
     }
   //checking whether the notification is null or not 
@@ -1390,6 +1418,7 @@ const getUserSchedule = async(request,response)=>{
 
 //for adding status to the medication_records
 const addStatus = async(request,response)=>{
+  console.log({request})
   try{
     const{
          userId,
@@ -1399,6 +1428,8 @@ const addStatus = async(request,response)=>{
          takenStatus
         } = request.body
     const date = new Date()
+    // const medicineTakenTime = request.body.takenTime
+    // console.log({medicineTakenTime})
     const addResponse = await prisma.medication_records.create({
       data:{
         userId:userId,

@@ -1,6 +1,6 @@
 const admin = require('firebase-admin')
-const serviceAccount = require('../med-one/firebase-adminsdk.json')
-// const serviceAccount = require('../medone-backend/firebase-adminsdk.json')
+// const serviceAccount = require('../med-one/firebase-adminsdk.json')
+const serviceAccount = require('../medone-backend/firebase-adminsdk.json')
 require("dotenv").config();
 
 
