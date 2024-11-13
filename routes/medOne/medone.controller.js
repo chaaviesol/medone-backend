@@ -26,23 +26,23 @@ cron.schedule('0 0 * * *', async () => {
   }
 });
 
-//for running the morning notification
-cron.schedule('0 5 * * *', () => {
-  console.log("Running morning notification job...");
-  realTimeNotification(/* request, response */);
-});
+// //for running the morning notification
+// cron.schedule('0 5 * * *', () => {
+//   console.log("Running morning notification job...");
+//   realTimeNotification(/* request, response */);
+// });
 
-//for running the luch time notification
-cron.schedule('0 12 * * *', () => {
-  console.log("Running lunch notification job...");
-  realTimeNotification(/* request, response */);
-});
+// //for running the luch time notification
+// cron.schedule('0 12 * * *', () => {
+//   console.log("Running lunch notification job...");
+//   realTimeNotification(/* request, response */);
+// });
 
-//for running the dinner time notification
-cron.schedule('0 18 * * *', () => {
-  console.log("Running dinner notification job...");
-  realTimeNotification(/* request, response */);
-});
+// //for running the dinner time notification
+// cron.schedule('0 18 * * *', () => {
+//   console.log("Running dinner notification job...");
+//   realTimeNotification(/* request, response */);
+// });
 
 
 const logger = winston.createLogger({
@@ -1417,9 +1417,9 @@ const realTimeNotification = async (request, response) => {
     let currentMeal = null;
     if (currentHours >= 5 && currentHours < 11) {
       currentMeal = "Morning";
-    } else if (currentHours >= 11 && currentHours < 17) {
+    } else if (currentHours >= 11 && currentHours < 18) {
       currentMeal = "lunch";
-    } else if (currentHours >= 17 && currentHours < 24) {
+    } else if (currentHours >= 18 && currentHours < 24) {
       currentMeal = "dinner";
     }
     console.log({currentMeal})
@@ -1536,6 +1536,28 @@ console.log({mealTimes});
     await prisma.$disconnect();
   }
 };
+// Schedule the realTimeNotification function to run at 5 AM, 12 PM, and 5 PM daily
+cron.schedule('0 5,12,18 * * *', async () => {
+  try {
+    console.log("Running scheduled notification check...");
+    
+    // Assuming you want notifications for multiple users, you can get all user IDs here
+    const allUsers = await prisma.user.findMany({ select: { id: true } });
+
+    for (const user of allUsers) {
+      const request = { body: { userId: user.id } };
+      const response = {
+        status: (statusCode) => ({
+          json: (data) => console.log("Scheduled notification response:", data),
+        }),
+      };
+      await realTimeNotification(request, response);
+    }
+
+  } catch (error) {
+    console.error("Error running scheduled notification:", error);
+  }
+});
 
 //get notification
 const getNotification = async(request,response)=>{
