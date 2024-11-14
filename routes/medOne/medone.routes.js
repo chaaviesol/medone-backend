@@ -19,7 +19,8 @@ const {addUserData,
     getNotification,
     addSeenStatus,
     editUserProfile,
-    addToken
+    addToken,
+    updatedchat
 } = require('./medone.controller')
 const medoneRouter = express.Router();
 const auth = require("../../middleware/Auth/auth");
@@ -48,7 +49,7 @@ medoneRouter.post('/getnotification',getNotification)
 medoneRouter.post('/addSeenStatus',addSeenStatus) 
 medoneRouter.post('/edituserprofile',editUserProfile)
 medoneRouter.post('/addToken',addToken)
-
+medoneRouter.post('/updatedchat',updatedchat)
 
 
 

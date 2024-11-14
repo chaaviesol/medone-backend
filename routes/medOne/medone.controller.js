@@ -9,6 +9,8 @@ const jwt = require("jsonwebtoken");
 const res = require("express/lib/response");
 const { closeSync } = require("fs");
 const cron = require('node-cron')
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+
 // const { use } = require("bcrypt/promises");
 
 //function for deleting the data within 24hrs
@@ -1864,6 +1866,79 @@ const addToken = async(request,response)=>{
 }
 
 
+ 
+
+const conversationHistories = {};
+const updatedchat = async (request, response) => {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    const genAI = new GoogleGenerativeAI(apiKey);
+    
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash",
+      // Uncomment and customize systemInstruction if needed
+      // systemInstruction: "Your name is 'Dr. One.' You only respond to questions related to the medical field. If the question is not related to the medical field, then you will send a funny reply. First, you want to ask for the user's name, gender, and age group. Users will also tell their symptoms so you can suggest the appropriate doctor and specialty. If the doctors are not listed, then just specify which specialty doctor to consider."
+    });
+
+    const generationConfig = {
+      temperature: 1,
+      topP: 0.95,
+      topK: 64,
+      maxOutputTokens: 8192,
+      responseMimeType: "text/plain",
+    };
+
+    // Retrieve conversation history for this chat session
+    const chatId = request.body.chatId || "default"; // Ensure a unique ID per session if needed
+    const conversationHistory = conversationHistories[chatId] || [
+      {
+        role: "user",
+        parts: [
+          {text: "Your name is \"Med. One.\" You only respond to questions related to the medical field. You primarily explain the purpose of medications without going deeply into side effects. If a question is not related to the medical field, you will respond casually. If users ask about their health problems, first ask for their name, gender, and age group. They may also describe their symptoms, allowing you to suggest the appropriate doctor and specialty. If a specific doctor is not listed, specify the relevant specialty instead."},
+        ],
+
+      },
+    ];
+
+    const chatSession = model.startChat({
+      generationConfig,
+      history: conversationHistory,
+    });
+
+    const userInput = request.body.message;
+
+    if (userInput.toLowerCase() !== "quit") {
+      const result = await chatSession.sendMessage(userInput);
+      response.status(200).json({
+        message: result.response.candidates[0].content.parts[0]?.text,
+      });
+
+      // Update conversation history
+      conversationHistory.push({
+        role: "user",
+        parts: [{ text: userInput }],
+      });
+      conversationHistory.push({
+        role: "model",
+        parts: [{ text: result.response.candidates[0].content.parts[0]?.text }],
+      });
+
+      // Save updated history for the session
+      conversationHistories[chatId] = conversationHistory;
+    } else {
+      await chatSession.endChat(); // Gracefully end the chat session if the input is "quit"
+      response.status(200).json({ message: "Chat session ended." });
+
+      // Clear conversation history if chat session ends
+      delete conversationHistories[chatId];
+    }
+  } catch (error) {
+    console.error("Error during chat:", error);
+    response.status(500).json({ error: "An error occurred" });
+  }
+};
+
+
 
 
 
@@ -1894,5 +1969,6 @@ module.exports = {addUserData,
   getNotification,
   addSeenStatus,
   editUserProfile,
-  addToken
+  addToken,
+  updatedchat
 }
