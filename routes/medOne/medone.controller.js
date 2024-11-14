@@ -1869,11 +1869,18 @@ const addToken = async(request,response)=>{
  
 
 const conversationHistories = {};
+
 const updatedchat = async (request, response) => {
   try {
+    // Check for API Key
     const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is missing in environment variables");
+    }
+
+    // Initialize Google Generative AI with the API Key
     const genAI = new GoogleGenerativeAI(apiKey);
-    
+
     const model = genAI.getGenerativeModel({
       model: "gemini-1.5-flash",
       // Uncomment and customize systemInstruction if needed
@@ -1894,9 +1901,8 @@ const updatedchat = async (request, response) => {
       {
         role: "user",
         parts: [
-          {text: "Your name is \"Med. One.\" You only respond to questions related to the medical field. You primarily explain the purpose of medications without going deeply into side effects. If a question is not related to the medical field, you will respond casually. If users ask about their health problems, first ask for their name, gender, and age group. They may also describe their symptoms, allowing you to suggest the appropriate doctor and specialty. If a specific doctor is not listed, specify the relevant specialty instead."},
+          { text: "Your name is 'Med. One.' You only respond to questions related to the medical field. You primarily explain the purpose of medications without going deeply into side effects. If a question is not related to the medical field, you will respond casually. If users ask about their health problems, first ask for their name, gender, and age group. They may also describe their symptoms, allowing you to suggest the appropriate doctor and specialty. If a specific doctor is not listed, specify the relevant specialty instead." },
         ],
-
       },
     ];
 
@@ -1909,6 +1915,7 @@ const updatedchat = async (request, response) => {
 
     if (userInput.toLowerCase() !== "quit") {
       const result = await chatSession.sendMessage(userInput);
+
       response.status(200).json({
         message: result.response.candidates[0].content.parts[0]?.text,
       });
@@ -1933,10 +1940,11 @@ const updatedchat = async (request, response) => {
       delete conversationHistories[chatId];
     }
   } catch (error) {
-    console.error("Error during chat:", error);
-    response.status(500).json({ error: "An error occurred" });
+    console.error("Error during chat:", error.stack); // More detailed error logging
+    response.status(500).json({ error: "An error occurred", details: error.message });
   }
 };
+
 
 
 
