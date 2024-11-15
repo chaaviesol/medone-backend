@@ -10,6 +10,7 @@ const res = require("express/lib/response");
 const { closeSync } = require("fs");
 const cron = require('node-cron')
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const schedule = require('node-schedule');
 
 // const { use } = require("bcrypt/promises");
 
@@ -1538,12 +1539,14 @@ console.log({mealTimes});
     await prisma.$disconnect();
   }
 };
-// Schedule the realTimeNotification function to run at 5 AM, 12 PM, and 5 PM daily
-cron.schedule('0 5,12,18 * * *', async () => {
+
+
+// Function to call realTimeNotification for multiple users
+const runScheduledNotification = async () => {
   try {
     console.log("Running scheduled notification check...");
-    
-    // Assuming you want notifications for multiple users, you can get all user IDs here
+
+    // Retrieve all user IDs to process notifications
     const allUsers = await prisma.user.findMany({ select: { id: true } });
 
     for (const user of allUsers) {
@@ -1555,11 +1558,16 @@ cron.schedule('0 5,12,18 * * *', async () => {
       };
       await realTimeNotification(request, response);
     }
-
   } catch (error) {
     console.error("Error running scheduled notification:", error);
   }
-});
+};
+
+// Schedule the job to run at 5:30 AM, 12:30 PM, and 5:30 PM daily
+schedule.scheduleJob('30 5 * * *', runScheduledNotification); // 5:30 AM
+schedule.scheduleJob('15 11 * * *', runScheduledNotification); // 11:30 PM
+schedule.scheduleJob('30 17 * * *', runScheduledNotification); // 5:30 PM
+
 
 //get notification
 const getNotification = async(request,response)=>{
