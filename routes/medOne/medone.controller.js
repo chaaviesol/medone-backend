@@ -1485,18 +1485,7 @@ console.log({mealTimes});
           medicineTime =  getRoutine.routine[0].dinner
         }
         console.log({medicineTime})
-        // const mealTime = mealTimes[currentMeal];
-        // console.log({mealTime})
-        // const notificationTime = new Date(mealTime);
-        // console.log({notificationTime})
-        // // Adjust notification time if it's "Before food"
-        // if (med.afterFd_beforeFd === "Before food") {
-        //   notificationTime.setMinutes(mealTime.getMinutes() - 30);
-        // }
-    
-        // Log the mealTime and notificationTime for each medicine
-        // console.log(`Meal Time for ${currentMeal}:`, mealTime.toLocaleString('en-IN', { hour: 'numeric', minute: 'numeric', hour12: true }));
-        // console.log(`Notification Time for ${med.medicine[0].name} (${med.afterFd_beforeFd}):`, notificationTime.toLocaleString('en-IN', { hour: 'numeric', minute: 'numeric', hour12: true }));
+        
         const message = `Time to take ${med.medicine[0].name} - ${med.afterFd_beforeFd} ${currentMeal}`
         notifications.push({
           userId,
@@ -1909,7 +1898,9 @@ const updatedchat = async (request, response) => {
       {
         role: "user",
         parts: [
-          { text: "Your name is 'Med. One.' You only respond to questions related to the medical field. You primarily explain the purpose of medications without going deeply into side effects. If a question is not related to the medical field, you will respond casually. If users ask about their health problems, first ask for their name, gender, and age group. They may also describe their symptoms, allowing you to suggest the appropriate doctor and specialty. If a specific doctor is not listed, specify the relevant specialty instead." },
+          {
+            text: "Your name is 'Med. One.' You only respond to questions related to the medical field. You primarily explain the purpose of medications without going deeply into side effects. If a question is not related to the medical field, you will respond casually. If users ask about their health problems, first ask for their name, gender, and age group. They may also describe their symptoms, allowing you to suggest the appropriate doctor and specialty. If a specific doctor is not listed, specify the relevant specialty instead.",
+          },
         ],
       },
     ];
@@ -1924,19 +1915,26 @@ const updatedchat = async (request, response) => {
     if (userInput.toLowerCase() !== "quit") {
       const result = await chatSession.sendMessage(userInput);
 
+      // Safely access the response content
+      const responseText =
+        result.response.candidates[0]?.content.parts[0]?.text ||
+        "Sorry, I couldn't understand that. Could you rephrase?";
+
       response.status(200).json({
-        message: result.response.candidates[0].content.parts[0]?.text,
+        message: responseText,
       });
 
-      // Update conversation history
-      conversationHistory.push({
-        role: "user",
-        parts: [{ text: userInput }],
-      });
-      conversationHistory.push({
-        role: "model",
-        parts: [{ text: result.response.candidates[0].content.parts[0]?.text }],
-      });
+      // Update conversation history if there is valid response content
+      if (responseText) {
+        conversationHistory.push({
+          role: "user",
+          parts: [{ text: userInput }],
+        });
+        conversationHistory.push({
+          role: "model",
+          parts: [{ text: responseText }],
+        });
+      }
 
       // Save updated history for the session
       conversationHistories[chatId] = conversationHistory;
@@ -1952,6 +1950,7 @@ const updatedchat = async (request, response) => {
     response.status(500).json({ error: "An error occurred", details: error.message });
   }
 };
+
 
 
 
