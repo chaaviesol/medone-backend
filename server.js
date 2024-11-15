@@ -121,6 +121,9 @@ server.post('/send-notification', async (req, res) => {
     const getNotification = await prisma.notification.findMany({
       where: {
         user_id: userId
+      },
+      select:{
+        status:"Not seen"
       }
     });
     console.log({ getNotification });
