@@ -1547,7 +1547,7 @@ const runScheduledNotification = async () => {
     console.log("Running scheduled notification check...");
 
     // Retrieve all user IDs to process notifications
-    const allUsers = await prisma.user.findMany({ select: { id: true } });
+    const allUsers = await prisma.user_details.findMany({ select: { id: true } });
 
     for (const user of allUsers) {
       const request = { body: { userId: user.id } };
@@ -1565,7 +1565,7 @@ const runScheduledNotification = async () => {
 
 // Schedule the job to run at 5:30 AM, 12:30 PM, and 5:30 PM daily
 schedule.scheduleJob('30 5 * * *', runScheduledNotification); // 5:30 AM
-schedule.scheduleJob('15 11 * * *', runScheduledNotification); // 11:30 PM
+schedule.scheduleJob('10 12 * * *', runScheduledNotification); // 11:30 PM
 schedule.scheduleJob('30 17 * * *', runScheduledNotification); // 5:30 PM
 
 
