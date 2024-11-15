@@ -1498,7 +1498,8 @@ console.log({mealTimes});
           data:{
             user_id:userId,
             message:message,
-            status:"Not seen"
+            status:"Not seen",
+            view_status:"false"
           }
         })
         console.log({addNotification})
@@ -1956,6 +1957,34 @@ const updatedchat = async (request, response) => {
 
 
 
+// const notificationData = async(request,response)=>{
+//   try{
+//     const{userId} = request.body
+//     const getUserRoutine = await prisma.dailyRoutine.findMany({
+//       where:{
+//         userId:userId
+//       }
+//     })
+//     console.log({getUserRoutine})
+//     const routine = getUserRoutine[0].routine
+//     console.log({routine})
+
+//     const findmedicationTT = await prisma.medicine_timetable.findMany({
+//       where:{
+//         userId:userId
+//       }
+//     })
+//     console.log({findmedicationTT})
+
+//   }catch (error) {
+//     console.log({ error });
+//     response.status(500).json(error.message);
+//     logger.error(`Internal server error: ${error.message} in medone-notificationData api`);
+//   } finally {
+//     await prisma.$disconnect();
+//   }
+// }
+
 
 
 
@@ -1985,5 +2014,6 @@ module.exports = {addUserData,
   addSeenStatus,
   editUserProfile,
   addToken,
-  updatedchat
+  updatedchat,
+  // notificationData
 }

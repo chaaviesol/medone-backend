@@ -122,6 +122,7 @@ model notification{
   user_id                Int?
   message                String?
   status                 String?
+  view_status            String?
   created_date           DateTime @default(now())
 }
 
