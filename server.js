@@ -67,7 +67,7 @@ const sendNotification = async (token, title, message) => {
         }
       }
     },
-    time_to_live: 120,  // TTL in seconds (1 hour)
+    // time_to_live: 120,  // TTL in seconds (1 hour)
   };
 
   try {
