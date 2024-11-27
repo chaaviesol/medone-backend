@@ -50,70 +50,63 @@ if (process.env.NODE_ENV === "development") {
 
 
 
-const sendNotification = async (token, title, message) => {
-  const messagePayload = {
-    token: token,
-    notification: {
-      title: title,
-      body: message
-    },
-    android: {
-      priority: "high"
-    },
-    apns: {  //apple push notification service
-      payload: {
-        aps: {
-          contentAvailable: true
-        }
-      }
-    },
-    // time_to_live: 120,  // TTL in seconds (1 hour)
-  };
+// const sendNotification = async (token, title, message) => {
+//   const messagePayload = {
+//     token: token,
+//     notification: {
+//       title: title,
+//       body: message
+//     },
+//     android: {
+//       priority: "high"
+//     },
+//     apns: {  //apple push notification service
+//       payload: {
+//         aps: {
+//           contentAvailable: true
+//         }
+//       }
+//     },
+//     // time_to_live: 120,  // TTL in seconds (1 hour)
+//   };
 
-  try {
-    const response = await admin.messaging().send(messagePayload);
-    console.log("Successfully sent the notification ----->", response);
-    return "Notification sent successfully!";
-  } catch (error) {
-    console.error("Error sending notification ----->", error);
-    return `Failed to send notification: ${error.message}`;
-  }
-};
 
-const scheduleNotificationForUser = async (userId) => {
-  try {
-    const user = await prisma.user_details.findUnique({
-      where: {
-        id: userId
-      }
-    });
+// };
 
-    if (!user) {
-      console.log("User not found");
-      return "User not found";
-    }
+// const scheduleNotificationForUser = async (userId) => {
+//   try {
+//     const user = await prisma.user_details.findUnique({
+//       where: {
+//         id: userId
+//       }
+//     });
 
-    const getNotification = await prisma.notification.findMany({
-      where: {
-        user_id: userId
-      }
-    });
+//     if (!user) {
+//       console.log("User not found");
+//       return "User not found";
+//     }
 
-    for (let notification of getNotification) {
-      const message = notification.message;
-      console.log("Sending notification with message:", message);
+//     const getNotification = await prisma.notification.findMany({
+//       where: {
+//         user_id: userId
+//       }
+//     });
 
-      // Send the notification
-      const notificationResponse = await sendNotification(user.token, "Reminder", message);
-      console.log(notificationResponse);
-    }
+//     for (let notification of getNotification) {
+//       const message = notification.message;
+//       console.log("Sending notification with message:", message);
 
-    return "Notifications scheduled successfully!";
-  } catch (error) {
-    console.error("Error in scheduleNotificationForUser:", error);
-    return "Error scheduling notifications";
-  }
-};
+//       // Send the notification
+//       const notificationResponse = await sendNotification(user.token, "Reminder", message);
+//       console.log(notificationResponse);
+//     }
+
+//     return "Notifications scheduled successfully!";
+//   } catch (error) {
+//     console.error("Error in scheduleNotificationForUser:", error);
+//     return "Error scheduling notifications";
+//   }
+// };
 
 // server.post('/send-notification', async (req, res) => {
 //   const { userId } = req.body;
@@ -157,51 +150,155 @@ const scheduleNotificationForUser = async (userId) => {
 //   }
 // });
 
+// server.post('/send-notification', async (req, res) => {
+//   const { userId } = req.body;
+
+//   try {
+//     // Step 1: Update all notifications with `view_status: false` to `view_status: true`
+//     // const updatedNotifications = await prisma.notification.updateMany({
+//     //   where: {
+//     //     user_id: userId,
+//     //     view_status: "false", // Only update notifications with `view_status: false`
+//     //   },
+//     //   data: {
+//     //     view_status: "true",
+//     //   },
+//     // });
+
+//     // Log how many notifications were updated
+//     // console.log(`Updated ${updatedNotifications.count} notifications for user ${userId}.`);
+
+//     // Step 2: Retrieve all notifications with `view_status: true` but ensure they haven't been "seen"
+//     const getNotification = await prisma.notification.findMany({
+//       where: {
+//         user_id: userId,
+//         status: "Not seen", // Ensure only unseen notifications are fetched
+//         // view_status: "false",
+//       },
+//     });
+
+//     // Log the notifications retrieved
+//     console.log({ getNotification });
+
+//     // Step 3: Call the function to schedule notifications for the user
+//     const notificationMessage = await scheduleNotificationForUser(userId);
+    
+//    if(getNotification){
+//     try {
+//       const response = await admin.messaging().send(messagePayload);
+//       console.log("Successfully sent the notification ----->", response);
+//       return "Notification sent successfully!";
+//     } catch (error) {
+//       console.error("Error sending notification ----->", error);
+//       return `Failed to send notification: ${error.message}`;
+//     }
+//    }
+//     res.status(200).json({
+//       error: false,
+//       success: true,
+//       message: notificationMessage,
+//       data: getNotification,
+//     });
+
+//   } catch (error) {
+//     console.error("Error in /send-notification:", error);
+//     res.status(500).json({
+//       error: true,
+//       message: "Failed to send notification",
+//     });
+//   }
+// });
+
 server.post('/send-notification', async (req, res) => {
   const { userId } = req.body;
 
   try {
-    // Step 1: Update all notifications with `view_status: false` to `view_status: true`
-    // const updatedNotifications = await prisma.notification.updateMany({
-    //   where: {
-    //     user_id: userId,
-    //     view_status: "false", // Only update notifications with `view_status: false`
-    //   },
-    //   data: {
-    //     view_status: "true",
-    //   },
-    // });
-
-    // Log how many notifications were updated
-    // console.log(`Updated ${updatedNotifications.count} notifications for user ${userId}.`);
-
-    // Step 2: Retrieve all notifications with `view_status: true` but ensure they haven't been "seen"
+    // Retrieve notifications with `status: "Not seen"`
     const getNotification = await prisma.notification.findMany({
       where: {
         user_id: userId,
-        status: "Not seen", // Ensure only unseen notifications are fetched
-        // view_status: "false",
+        status: "Not seen",
       },
     });
 
-    // Log the notifications retrieved
-    console.log({ getNotification });
+    if (getNotification.length > 0) {
+      for (const notification of getNotification) {
+        const { token, title, message } = notification; // Extract fields
 
-    // Step 3: Call the function to schedule notifications for the user
-    const notificationMessage = await scheduleNotificationForUser(userId);
+        if (!token) {
+          console.error(`Missing token for notification ID: ${notification.id}`);
+          // Skip this notification without updating the status
+          continue;
+        }
 
-    res.status(200).json({
-      error: false,
-      success: true,
-      message: notificationMessage,
-      data: getNotification,
-    });
+        try {
+          const response = await sendNotification(token, title, message);
+          console.log("Successfully sent the notification ----->", response);
+
+          // Update notification status to "Sent"
+          await prisma.notification.update({
+            where: { id: notification.id },
+            data: {
+              status: "Sent",
+              view_status: "true",
+            },
+          });
+        } catch (error) {
+          console.error(`Error sending notification for ID ${notification.id} ----->`, error);
+
+          // Do not change the status; it will remain "Not seen"
+          continue;
+        }
+      }
+
+      return res.status(200).json({
+        error: false,
+        success: true,
+        message: "Notifications processed successfully",
+        data: getNotification,
+      });
+    } else {
+      return res.status(404).json({
+        error: true,
+        success: false,
+        message: "No unseen notifications available",
+      });
+    }
   } catch (error) {
     console.error("Error in /send-notification:", error);
-    res.status(500).json({
+    return res.status(500).json({
       error: true,
-      message: "Failed to send notification",
+      message: "Failed to process notifications",
     });
   }
 });
+
+// Define the sendNotification function
+const sendNotification = async (token, title, message) => {
+  const messagePayload = {
+    token: token, // Ensure token is passed correctly
+    notification: {
+      title: title || "Default Title",
+      body: message || "Default Message",
+    },
+    android: {
+      priority: "high",
+    },
+    apns: {
+      payload: {
+        aps: {
+          contentAvailable: true,
+        },
+      },
+    },
+  };
+
+  try {
+    const response = await admin.messaging().send(messagePayload);
+    return `Notification sent successfully! Response: ${response}`;
+  } catch (error) {
+    throw new Error(`Failed to send notification: ${error.message}`);
+  }
+};
+   
 

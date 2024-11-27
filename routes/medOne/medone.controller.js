@@ -843,9 +843,13 @@ const notifyMedicineSchedule = async (request, response) => {
         medicine: true,
         timing: true,
         afterFd_beforeFd: true,
+        medicine_type:true,
+        startDate:true,
+        no_of_days:true
       },
     });
-
+     
+   
     if (!medicineSchedule || medicineSchedule.length === 0) {
       return response.status(404).json({
         error: true,
@@ -917,8 +921,27 @@ const notifyMedicineSchedule = async (request, response) => {
     // Generate notifications
     let notifications = [];
     for (const medicine of medicineSchedule) {
+      console.log({medicineSchedule})
       const { timing, afterFd_beforeFd, id } = medicine;
+      console.log({medicine})
+
       const times = Object.values(timing[0]);
+
+
+
+      const startDateObj = new Date(medicine.startDate);
+      const numberOfDays = parseInt(medicine.no_of_days, 10); // Ensure no_of_days is an integer
+      const endDate = new Date(startDateObj);
+      endDate.setDate(endDate.getDate() + numberOfDays); // Calculate the end date
+       
+      console.log({endDate})
+
+       // Check if the current date is within the range of startDate and endDate
+       const currentDate = new Date();
+       if (currentDate < startDateObj || currentDate > endDate) {
+         console.log(`Skipping medicine ID: ${medicine.id} as it is out of the active range`);
+         continue; // Skip this medicine if the current date is outside the range
+       }
 
       for (const notifyTime of times) {
         const notifyTimeOfDay = notifyTime.toLowerCase();
@@ -946,11 +969,13 @@ const notifyMedicineSchedule = async (request, response) => {
             notifications.push({
               medicine_timetableID: id,
               medicine: medicine.medicine[0].name,
+              
               notificationTime: notificationTime.toLocaleTimeString("en-US", {
                 hour: "2-digit",
                 minute: "2-digit",
                 hour12: true,
               }),
+              medicine_type: medicine.medicine_type,
               validUntil: validUntil.toLocaleTimeString("en-US", {
                 hour: "2-digit",
                 minute: "2-digit",
@@ -1659,7 +1684,17 @@ const realTimeNotification = async (request, response) => {
             medicineId: med.id,
             message,
           });
-      
+
+        //findnotification is already exists or not
+        const findNotication = await prisma.notification.findMany({
+          where:{
+            user_id:userId,
+            message:message,
+            status:"Not seen",
+            view_status:"false"
+          }
+        })
+         if(!findNotication){
           // Save the notification to the database
           const addNotification = await prisma.notification.create({
             data: {
@@ -1670,6 +1705,7 @@ const realTimeNotification = async (request, response) => {
             },
           });
           console.log({ addNotification });
+         }
         }
       }
       
