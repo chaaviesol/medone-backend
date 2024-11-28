@@ -808,7 +808,7 @@ const addMedicineSchedule = async(request,response)=>{
 const notifyMedicineSchedule = async (request, response) => {
   try {
     const { userid } = request.body;
-
+    process.env.TZ = 'Asia/Kolkata';
     // Fetch user routine
     const findRoutine = await prisma.dailyRoutine.findFirst({
       where: { userId: userid },
@@ -2301,6 +2301,9 @@ const getAddedFeedback = async(req,res)=>{
     await prisma.$disconnect();
   }
 }
+
+
+
 
 
 
