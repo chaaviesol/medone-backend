@@ -21,6 +21,9 @@ const {addUserData,
     editUserProfile,
     addToken,
     updatedchat,
+    getMedicineAddedByUser,
+    addFeedback,
+    getAddedFeedback
     // notificationData
 } = require('./medone.controller')
 const medoneRouter = express.Router();
@@ -52,8 +55,8 @@ medoneRouter.post('/edituserprofile',editUserProfile)
 medoneRouter.post('/addToken',addToken)
 medoneRouter.post('/updatedchat',updatedchat)
 // medoneRouter.post('/notificationData',notificationData)
-
-
-
+medoneRouter.post('/getMedicineAddedByUser',getMedicineAddedByUser)
+medoneRouter.post('/addFeedback',addFeedback)
+medoneRouter.post('/getAddedFeedback',getAddedFeedback)
 
 module.exports = medoneRouter

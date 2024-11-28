@@ -153,3 +153,12 @@ model hospital_details{
   // interacteduser             hospital_interacteduser[]
   // feedback                   hospital_feedback[]
  }
+
+
+ model user_feedback{
+  id                           Int  @id @default(autoincrement())
+  userId                       Int?
+  medicineId                   Int?
+  feedback                     Json? // title , comment , userName 
+  createdDate                  DateTime
+ }

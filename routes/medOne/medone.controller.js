@@ -2196,6 +2196,112 @@ const updatedchat = async (request, response) => {
 
 
 
+//getting medine added by user
+const getMedicineAddedByUser = async(req,res)=>{
+  try{
+    const {userId} = req.body
+    if(!userId){
+      return res.status(200).json({
+        error:true,
+        success:true,
+        message:"UserId is required..............."
+      })
+    }
+    const getMedicine = await prisma.medicine_timetable.findMany({
+      where:{
+         userId:userId
+      },
+      select:{
+        medicine:true,
+     }
+    })
+    console.log({getMedicine})
+    res.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull",
+      data:getMedicine
+    })
+
+  }catch (error) {
+    console.log({ error });
+    response.status(500).json(error.message);
+    logger.error(`Internal server error: ${error.message} in medone-getMedicineAddedByUser api`);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+
+const addFeedback = async(req,res)=>{
+  try{
+     const{userId,medicineId,feedback} = req.body
+     const date = new Date()
+     if(!feedback){
+      return res.status(200).json({
+        error:true,
+        success:false,
+        message:"Feedback is required..........."
+      })
+     }
+     const addMedicine = await prisma.user_feedback.create({
+      data:{
+        userId:userId,
+        medicineId:medicineId,
+        feedback:feedback,
+        createdDate:date
+      }
+     })
+     console.log({addMedicine})
+     res.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfullll",
+      data:addMedicine
+     })
+  }catch (error) {
+    console.log({ error });
+    response.status(500).json(error.message);
+    logger.error(`Internal server error: ${error.message} in medone-addFeedback api`);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+
+/////getting the user added feedback
+const getAddedFeedback = async(req,res)=>{
+  try{
+    const {userId} = req.body
+    if(!userId){
+      return res.status(200).json({
+        error:true,
+        success:false,
+        message:"userid is required"
+      })
+    }
+    const getFeedback = await prisma.user_feedback.findMany({
+      where:{
+        userId:userId
+      }
+    })
+    console.log({getFeedback})
+    res.status(200).json({
+      error:true,
+      success:false,
+      message:"Successfull",
+      data:getFeedback
+    })
+
+  }catch (error) {
+    console.log({ error });
+    response.status(500).json(error.message);
+    logger.error(`Internal server error: ${error.message} in medone-getAddedFeedback api`);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
 
 
 
@@ -2221,5 +2327,8 @@ module.exports = {addUserData,
   editUserProfile,
   addToken,
   updatedchat,
+  getMedicineAddedByUser,
+  addFeedback,
+  getAddedFeedback
   // notificationData
 }
