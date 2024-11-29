@@ -217,7 +217,7 @@ if (process.env.NODE_ENV === "development") {
 
 /////////////workinggggg///////////////////////
 server.post('/send-notification', async (req, res) => {
-  const { userId } = req.body;
+  const { userId,fcmToken } = req.body;
 
   try {
     // Retrieve notifications with `status: "Not seen"`
@@ -227,25 +227,25 @@ server.post('/send-notification', async (req, res) => {
         status: "Not seen",
       },
     });
-    
+    console.log({getNotification})
     if (getNotification.length > 0) {
       const processedNotifications = [];
     
       for (const notification of getNotification) {
-        if (processedNotifications.includes(notification.id)) {
-          // Skip already processed notifications
-          continue;
-        }
+        // if (processedNotifications.includes(notification.id)) {
+        //   // Skip already processed notifications
+        //   continue;
+        // }
     
         processedNotifications.push(notification.id);
     
-        if (!notification.token) {
+        if (!fcmToken) {
           console.error(`Missing token for notification ID: ${notification.id}`);
           continue;
         }
     
         try {
-          const response = await sendNotification(notification.token, notification.title, notification.message);
+          const response = await sendNotification(fcmToken, notification.title, notification.message);
           console.log("Successfully sent the notification ----->", response);
     
           await prisma.notification.update({
