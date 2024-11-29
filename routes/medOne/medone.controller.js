@@ -950,6 +950,12 @@ const notifyMedicineSchedule = async (request, response) => {
         }
       }
     }
+    // Sort notifications by time of day
+    notifications.sort((a, b) => {
+      const timeOrder = { morning: 1, lunch: 2, dinner: 3 };
+      return timeOrder[a.timeOfDay] - timeOrder[b.timeOfDay];
+    });
+
 
     if (notifications.length === 0) {
       return response.status(404).json({
@@ -1736,7 +1742,7 @@ const runScheduledNotification = async () => {
 
 // Schedule the job to run at 5:30 AM, 12:30 PM, and 5:30 PM daily
 schedule.scheduleJob('30 5 * * *', runScheduledNotification); // 5:30 AM
-schedule.scheduleJob('30 11 * * *', runScheduledNotification); // 11:30 PM
+schedule.scheduleJob('32 12 * * *', runScheduledNotification); // 11:30 PM
 schedule.scheduleJob('30 17 * * *', runScheduledNotification); // 5:30 PM
 
 
