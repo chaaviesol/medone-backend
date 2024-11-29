@@ -227,42 +227,41 @@ server.post('/send-notification', async (req, res) => {
         status: "Not seen",
       },
     });
-
+    
     if (getNotification.length > 0) {
+      const processedNotifications = [];
+    
       for (const notification of getNotification) {
-        const { token, title, message } = notification; // Extract fields
-
-        if (!token) {
-          console.error(`Missing token for notification ID: ${notification.id}`);
-          // Skip this notification without updating the status
+        if (processedNotifications.includes(notification.id)) {
+          // Skip already processed notifications
           continue;
         }
-
+    
+        processedNotifications.push(notification.id);
+    
+        if (!notification.token) {
+          console.error(`Missing token for notification ID: ${notification.id}`);
+          continue;
+        }
+    
         try {
-          const response = await sendNotification(token, title, message);
+          const response = await sendNotification(notification.token, notification.title, notification.message);
           console.log("Successfully sent the notification ----->", response);
-
-          // Update notification status to "Sent"
+    
           await prisma.notification.update({
             where: { id: notification.id },
-            data: {
-              status: "Sent",
-              view_status: "true",
-            },
+            data: { status: "Sent", view_status: "true" },
           });
         } catch (error) {
           console.error(`Error sending notification for ID ${notification.id} ----->`, error);
-
-          // Do not change the status; it will remain "Not seen"
           continue;
         }
       }
-
+    
       return res.status(200).json({
         error: false,
         success: true,
         message: "Notifications processed successfully",
-        data: getNotification,
       });
     } else {
       return res.status(404).json({
@@ -271,6 +270,7 @@ server.post('/send-notification', async (req, res) => {
         message: "No unseen notifications available",
       });
     }
+    
   } catch (error) {
     console.error("Error in /send-notification:", error);
     return res.status(500).json({
@@ -280,7 +280,7 @@ server.post('/send-notification', async (req, res) => {
   }
 });
 
-// Define the sendNotification function
+// // Define the sendNotification function
 const sendNotification = async (token, title, message) => {
   const messagePayload = {
     token: token, // Ensure token is passed correctly

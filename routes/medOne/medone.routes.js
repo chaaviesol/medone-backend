@@ -47,7 +47,7 @@ medoneRouter.post('/editroutine',editRoutine)
 medoneRouter.post('/editschedule',editMedicineSchedule)
 medoneRouter.post('/getuserschedule',getUserSchedule)
 medoneRouter.post('/addStatus',addStatus)
-medoneRouter.post('/medicationhistory',getMedicationHistory)   //on work
+medoneRouter.post('/medicationhistory',getMedicationHistory)   //done
 medoneRouter.post('/refillnotification',refillNotification)
 medoneRouter.get('/realtimenotification',realTimeNotification) //have some change in the notification
 medoneRouter.post('/getnotification',getNotification)

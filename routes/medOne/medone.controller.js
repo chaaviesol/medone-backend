@@ -1271,6 +1271,7 @@ const getMedicationHistory = async(request,response)=>{
       }
     })
     console.log({medicationHistory})
+    const medicineName = []
     for(let i=0; i<medicationHistory.length; i++){
       const timeTableId = medicationHistory[i].timetable_id
       console.log({timeTableId})
@@ -1281,13 +1282,26 @@ const getMedicationHistory = async(request,response)=>{
         }
         
       })
-      console.log({getTimetable})
+      // console.log({getTimetable})
+      const medicinename =getTimetable.medicine?.[0]?.name || "Unknown";
+      console.log({medicinename})
+      medicineName.push({
+        id: medicationHistory[i].id,
+        userId: medicationHistory[i].userId,
+        // timetableId: timeTableId,
+        startDate: medicationHistory[i].startDate,
+        takenTime: medicationHistory[i].taken_time,
+        takenStatus: medicationHistory[i].taken_status,
+        status:medicationHistory[i].status,
+        createdDate: medicationHistory[i].created_date,
+        medicinename,
+      })
     }
     return response.status(200).json({
       error:false,
       success:true,
       message:"Successfull",
-      data:medicationHistory
+      data:medicineName
     })
   }catch (error) {
     console.log({ error });
@@ -1743,7 +1757,7 @@ const runScheduledNotification = async () => {
 // Schedule the job to run at 5:30 AM, 12:30 PM, and 5:30 PM daily
 schedule.scheduleJob('30 5 * * *', runScheduledNotification); // 5:30 AM
 schedule.scheduleJob('32 12 * * *', runScheduledNotification); // 11:30 PM
-schedule.scheduleJob('30 17 * * *', runScheduledNotification); // 5:30 PM
+schedule.scheduleJob('58 15 * * *', runScheduledNotification); // 5:30 PM
 
 
 //get notification
@@ -2272,12 +2286,14 @@ const getAddedFeedback = async(req,res)=>{
     for(let i=0; i<getFeedback.length; i++){
       const medicineid = getFeedback[i].medicineId
       console.log({medicineid})
-      const findmedicine = await prisma.medicines.findMany({
+      const findmedicine = await prisma.medicine_timetable.findMany({
         where:{
           id:medicineid
         }
       })
       console.log({findmedicine})
+      const medicinename = findmedicine[i]?.medicine?.[0]?.name || "Unknown";
+      console.log({medicinename})
     }
     res.status(200).json({
       error:true,
