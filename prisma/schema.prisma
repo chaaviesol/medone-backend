@@ -162,3 +162,10 @@ model hospital_details{
   feedback                     Json? // title , comment , userName 
   createdDate                  DateTime
  }
+
+
+ model remainder{
+  id                          Int  @id @default(autoincrement())
+  quotes                      String?
+  created_date                DateTime
+ }

@@ -809,6 +809,7 @@ const notifyMedicineSchedule = async (request, response) => {
   try {
     const { userid } = request.body;
     process.env.TZ = 'Asia/Kolkata';
+
     // Fetch user routine
     const findRoutine = await prisma.dailyRoutine.findFirst({
       where: { userId: userid },
@@ -843,13 +844,12 @@ const notifyMedicineSchedule = async (request, response) => {
         medicine: true,
         timing: true,
         afterFd_beforeFd: true,
-        medicine_type:true,
-        startDate:true,
-        no_of_days:true
+        medicine_type: true,
+        startDate: true,
+        no_of_days: true,
       },
     });
-     
-   
+
     if (!medicineSchedule || medicineSchedule.length === 0) {
       return response.status(404).json({
         error: true,
@@ -873,80 +873,45 @@ const notifyMedicineSchedule = async (request, response) => {
       dinner: parseTime(dinnerTimeString),
     };
 
-    // Define skip times
-    const skipBreakfastTime = new Date();
-    skipBreakfastTime.setHours(11, 59, 0, 0);
-
-    const skipLunchTime = new Date();
-    skipLunchTime.setHours(17, 0, 0, 0);
-
-    // Skip medicines based on skip times
-    for (const meal in mealTimes) {
-      if (
-        (meal === "Morning" && now >= skipBreakfastTime) ||
-        (meal === "lunch" && now >= skipLunchTime)
-      ) {
-        for (const med of medicineSchedule) {
-          const timings = Object.values(med.timing[0]);
-          if (timings.includes(meal)) {
-            const existingRecord = await prisma.medication_records.findFirst({
-              where: {
-                userId: userid,
-                timetable_id: med.id,
-                taken_time: meal,
-                created_date: {
-                  gte: new Date(now.toISOString().split("T")[0] + "T00:00:00.000Z"),
-                  lt: new Date(now.toISOString().split("T")[0] + "T23:59:59.999Z"),
-                },
-              },
-            });
-
-            if (!existingRecord) {
-              await prisma.medication_records.create({
-                data: {
-                  userId: userid,
-                  timetable_id: med.id,
-                  status: "Skipped",
-                  taken_time: meal,
-                  created_date: new Date(),
-                  taken_status:"No"
-                },
-              });
-            }
-          }
-        }
-      }
-    }
-
-    // Generate notifications
     let notifications = [];
     for (const medicine of medicineSchedule) {
-      console.log({medicineSchedule})
       const { timing, afterFd_beforeFd, id } = medicine;
-      console.log({medicine})
-
       const times = Object.values(timing[0]);
 
-
-
       const startDateObj = new Date(medicine.startDate);
-      const numberOfDays = parseInt(medicine.no_of_days, 10); // Ensure no_of_days is an integer
+      const numberOfDays = parseInt(medicine.no_of_days, 10);
       const endDate = new Date(startDateObj);
-      endDate.setDate(endDate.getDate() + numberOfDays); // Calculate the end date
-       
-      console.log({endDate})
+      endDate.setDate(endDate.getDate() + numberOfDays);
 
-       // Check if the current date is within the range of startDate and endDate
-       const currentDate = new Date();
-       if (currentDate < startDateObj || currentDate > endDate) {
-         console.log(`Skipping medicine ID: ${medicine.id} as it is out of the active range`);
-         continue; // Skip this medicine if the current date is outside the range
-       }
+      const currentDate = new Date();
+      if (currentDate < startDateObj || currentDate > endDate) {
+        console.log(`Skipping medicine ID: ${id} as it is out of the active range`);
+        continue;
+      }
 
       for (const notifyTime of times) {
         const notifyTimeOfDay = notifyTime.toLowerCase();
-        let notificationTime;
+         console.log({notifyTimeOfDay})
+        // Check if the medicine has already been taken
+        const existingTakenRecord = await prisma.medication_records.findFirst({
+          where: {
+            userId: userid,
+            timetable_id: id,
+            taken_time: notifyTimeOfDay,
+            created_date: {
+              gte: new Date(currentDate.toISOString().split("T")[0] + "T00:00:00.000Z"),
+              lt: new Date(currentDate.toISOString().split("T")[0] + "T23:59:59.999Z"),
+            },
+            status: "Taken",
+          },
+        });
 
+        if (existingTakenRecord) {
+          console.log(`Skipping notification for medicine ID: ${id} as it is already taken for ${notifyTimeOfDay}`);
+          continue;
+        }
+
+        let notificationTime;
         if (notifyTimeOfDay === "morning") {
           notificationTime = afterFd_beforeFd === "before food"
             ? new Date(mealTimes.Morning.getTime() - 45 * 60000)
@@ -962,14 +927,12 @@ const notifyMedicineSchedule = async (request, response) => {
         }
 
         if (notificationTime) {
-          const validUntil = new Date(notificationTime.getTime() + 2 * 60 * 60 * 1000); // Add 2 hours
+          const validUntil = new Date(notificationTime.getTime() + 2 * 60 * 60 * 1000);
 
-          // Ensure the current time is within the valid window
           if (now <= validUntil) {
             notifications.push({
               medicine_timetableID: id,
               medicine: medicine.medicine[0].name,
-              
               notificationTime: notificationTime.toLocaleTimeString("en-US", {
                 hour: "2-digit",
                 minute: "2-digit",
@@ -1007,6 +970,7 @@ const notifyMedicineSchedule = async (request, response) => {
     return response.status(500).json({ error: error.message });
   }
 };
+
 
 
 
@@ -1304,6 +1268,14 @@ const getMedicationHistory = async(request,response)=>{
     for(let i=0; i<medicationHistory.length; i++){
       const timeTableId = medicationHistory[i].timetable_id
       console.log({timeTableId})
+
+      const getTimetable = await prisma.medicine_timetable.findFirst({
+        where:{
+          id:timeTableId
+        }
+        
+      })
+      console.log({getTimetable})
     }
     return response.status(200).json({
       error:false,
@@ -1551,6 +1523,7 @@ const refillNotification = async(request,response)=>{
 const realTimeNotification = async (request, response) => {
   console.log({ request });
   try {
+    const date = new Date()
     // Set timezone to IST
     process.env.TZ = 'Asia/Kolkata';
 
@@ -1559,7 +1532,7 @@ const realTimeNotification = async (request, response) => {
 
     // Fetch all users from the `user_details` table
     const users = await prisma.user_details.findMany();
-    // console.log({ users });
+    console.log({ users });   //ok
 
     if (!users || users.length === 0) {
       return response.status(200).json({
@@ -1579,7 +1552,7 @@ const realTimeNotification = async (request, response) => {
       const getRoutine = await prisma.dailyRoutine.findFirst({
         where: { userId: userId },
       });
-
+       console.log({getRoutine})
       if (!getRoutine || !getRoutine.routine[0]) {
         console.log(`No routine found for user ID: ${userId}`);
         continue; // Skip to the next user if no routine exists
@@ -1684,7 +1657,7 @@ const realTimeNotification = async (request, response) => {
             medicineId: med.id,
             message,
           });
-
+         console.log({notifications})
         //findnotification is already exists or not
         const findNotication = await prisma.notification.findMany({
           where:{
@@ -1694,14 +1667,16 @@ const realTimeNotification = async (request, response) => {
             view_status:"false"
           }
         })
-         if(!findNotication){
+        console.log({findNotication})
+         if(findNotication.length===0){
           // Save the notification to the database
-          const addNotification = await prisma.notification.create({
+          const addNotification = await prisma.notification.createMany({
             data: {
               user_id: userId,
               message: message,
               status: "Not seen",
               view_status: "false",
+              // created_date:date
             },
           });
           console.log({ addNotification });
@@ -2213,6 +2188,8 @@ const getMedicineAddedByUser = async(req,res)=>{
       },
       select:{
         medicine:true,
+        medicine_type:true,
+        startDate:true
      }
     })
     console.log({getMedicine})
@@ -2286,6 +2263,16 @@ const getAddedFeedback = async(req,res)=>{
       }
     })
     console.log({getFeedback})
+    for(let i=0; i<getFeedback.length; i++){
+      const medicineid = getFeedback[i].medicineId
+      console.log({medicineid})
+      const findmedicine = await prisma.medicines.findMany({
+        where:{
+          id:medicineid
+        }
+      })
+      console.log({findmedicine})
+    }
     res.status(200).json({
       error:true,
       success:false,
@@ -2303,8 +2290,64 @@ const getAddedFeedback = async(req,res)=>{
 }
 
 
+///////water remainder notification
 
+const quotes=[
+  "Believe you can, and you're halfway there.",
+  "Don't watch the clock; do what it does. Keep going.",
+  "The harder you work for something, the greater you'll feel when you achieve it.",
+  "Success doesn't come from what you do occasionally, but what you do consistently.",
+  "Dream it. Believe it. Build it."
+]
 
+const addQuotes = async()=>{
+  const date =  new Date()
+  for(const quote of quotes){
+    await prisma.remainder.create({
+      data:{
+         quotes: quote,
+         created_date:date
+      }
+    })
+  }
+}
+// const getRandomMotivationalQuote = async () => {
+//   const totalQuotes = await prisma.motivationalQuotes.count();
+//   const randomIndex = Math.floor(Math.random() * totalQuotes);
+
+//   const quote = await prisma.motivationalQuotes.findMany({
+//     skip: randomIndex,
+//     take: 1,
+//   });
+
+//   return quote[0]?.quote || "Stay motivated and keep moving forward!";
+// };
+// // const schedule = require('node-schedule');
+
+// const sendMotivationalQuote = async () => {
+//   try {
+//     const quote = await getRandomMotivationalQuote();
+//     console.log(`Motivational Quote: ${quote}`);
+    
+//     // Logic to send the quote to users
+//     const users = await prisma.user.findMany(); // Assuming a users table
+//     users.forEach(user => {
+//       console.log(`Sending to User ${user.id}: ${quote}`);
+//       // Add actual notification logic here (e.g., push notifications, email, etc.)
+//     });
+//   } catch (error) {
+//     console.error('Error sending motivational quote:', error);
+//   }
+// };
+
+// // Schedule at 9:00 AM
+// schedule.scheduleJob('0 9 * * *', sendMotivationalQuote);
+
+// // Schedule at 12:00 PM
+// schedule.scheduleJob('0 12 * * *', sendMotivationalQuote);
+
+// // Schedule at 6:00 PM
+// schedule.scheduleJob('0 18 * * *', sendMotivationalQuote);
 
 
 
@@ -2332,6 +2375,7 @@ module.exports = {addUserData,
   updatedchat,
   getMedicineAddedByUser,
   addFeedback,
-  getAddedFeedback
+  getAddedFeedback,
+  addQuotes
   // notificationData
 }

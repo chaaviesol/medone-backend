@@ -23,7 +23,8 @@ const {addUserData,
     updatedchat,
     getMedicineAddedByUser,
     addFeedback,
-    getAddedFeedback
+    getAddedFeedback,
+    addQuotes
     // notificationData
 } = require('./medone.controller')
 const medoneRouter = express.Router();
@@ -46,7 +47,7 @@ medoneRouter.post('/editroutine',editRoutine)
 medoneRouter.post('/editschedule',editMedicineSchedule)
 medoneRouter.post('/getuserschedule',getUserSchedule)
 medoneRouter.post('/addStatus',addStatus)
-medoneRouter.post('/medicationhistory',getMedicationHistory)
+medoneRouter.post('/medicationhistory',getMedicationHistory)   //on work
 medoneRouter.post('/refillnotification',refillNotification)
 medoneRouter.get('/realtimenotification',realTimeNotification) //have some change in the notification
 medoneRouter.post('/getnotification',getNotification)
@@ -54,7 +55,7 @@ medoneRouter.post('/addSeenStatus',addSeenStatus)
 medoneRouter.post('/edituserprofile',editUserProfile)
 medoneRouter.post('/addToken',addToken)
 medoneRouter.post('/updatedchat',updatedchat)
-// medoneRouter.post('/notificationData',notificationData)
+medoneRouter.get('/addQuotes',addQuotes)
 medoneRouter.post('/getMedicineAddedByUser',getMedicineAddedByUser)
 medoneRouter.post('/addFeedback',addFeedback)
 medoneRouter.post('/getAddedFeedback',getAddedFeedback)
