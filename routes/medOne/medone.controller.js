@@ -1602,7 +1602,7 @@ const realTimeNotification = async (request, response) => {
       const currentHours = new Date(currentTimeUTC.getTime()).getHours();
 
       let currentMeal = null;
-      if (currentHours >= 5 && currentHours < 11) {
+      if (currentHours >= 7 && currentHours < 11) {
         currentMeal = "Morning";
       } else if (currentHours >= 11 && currentHours < 18) {
         currentMeal = "lunch";
@@ -1688,7 +1688,7 @@ const realTimeNotification = async (request, response) => {
           }
         })
         console.log({findNotication})
-         if(findNotication.length===0){
+         if(findNotication.length === 0){
           // Save the notification to the database
           const addNotification = await prisma.notification.createMany({
             data: {
@@ -1735,6 +1735,8 @@ const realTimeNotification = async (request, response) => {
 // Function to call realTimeNotification for multiple users
 const runScheduledNotification = async () => {
   try {
+    console.log("Scheduled notification triggered at:", new Date());
+
     console.log("Running scheduled notification check...");
 
     // Retrieve all user IDs to process notifications
@@ -1755,9 +1757,9 @@ const runScheduledNotification = async () => {
 };
 
 // Schedule the job to run at 5:30 AM, 12:30 PM, and 5:30 PM daily
-schedule.scheduleJob('30 5 * * *', runScheduledNotification); // 5:30 AM
-schedule.scheduleJob('32 12 * * *', runScheduledNotification); // 11:30 PM
-schedule.scheduleJob('58 15 * * *', runScheduledNotification); // 5:30 PM
+schedule.scheduleJob('00 7 * * *', runScheduledNotification); // 5:30 AM
+schedule.scheduleJob('00 12 * * *', runScheduledNotification); // 11:30 PM
+schedule.scheduleJob('00 18 * * *', runScheduledNotification); // 5:30 PM
 
 
 //get notification

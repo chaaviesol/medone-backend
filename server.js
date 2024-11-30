@@ -217,7 +217,7 @@ if (process.env.NODE_ENV === "development") {
 
 /////////////workinggggg///////////////////////
 server.post('/send-notification', async (req, res) => {
-  const { userId,fcmToken } = req.body;
+  const { userId, fcmToken } = req.body;
 
   try {
     // Retrieve notifications with `status: "Not seen"`
@@ -227,50 +227,61 @@ server.post('/send-notification', async (req, res) => {
         status: "Not seen",
       },
     });
-    console.log({getNotification})
-    if (getNotification.length > 0) {
-      const processedNotifications = [];
-    
-      for (const notification of getNotification) {
-        // if (processedNotifications.includes(notification.id)) {
-        //   // Skip already processed notifications
-        //   continue;
-        // }
-    
-        processedNotifications.push(notification.id);
-    
-        if (!fcmToken) {
-          console.error(`Missing token for notification ID: ${notification.id}`);
-          continue;
-        }
-    
-        try {
-          const response = await sendNotification(fcmToken, notification.title, notification.message);
-          console.log("Successfully sent the notification ----->", response);
-    
-          await prisma.notification.update({
-            where: { id: notification.id },
-            data: { status: "Sent", view_status: "true" },
-          });
-        } catch (error) {
-          console.error(`Error sending notification for ID ${notification.id} ----->`, error);
-          continue;
-        }
-      }
-    
-      return res.status(200).json({
-        error: false,
-        success: true,
-        message: "Notifications processed successfully",
-      });
-    } else {
+    console.log({ getNotification });
+    if(getNotification.length<1){
       return res.status(404).json({
         error: true,
         success: false,
         message: "No unseen notifications available",
       });
     }
-    
+    // if (getNotification.length > 0) {
+      const sentNotifications = []; // Array to store details of sent notifications
+
+      for (const notification of getNotification) {
+        // if (!fcmToken) {
+        //   console.error(`Missing token for notification ID: ${notification.id}`);
+        //   continue;
+        // }
+
+        try {
+          const response = await sendNotification(fcmToken, notification.title, notification.message);
+          console.log("Successfully sent the notification ----->", response);
+          
+          // Update the notification status to "Sent"
+          await prisma.notification.update({
+            where: { id: notification.id },
+            data: { status: "Sent", view_status: "true" },
+          });
+
+          // Add sent notification details to the response
+          sentNotifications.push({
+            id: notification.id,
+            title: notification.title,
+            message: notification.message,
+            status: "Sent",
+            response,
+          });
+          
+        } catch (error) {
+          console.error(`Error sending notification for ID ${notification.id} ----->`, error);
+          continue;
+        }
+      }
+
+      return res.status(200).json({
+        error: false,
+        success: true,
+        message: "Notifications processed successfully",
+        data: sentNotifications, // Include sent notification details
+      });
+    // } else {
+      // return res.status(404).json({
+      //   error: true,
+      //   success: false,
+      //   message: "No unseen notifications available",
+      // });
+    // }
   } catch (error) {
     console.error("Error in /send-notification:", error);
     return res.status(500).json({
@@ -280,8 +291,9 @@ server.post('/send-notification', async (req, res) => {
   }
 });
 
-// // Define the sendNotification function
+// Define the sendNotification function
 const sendNotification = async (token, title, message) => {
+  console.log("notification sended")
   const messagePayload = {
     token: token, // Ensure token is passed correctly
     notification: {
@@ -307,5 +319,6 @@ const sendNotification = async (token, title, message) => {
     throw new Error(`Failed to send notification: ${error.message}`);
   }
 };
+
    
 
