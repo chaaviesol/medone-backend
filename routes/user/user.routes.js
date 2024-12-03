@@ -4,7 +4,14 @@ const {
   userLogin,
   getusers,
   edituser,
+  forgotPwd,
   completeRegistration,
+  userdisable,
+  getprofile,
+  profilecompleted,
+  UserforgotPwd,
+  userresetpassword,
+  userotpLogin,
   csvupload,
 } = require("./user.controller");
 
@@ -23,6 +30,20 @@ UserRouter.post(
   upload.single("image"),
   completeRegistration
 );
+
+UserRouter.post("/forgotpwd", forgotPwd); //forgot password api for lab,hospital& doctor
+UserRouter.post("/userforgotpwd", UserforgotPwd);
+UserRouter.post("/userresetpassword", userresetpassword);
+UserRouter.post("/userotpLogin", userotpLogin);
+
+
+
+UserRouter.route("/userdisable").post(userdisable);
+
+
+UserRouter.post("/getprofile", auth, getprofile);
+UserRouter.post("/profilecompleted", auth, profilecompleted); //to check if the user has completed their profile or not
+
 
 ///testing/////////////
 // UserRouter.post("/decrypt", decryptEmails);

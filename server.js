@@ -10,8 +10,11 @@ const admin = require('./firebase')
 const authRouter = require("./routes/Auth/authRouters");
 const HospitalRouter = require("./routes/hospital/hospital.routes");
 const UserRouter = require("./routes/user/user.routes");
+const PharmacyRouter = require("./routes/pharmacy/pharmacy.routes");
 const medoneRouter = require("./routes/medOne/medone.routes");
+const productRouter = require("./routes/productcategory/productcategory.routes");
 const { PrismaClient } = require("@prisma/client");
+const pharmacyquotationRouter = require("./routes/pharmacyquotation/pharmacyquotation.routes");
 const prisma = new PrismaClient();
 
 
@@ -30,7 +33,9 @@ server.use("/auth", authRouter);
 server.use("/hospital", HospitalRouter);
 server.use("/user", UserRouter);
 server.use("/medone",medoneRouter)
-
+server.use("/pharmacy", PharmacyRouter);
+server.use("/product", productRouter);
+server.use("/pharmacyquotation",pharmacyquotationRouter)
 
 if (process.env.NODE_ENV === "development") {
   server.listen(PORT, () => {
@@ -227,7 +232,7 @@ server.post('/send-notification', async (req, res) => {
         status: "Not seen",
       },
     });
-    console.log({ getNotification });
+    // console.log({ getNotification });
     if(getNotification.length<1){
       return res.status(404).json({
         error: true,

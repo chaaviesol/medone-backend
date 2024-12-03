@@ -249,10 +249,10 @@ async function insertData(data) {
     "Other Services ",
   ];
   const hospitalspeciality = ["General medicine"];
-  const labtiming={
-    "closing_time": "06:00 PM",
-    "opening_time": "06:00 AM"
-  }
+  const labtiming = {
+    closing_time: "06:00 PM",
+    opening_time: "06:00 AM",
+  };
   try {
     const hospitalDetailsData = await Promise.all(
       data.map(async (row) => ({
@@ -519,11 +519,11 @@ const userLogin = async (request, response) => {
       return emailRegex.test(email_id);
     }
     const users = await prisma.user_details.findMany({
-      select:{
-        id:true,
-        email:true,
-        password:true
-      }
+      select: {
+        id: true,
+        email: true,
+        password: true,
+      },
     });
     let user = null;
 
@@ -683,7 +683,7 @@ const getusers = async (request, response) => {
         success: true,
         error: false,
         data: decryptedData,
-        allregisteredcount:decryptedData.length,
+        allregisteredcount: decryptedData.length,
         allcompletedcount: allcompletedcount,
       });
     } else {
@@ -705,8 +705,6 @@ const getusers = async (request, response) => {
     await prisma.$disconnect();
   }
 };
-
-
 
 const edituser = async (request, response) => {
   const secretKey = process.env.ENCRYPTION_KEY;
@@ -789,23 +787,536 @@ const edituser = async (request, response) => {
   }
 };
 
+//////////////////////
+const getprofile = async (request, response) => {
+  console.log("getprofileeeee=====");
+  const secretKey = process.env.ENCRYPTION_KEY;
 
+  const safeDecrypt = (text, key) => {
+    try {
+      return decrypt(text, key);
+    } catch (err) {
+      return text;
+    }
+  };
 
+  try {
+    const userid = request.user.userId;
+    // const userid=request.body.userid
+    console.log({ userid });
+    if (!userid) {
+      return response.status(404).json({
+        error: true,
+        success: false,
+        message: "User id null!",
+      });
+    }
+    const userDetails = await prisma.user_details.findFirst({
+      where: {
+        id: userid,
+      },
+    });
 
+    if (!userDetails) {
+      return response.status(404).json({
+        error: true,
+        success: false,
+        message: "User not found!",
+      });
+    }
 
+    const decryptedname = safeDecrypt(userDetails.name, secretKey);
+    const decryptedphone = safeDecrypt(userDetails?.phone_no, secretKey);
 
+    const decryptedemail = safeDecrypt(userDetails.email, secretKey);
 
+    const decryptedageGroup = safeDecrypt(userDetails?.ageGroup, secretKey);
+    const decryptgender = safeDecrypt(userDetails?.gender, secretKey);
 
+    userDetails.name = decryptedname;
+    userDetails.phone_no = decryptedphone;
+    userDetails.email = decryptedemail;
+    userDetails.ageGroup = decryptedageGroup;
+    userDetails.gender = decryptgender;
+    console.log({ userDetails });
+    return response.status(200).json({
+      error: false,
+      success: true,
+      userDetails,
+      data: userDetails,
+    });
+  } catch (error) {
+    console.log("Error:", error);
+    logger.error(`Internal server error: ${error.message} in getprofile API`);
+    return response.status(500).json({
+      error: true,
+      success: false,
+      message: "Internal Server Error!",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
 
+const deleteuser = async (request, response) => {
+  try {
+    const id = request.body.id;
+    if (id) {
+      const datetime = getCurrentDateInIST();
+      const del = await prisma.user_details.update({
+        where: {
+          id: id,
+        },
+        data: {
+          is_active: "N",
+          updatedDate: datetime,
+        },
+      });
+      response.status(200).json({
+        success: true,
+        error: false,
+        data: del,
+      });
+    }
+  } catch (error) {
+    console.log("errr", error);
+    logger.error(`Internal server error: ${error.message} in deleteuser api`);
+    return response.status(500).json({
+      error: true,
+      success: false,
+      message: "Internal Server Error!",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
 
+/////////forgotpassword//////////////////////////
 
+const UserforgotPwd = async (request, response) => {
+  console.log("hyyyyyyyyy", request.body);
+  const email = request.body.emailid;
+  const secretKey = process.env.ENCRYPTION_KEY;
 
+  try {
+    async function sendOTPByEmail(username, userEmail, otp) {
+      try {
+        const transporter = nodemailer.createTransport({
+          host: "smtp.zoho.in",
+          port: 465,
+          auth: {
+            user: process.env.EMAIL_USERNAME,
+            pass: process.env.EMAIL_PASSWORD,
+          },
+          secure: true,
+          tls: { rejectUnauthorized: false },
+        });
 
+        const handlebarOptions = {
+          viewEngine: {
+            partialsDir: path.resolve(__dirname, "../../views"),
+            defaultLayout: false,
+          },
+          viewPath: path.resolve(__dirname, "../../views"),
+        };
 
+        transporter.use("compile", hbs(handlebarOptions));
 
+        const mailOptions = {
+          from: "support@chaavie.com",
+          to: userEmail,
+          subject: "OTP Mail",
+          template: "user_temp_otp",
+          context: {
+            username: username,
+            otp: otp,
+          },
+        };
 
+        await transporter.sendMail(mailOptions);
+      } catch (error) {
+        console.error("Error sending OTP email:", error);
+        throw error;
+      }
+    }
 
+    function validateEmail(email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(email);
+    }
 
+    function generateOTP() {
+      const characters = "0123456789";
+      let otp = "";
+      for (let i = 0; i < 5; i++) {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        otp += characters.charAt(randomIndex);
+      }
+      console.log({ otp });
+      return otp;
+    }
+    if (!email) {
+      return response
+        .status(400)
+        .json({ error: true, message: "Email is required" });
+    }
+
+    if (!validateEmail(email)) {
+      return response
+        .status(400)
+        .json({ error: true, message: "Invalid email address" });
+    }
+
+    let user = await prisma.user_details.findMany({
+      select: {
+        email: true,
+        id: true,
+        name: true,
+      },
+    });
+    for (const u of user) {
+      const decryptedEmail = decrypt(u.email, secretKey);
+      const decryptedname = decrypt(u.name, secretKey);
+
+      if (decryptedEmail === email) {
+        user = u;
+        user.email = decryptedEmail;
+        user.name = decryptedname;
+      }
+    }
+
+    if (!user) {
+      return response
+        .status(404)
+        .json({ error: true, message: "User not found" });
+    }
+
+    const otp = generateOTP();
+
+    await sendOTPByEmail(user.name, user.email, otp);
+
+    return response.status(200).json({
+      success: true,
+      message: "OTP sent successfully",
+      userId: user.user_id,
+      otp: otp,
+    });
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in user forgotPwd api`
+    );
+    return response
+      .status(500)
+      .json({ error: true, message: "Internal server error" });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+const forgotPwd = async (request, response) => {
+  const { email } = request.body;
+  try {
+    async function sendOTPByEmail(username, userEmail, otp) {
+      try {
+        const transporter = nodemailer.createTransport({
+          host: "smtp.zoho.in",
+          port: 465,
+          auth: {
+            user: process.env.EMAIL_USERNAME,
+            pass: process.env.EMAIL_PASSWORD,
+          },
+          secure: true,
+          tls: { rejectUnauthorized: false },
+        });
+
+        const handlebarOptions = {
+          viewEngine: {
+            partialsDir: path.resolve(__dirname, "../../views"),
+            defaultLayout: false,
+          },
+          viewPath: path.resolve(__dirname, "../../views"),
+        };
+
+        transporter.use("compile", hbs(handlebarOptions));
+
+        const mailOptions = {
+          from: "support@chaavie.com",
+          to: userEmail,
+          subject: "OTP Mail",
+          template: "user_temp_otp",
+          context: {
+            username: username,
+            otp: otp,
+          },
+        };
+
+        await transporter.sendMail(mailOptions);
+      } catch (error) {
+        console.error("Error sending OTP email:", error);
+        throw error;
+      }
+    }
+
+    function validateEmail(email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(email);
+    }
+
+    function generateOTP() {
+      const characters = "0123456789";
+      let otp = "";
+      for (let i = 0; i < 5; i++) {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        otp += characters.charAt(randomIndex);
+      }
+      console.log({ otp });
+      return otp;
+    }
+    if (!email) {
+      return response
+        .status(400)
+        .json({ error: true, message: "Email is required" });
+    }
+
+    if (!validateEmail(email)) {
+      return response
+        .status(400)
+        .json({ error: true, message: "Invalid email address" });
+    }
+
+    let user = await prisma.doctor_details.findFirst({ where: { email } });
+
+    console.log({ user });
+    if (!user) {
+      user = await prisma.hospital_details.findFirst({ where: { email } });
+    }
+
+    if (!user) {
+      user = await prisma.lab_details.findFirst({ where: { email } });
+    }
+
+    if (!user) {
+      return response
+        .status(404)
+        .json({ error: true, message: "User not found" });
+    }
+
+    const otp = generateOTP();
+
+    await sendOTPByEmail(user.name, user.email, otp);
+
+    return response.status(200).json({
+      success: true,
+      message: "OTP sent successfully",
+      userId: user.user_id,
+      otp: otp,
+    });
+  } catch (error) {
+    logger.error(`Internal server error: ${error.message} in forgotPwd api`);
+    return response
+      .status(500)
+      .json({ error: true, message: "Internal server error" });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+const userresetpassword = async (request, response) => {
+  console.log("Request Body:", request.body);
+  const secretKey = process.env.ENCRYPTION_KEY;
+  try {
+    const { email, password } = request.body;
+
+    // Check if email or password is missing
+    if (!email || !password) {
+      return response.status(400).json({
+        error: true,
+        message: "Email or password field is empty!",
+      });
+    }
+
+    // Validate email format
+    if (!validateEmail(email)) {
+      console.log("Invalid email address");
+      return response.status(401).json({
+        error: true,
+        success: false,
+        message: "Invalid email address!",
+      });
+    }
+
+    // Function to validate email format
+    function validateEmail(email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(email);
+    }
+
+    let user = null; // Initialize user as null
+    const users = await prisma.user_details.findMany();
+
+    for (const u of users) {
+      const decryptedEmail = decrypt(u.email, secretKey);
+      const decryptedName = decrypt(u.name, secretKey);
+      console.log({ decryptedEmail });
+
+      if (decryptedEmail === email) {
+        user = u;
+        user.email = decryptedEmail;
+        user.name = decryptedName;
+        break;
+      }
+    }
+
+    if (user) {
+      const hashedPassword = await bcrypt.hash(password, 5);
+      const updatedUser = await prisma.user_details.update({
+        where: {
+          id: user.id,
+        },
+        data: { password: hashedPassword },
+      });
+
+      return response.status(200).json({
+        success: true,
+        message: "Password reset successful",
+      });
+    } else {
+      return response.status(404).json({
+        error: true,
+        message: "User not found!",
+      });
+    }
+  } catch (error) {
+    console.error(
+      `Internal server error: ${error.message} in resetpassword api`
+    );
+    return response.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  }
+};
+
+const userotpLogin = async (request, response) => {
+  const { email, otp } = request.body;
+
+  if (!email || !otp) {
+    logger.error(`email or otp field is empty in otpLogin api`);
+    response.status(400).json({
+      error: true,
+      message: "email or otp field is empty!",
+    });
+    return;
+  }
+  try {
+    const user = await prisma.user_details.findOne({ email: email });
+
+    if (!user) {
+      response.status(400).json({
+        error: true,
+        message: "no user found!",
+      });
+    } else {
+      const dbOtp = user.temp_otp;
+      const result = await bcrypt.compare(otp, dbOtp);
+      if (!result) {
+        logger.error(`otp is not matching -in otpLogin api`);
+        response.status(401).json({
+          error: true,
+          message: "otp is not matching!",
+        });
+      } else {
+        response.status(200).json({
+          success: true,
+          message: "Login successful",
+          data: user,
+        });
+      }
+    }
+  } catch (error) {
+    logger.error(`Internal server error: ${error.message} in otpLogin api`);
+    response.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  }
+};
+
+const userdisable = async (request, response) => {
+  try {
+    const { id } = request.body;
+    if (id) {
+      const disable = await prisma.user_details.update({
+        where: {
+          id: id,
+        },
+        data: {
+          status: "N",
+        },
+      });
+      if (disable) {
+        return response.status(200).json({
+          message: "successfully disabled the user",
+          success: true,
+          error: false,
+        });
+      }
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in user-userdisable api`
+    );
+    return response.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+//to check if the user has completed their profile or not
+const profilecompleted = async (request, response) => {
+  try {
+    const id = request.user.userId;
+    if (id) {
+      const find = await prisma.user_details.findFirst({
+        where: {
+          id,
+        },
+        select: {
+          pincode: true,
+          ageGroup: true,
+          gender: true,
+        },
+      });
+
+      if (
+        find?.pincode === null ||
+        find?.ageGroup === null ||
+        find?.gender === null
+      ) {
+        return response.status(200).json({
+          profilecompleted: false,
+          success: true,
+        });
+      } else {
+        return response.status(200).json({
+          profilecompleted: true,
+          success: true,
+        });
+      }
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in profilecompleted API`
+    );
+    console.error(error);
+    response.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
 
 module.exports = {
   addUsers,
@@ -814,4 +1325,19 @@ module.exports = {
   edituser,
   completeRegistration,
   csvupload,
+
+  deleteuser,
+
+  forgotPwd,
+
+  completeRegistration,
+  userdisable,
+
+  getprofile,
+
+  profilecompleted,
+
+  UserforgotPwd,
+  userresetpassword,
+  userotpLogin,
 };
