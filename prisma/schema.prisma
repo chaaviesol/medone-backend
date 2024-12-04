@@ -214,7 +214,7 @@ model pharmacy_details{
     id                       Int @id @default(autoincrement())
     name                     String?
     phone_no                 String?
-    address                  String?
+    address                  Json?
     lisence_no               String?
     datetime                 DateTime
     email                    String?

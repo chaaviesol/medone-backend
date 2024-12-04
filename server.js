@@ -15,6 +15,8 @@ const medoneRouter = require("./routes/medOne/medone.routes");
 const productRouter = require("./routes/productcategory/productcategory.routes");
 const { PrismaClient } = require("@prisma/client");
 const pharmacyquotationRouter = require("./routes/pharmacyquotation/pharmacyquotation.routes");
+const { checkPrime } = require("crypto");
+const chemistRouter = require("./routes/Chemist/chemist.routes");
 const prisma = new PrismaClient();
 
 
@@ -36,6 +38,7 @@ server.use("/medone",medoneRouter)
 server.use("/pharmacy", PharmacyRouter);
 server.use("/product", productRouter);
 server.use("/pharmacyquotation",pharmacyquotationRouter)
+server.use("/chemist",chemistRouter)
 
 if (process.env.NODE_ENV === "development") {
   server.listen(PORT, () => {
