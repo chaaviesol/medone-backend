@@ -20,7 +20,6 @@ const getproductspharmacy = async (request, response) => {
       });
     }
 
-    
     const pharmacyMedicines = await prisma.pharmacy_medicines.findFirst({
       where: {
         pharmacy_id: pharmacy_id,
@@ -74,7 +73,6 @@ const getproductspharmacy = async (request, response) => {
     await prisma.$disconnect();
   }
 };
-
 
 ///////////////////product ///////////////////
 
@@ -387,80 +385,26 @@ const getorderdetails = async (request, response) => {
         pincode: true,
         prescription_image: true,
         patient_name: true,
-        sales_list: {
+        sales_invoice: {
           select: {
-            id: true,
-            order_qty: true,
-            net_amount: true,
-            pharmacy_name: true,
-            generic_prodid: {
-              select: {
-                name: true,
-                category: true,
-                mrp: true,
-                description: true,
-                hsn: true,
-              },
-            },
+            created_date: true,
+            medicine_timetable: true,
           },
         },
-        sales_invoice:{
-          select:{
-            created_date:true,
-            medicine_timetable:true
-          }
-          
-        }
       },
     });
 
-    const decryptedUsername = decrypt(getdata?.users.name, secretKey);
-    const userId = getdata?.users.id;
-    const medication_details = (getdata.sales_list || getdata).map((item) => ({
-      id: item?.id || "",
-      name: item?.generic_prodid?.name || "",
-      category: item?.generic_prodid?.category || "",
-      batch_no: "",
-      timing: [],
-      afterFd_beforeFd: "",
-      takingQuantity: "",
-      totalQuantity: item?.order_qty || "",
-      hsn: item?.generic_prodid?.hsn || "",
-      mrp: item?.generic_prodid?.mrp || "",
-      selling_price: item?.net_amount || "",
-    }));
-    if (medication_details.length === 0) {
-      medication_details.push({
-        id: "",
-        name: "",
-        category: [],
-        batch_no: "",
-        timing: [],
-        afterFd_beforeFd: "",
-        takingQuantity: "",
-        totalQuantity: "",
-        hsn: "",
-        mrp: "",
-        selling_price: "",
-      });
+    let user_name = null;
+    if (getdata?.users?.name) {
+      user_name = decrypt(getdata.users.name, secretKey);
     }
-    const responseData = {
-      sales_id: getdata.sales_id,
-      contact_no: getdata.contact_no,
-      doctor_name: getdata.doctor_name,
-      order_type: getdata.order_type,
-      prescription_image: getdata?.prescription_image,
-      username: decryptedUsername,
-      userId: userId,
-      delivery_address: getdata.delivery_address,
-      district: getdata.district,
-      city: getdata.city,
-      medicine_details: medication_details,
-      total: "",
-    };
+
     response.status(200).json({
       success: true,
-      data: getdata,
+      data: {
+        ...getdata,
+        user_name, 
+      },
     });
   } catch (error) {
     logger.error(
@@ -475,5 +419,10 @@ const getorderdetails = async (request, response) => {
   }
 };
 
-
-module.exports = { assignpharmacy, getpackedorders, getpharmacies ,getproductspharmacy,getorderdetails};
+module.exports = {
+  assignpharmacy,
+  getpackedorders,
+  getpharmacies,
+  getproductspharmacy,
+  getorderdetails,
+};

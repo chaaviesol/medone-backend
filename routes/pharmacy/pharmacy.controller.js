@@ -1479,7 +1479,7 @@ const prescriptioninvoice = async (request, response) => {
           doctor_name,
         },
       });
-      await prisma.sales_invoice.create({
+      const saleinvoice=await prisma.sales_invoice.create({
         data: {
           sales_id,
           sold_by,
@@ -1547,6 +1547,7 @@ const prescriptioninvoice = async (request, response) => {
               takingQuantity,
               app_flag: false,
               created_date: datetime,
+              sales_invoiceid:saleinvoice.id
             },
           });
         }
