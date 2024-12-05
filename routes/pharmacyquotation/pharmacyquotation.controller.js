@@ -394,16 +394,64 @@ const getorderdetails = async (request, response) => {
       },
     });
 
+    console.log("Sales Invoice:", getdata.sales_invoice);
+
     let user_name = null;
     if (getdata?.users?.name) {
       user_name = decrypt(getdata.users.name, secretKey);
     }
 
+    const salesInvoice  = await Promise.all(
+      getdata.sales_invoice[0]?.medicine_timetable.map(async (item, index) => {
+        console.log(`Processing item ${index}:`, item);
+
+        const detailedMedicines = await Promise.all(
+          (item.medicine || []).map(async (medicine, medIndex) => {
+            console.log(`Processing medicine ${medIndex}:`, medicine);
+
+            const medicinedetails = await prisma.sales_list.findFirst({
+              where: { product_id: medicine.id,
+                sales_id:sales_id
+               },
+              select: {
+                order_qty: true,
+                net_amount: true,
+                batch_no: true,
+                selling_price: true,
+                generic_prodid:{
+                  select:{
+                    hsn:true,
+                    mrp:true
+                  }
+                }
+              },
+            });
+
+            console.log(
+              `Details for medicine ${medicine.id}:`,
+              medicinedetails
+            );
+
+            return {
+              ...medicine,
+              details: medicinedetails,
+            };
+          })
+        );
+
+        return {
+          ...item,
+          medicine: detailedMedicines,
+        };
+      })
+    );
+    
     response.status(200).json({
       success: true,
       data: {
         ...getdata,
-        user_name, 
+        sales_invoice: salesInvoice, // Attach updated sales_invoice
+        user_name, // Add decrypted user name
       },
     });
   } catch (error) {

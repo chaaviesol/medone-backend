@@ -1420,6 +1420,7 @@ const createinvoice = async (request, response) => {
                 takingQuantity,
                 app_flag: false,
                 created_date: datetime,
+                sales_invoiceid:create.id
               },
             });
           }
