@@ -202,6 +202,22 @@ try{
     }
   })
   console.log({getCompleteOrder})
+  const order = []
+  for(let i=0;i<getCompleteOrder.length;i++){
+    const salesId = getCompleteOrder[i].sales_id
+    console.log({salesId})
+
+    const getSaleslist = await prisma.sales_list.findMany({
+      where:{
+        sales_id:salesId
+      }
+    })
+    console.log({getSaleslist})
+    order.push({
+      ...getCompleteOrder[i],
+      productlist:getSaleslist
+    })
+  }
   if(getCompleteOrder.length === 0){
     return res.status(404).json({
       error:true,
@@ -214,7 +230,7 @@ try{
     error:false,
     success:true,
     message:"Successfull",
-    data:getCompleteOrder
+    data:order
   })
 } catch (err) {
     logger.error(

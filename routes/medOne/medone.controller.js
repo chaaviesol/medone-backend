@@ -585,7 +585,8 @@ const addMedicineSchedule = async(request,response)=>{
         timeInterval:timeInterval,
         takingQuantity:takingQuantity,
         daysInterval:daysInterval,
-        created_date:istDate //change to dateTime
+        created_date:istDate, //change to dateTime
+        app_flag:"true"
       }
     })
    console.log({addSchedule})
@@ -2375,6 +2376,104 @@ const addQuotes = async()=>{
 
 
 
+
+
+// const selectPastOrderMedicine = async(req,res)=>{
+//   try{
+//     const{userId,status,medicineId} = req.body
+    
+//     const selectMedicine = await prisma.medicine_timetable.updateMany({
+//        where:{
+//         userId:userId,
+//         medicine:{
+//           some:{
+//             id:medicineId
+//           }
+//         },
+      
+//        },
+//        data:{
+//         active_status:"true"
+//        }
+//     })
+//     console.log({selectMedicine})
+//     // for(let i=0; i<selectMedicine.length; i++){
+//     //   const medicineid = selectMedicine[i].medicine[0].id
+//     //   console.log({medicineid})
+//     //   const addStatus = await prisma.medicine_timetable.findMany({
+//     //     where:{
+//     //       medicine:medicineId,
+//     //       active_status:"true"
+//     //     }
+//     //   })
+//     //   console.log({addStatus})
+//     // }
+//     res.status(200).json({
+//       error:false,
+//       success:true,
+//       message:"Successfull",
+//       data:selectMedicine
+//     })
+
+//   }catch (error) {
+//     console.log({ error });
+//     response.status(500).json(error.message);
+//     logger.error(`Internal server error: ${error.message} in medone-selectPastOrderMedicine  api`);
+//   } finally {
+//     await prisma.$disconnect();
+//   }
+// }
+
+const selectPastOrderMedicine = async (req, res) => {
+  try {
+    const { userId, medicineId } = req.body;
+
+    // Step 1: Fetch all records for the user
+    const medicines = await prisma.medicine_timetable.findMany({
+      where: {
+        userId: userId,
+      },
+    });
+
+    // Step 2: Filter the records in JavaScript
+    const filteredMedicines = medicines.filter((record) =>
+      record.medicine.some((med) => med.id === medicineId)
+    );
+
+    if (filteredMedicines.length === 0) {
+      return res.status(404).json({ success: false, message: "No matching medicines found" });
+    }
+
+    // Step 3: Extract IDs of filtered records
+    const medicineIdsToUpdate = filteredMedicines.map((medicine) => medicine.id);
+
+    // Step 4: Update the filtered records
+    const updateResult = await prisma.medicine_timetable.updateMany({
+      where: {
+        id: { in: medicineIdsToUpdate },
+      },
+      data: {
+        active_status: "true",
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `${updateResult.count} records updated successfully.`,
+    });
+  } catch (error) {
+    console.error({ error });
+    res.status(500).json({ success: false, message: error.message });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+
+
+
+
+
 module.exports = {addUserData,
   userLogin,
   addRoutine,
@@ -2400,6 +2499,7 @@ module.exports = {addUserData,
   getMedicineAddedByUser,
   addFeedback,
   getAddedFeedback,
-  addQuotes
+  addQuotes,
+  selectPastOrderMedicine
   // notificationData
 }

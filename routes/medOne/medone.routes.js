@@ -24,7 +24,8 @@ const {addUserData,
     getMedicineAddedByUser,
     addFeedback,
     getAddedFeedback,
-    addQuotes
+    addQuotes,
+    selectPastOrderMedicine
     // notificationData
 } = require('./medone.controller')
 const medoneRouter = express.Router();
@@ -59,5 +60,8 @@ medoneRouter.get('/addQuotes',addQuotes)
 medoneRouter.post('/getMedicineAddedByUser',getMedicineAddedByUser)
 medoneRouter.post('/addFeedback',addFeedback)
 medoneRouter.post('/getAddedFeedback',getAddedFeedback)
+medoneRouter.post('/selectPastOrderMedicine',selectPastOrderMedicine)
+
+
 
 module.exports = medoneRouter
