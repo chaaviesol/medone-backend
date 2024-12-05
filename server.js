@@ -13,6 +13,7 @@ const UserRouter = require("./routes/user/user.routes");
 const PharmacyRouter = require("./routes/pharmacy/pharmacy.routes");
 const medoneRouter = require("./routes/medOne/medone.routes");
 const productRouter = require("./routes/productcategory/productcategory.routes");
+const googleMapRouter=require("./routes/googleMap/googlemap.routes")
 const { PrismaClient } = require("@prisma/client");
 const pharmacyquotationRouter = require("./routes/pharmacyquotation/pharmacyquotation.routes");
 const { checkPrime } = require("crypto");
@@ -39,6 +40,7 @@ server.use("/pharmacy", PharmacyRouter);
 server.use("/product", productRouter);
 server.use("/pharmacyquotation",pharmacyquotationRouter)
 server.use("/chemist",chemistRouter)
+server.use("/googlemap",googleMapRouter)
 
 if (process.env.NODE_ENV === "development") {
   server.listen(PORT, () => {
