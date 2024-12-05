@@ -2426,7 +2426,11 @@ const addQuotes = async()=>{
 
 const selectPastOrderMedicine = async (req, res) => {
   try {
-    const { userId, medicineId } = req.body;
+    const { userId, medicineIds } = req.body; // Expecting `medicineIds` to be an array
+
+    if (!Array.isArray(medicineIds) || medicineIds.length === 0) {
+      return res.status(400).json({ success: false, message: "medicineIds must be a non-empty array" });
+    }
 
     // Step 1: Fetch all records for the user
     const medicines = await prisma.medicine_timetable.findMany({
@@ -2437,7 +2441,7 @@ const selectPastOrderMedicine = async (req, res) => {
 
     // Step 2: Filter the records in JavaScript
     const filteredMedicines = medicines.filter((record) =>
-      record.medicine.some((med) => med.id === medicineId)
+      record.medicine.some((med) => medicineIds.includes(med.id)) // Check if any of the medicineIds match
     );
 
     if (filteredMedicines.length === 0) {
