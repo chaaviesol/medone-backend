@@ -233,6 +233,12 @@ const getpharmacies = async (request, response) => {
         where: {
           OR: [{ pincode: incrementPincode }, { pincode: decrementPincode }],
         },
+        select:{
+          id:true,
+          name:true,
+          address:true,
+          pincode:true
+        }
       });
 
       // Add unique pharmacies to the list
@@ -252,23 +258,37 @@ const getpharmacies = async (request, response) => {
     // Limit to 3 pharmacies
     pharmacies = pharmacies.slice(0, 3);
    
-    // Check product availability and add count
-    for (let pharmacy of pharmacies) {
-      const products = await prisma.pharmacy_medicines.findFirst({
-        where: { pharmacy_id: pharmacy.id },
-        select: { product_ids: true },
-      });
-
+    // // Check product availability and add count
+    // for (let pharmacy of pharmacies) {
+    //   const products = await prisma.pharmacy_medicines.findFirst({
+    //     where: { pharmacy_id: pharmacy.id },
+    //     select: { product_ids: true },
+    //   });
+    const productDetails = await Promise.all(
+      pharmacies.map(async (pharmacy) => {
+        const products = await prisma.pharmacy_medicines.findFirst({
+          where: { pharmacy_id: pharmacy.id },
+          select: { product_ids: true },
+        });
       const availableProducts = products?.product_ids || [];
       const matchingCount = product_ids.filter((pid) =>
         availableProducts.includes(pid)
       ).length;
 
-      pharmacy.count = matchingCount;
-    }
-
+      return {
+        pharm_id: {
+          id: pharmacy.id,
+          name: pharmacy.name,
+          address: pharmacy.address ,
+          pincode: pharmacy.pincode,
+        },
+        status: "", 
+        matchingCount, 
+      };
+    })
+  );
     return response.status(200).json({
-      data: pharmacies,
+      data:productDetails,
       success: true,
       error: false,
     });
