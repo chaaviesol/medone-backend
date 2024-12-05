@@ -184,6 +184,7 @@ const getpharmacies = async (request, response) => {
               select: {
                 id: true,
                 name: true,
+                address:true
               },
             },
             status: true,
@@ -203,6 +204,7 @@ const getpharmacies = async (request, response) => {
     }
 
     pincode = finddata.pincode;
+    console.log({pincode})
     const product_ids =
       finddata?.sales_list.map((item) => item.product_id) || [];
 
@@ -244,11 +246,11 @@ const getpharmacies = async (request, response) => {
         );
       }
       range++;
-      if (range > 100) break;
+      // if (range > 100) break;
     }
     // Limit to 3 pharmacies
     pharmacies = pharmacies.slice(0, 3);
-
+   
     // Check product availability and add count
     for (let pharmacy of pharmacies) {
       const products = await prisma.pharmacy_medicines.findFirst({
