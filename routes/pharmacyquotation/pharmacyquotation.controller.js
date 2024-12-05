@@ -311,7 +311,7 @@ const assignpharmacy = async (request, response) => {
     const datetime = getCurrentDateInIST();
 
     // Validate the required fields
-    if (!sales_id || pharmacy_id) {
+    if (!sales_id || !pharmacy_id) {
       return response.status(400).json({
         error: true,
         message: "sales_id and pharmacy_id can't be null or empty.",
