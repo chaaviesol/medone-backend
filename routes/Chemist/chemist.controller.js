@@ -185,63 +185,84 @@ const chemist_profile = async(req,res)=>{
 }
 
 /////get complete order////
-const getOrder = async(req,res)=>{
-try{
-  const{chemistId} = req.body
-  if(!chemistId){
-    return res.status(200).json({
-      error:true,
-      success:false,
-      message:"chemist id is required..........."
-    })
-   }
-  const getCompleteOrder = await prisma.pharmacyquotation.findMany({
-    where:{
-      pharmacy_id:chemistId,
-      status:"requested"
+const getOrder = async (req, res) => {
+  try {
+    const { chemistId } = req.body;
+
+    if (!chemistId) {
+      return res.status(200).json({
+        error: true,
+        success: false,
+        message: "Chemist ID is required.",
+      });
     }
-  })
-  console.log({getCompleteOrder})
-  const order = []
-  for(let i=0;i<getCompleteOrder.length;i++){
-    const salesId = getCompleteOrder[i].sales_id
-    console.log({salesId})
 
-    const getSaleslist = await prisma.sales_list.findMany({
-      where:{
-        sales_id:salesId
+    const getCompleteOrder = await prisma.pharmacyquotation.findMany({
+      where: {
+        pharmacy_id: chemistId,
+        status: "requested",
+      },
+    });
+
+    if (getCompleteOrder.length === 0) {
+      return res.status(404).json({
+        error: true,
+        success: false,
+        message: "No order found.",
+      });
+    }
+
+    const order = [];
+
+    for (let i = 0; i < getCompleteOrder.length; i++) {
+      const salesId = getCompleteOrder[i].sales_id;
+
+      const getSaleslist = await prisma.sales_list.findMany({
+        where: {
+          sales_id: salesId,
+        },
+      });
+
+      const productlist = [];
+      for (let j = 0; j < getSaleslist.length; j++) {
+        const productId = getSaleslist[j].product_id;
+
+        // Fetch product details
+        const getProduct = await prisma.generic_product.findUnique({
+          where: {
+            id: productId,
+          },
+        });
+
+        // Add productName directly to the sales list item
+        productlist.push({
+          ...getSaleslist[j],
+          productName: getProduct ? getProduct.name : null,
+        });
       }
-    })
-    console.log({getSaleslist})
-    order.push({
-      ...getCompleteOrder[i],
-      productlist:getSaleslist
-    })
-  }
-  if(getCompleteOrder.length === 0){
-    return res.status(404).json({
-      error:true,
-      success:false,
-      message:"No order found........"
-    })
 
-  }
-  res.status(200).json({
-    error:false,
-    success:true,
-    message:"Successfull",
-    data:order
-  })
-} catch (err) {
-    logger.error(
-      `Internal server error: ${err.message} in getorder api`
-    );
-    res.status(400).json({
+      order.push({
+        ...getCompleteOrder[i],
+        productlist, // Include the modified product list with product names
+      });
+    }
+
+    res.status(200).json({
+      error: false,
+      success: true,
+      message: "Successful",
+      data: order,
+    });
+  } catch (err) {
+    console.error(`Internal server error: ${err.message} in getOrder API`);
+    res.status(500).json({
       error: true,
-      message: "internal server error",
+      success: false,
+      message: "Internal server error.",
     });
   }
-}
+};
+
 
 ///////order accept/reject /////
 const orderResponse = async(req,res)=>{
@@ -282,50 +303,86 @@ const orderResponse = async(req,res)=>{
   }
 }
 
-const getConfirmedOrder = async(req,res)=>{
-  try{
-    const{chemistId,status} = req.body
+const getConfirmedOrder = async (req, res) => {
+  try {
+    const { chemistId, status } = req.body;
+
+    if (!chemistId) {
+      return res.status(400).json({
+        error: true,
+        success: false,
+        message: "Chemist ID is required.",
+      });
+    }
+
     const getorder = await prisma.pharmacyquotation.findMany({
-      where:{
-        pharmacy_id:chemistId,
-        status:{
-          in:["Packed","Accepted","ready to ship"]
-        }
+      where: {
+        pharmacy_id: chemistId,
+        status: {
+          in: ["Packed", "Accepted", "ready to ship"],
+        },
+      },
+    });
+
+    if (getorder.length === 0) {
+      return res.status(404).json({
+        error: true,
+        success: false,
+        message: "No confirmed orders found.",
+      });
+    }
+
+    const orders = [];
+
+    for (let i = 0; i < getorder.length; i++) {
+      const salesId = getorder[i].sales_id;
+
+      const getSaleslist = await prisma.sales_list.findMany({
+        where: {
+          sales_id: salesId,
+        },
+      });
+
+      const productlist = [];
+      for (let j = 0; j < getSaleslist.length; j++) {
+        const productId = getSaleslist[j].product_id;
+
+        // Fetch product details
+        const getProduct = await prisma.generic_product.findUnique({
+          where: {
+            id: productId,
+          },
+        });
+
+        // Add productName directly to the sales list item
+        productlist.push({
+          ...getSaleslist[j],
+          productName: getProduct ? getProduct.name : null,
+        });
       }
-    })
-    console.log({getorder})
-    const orders = []
-    for(let i=0;i<getorder.length;i++){
-      const salesId = getorder[i].sales_id
-      console.log({salesId})
-      const getOrder = await prisma.sales_list.findMany({
-        where:{
-          sales_id:salesId
-        }
-      })
-      console.log({getOrder})
+
       orders.push({
         ...getorder[i],
-        productlist:getOrder
-      })
+        productlist, // Include the enhanced product list
+      });
     }
-    res.status(200).json({
-      error:false,
-      success:true,
-      message:"Successfull",
-      data:orders
-    })
 
+    res.status(200).json({
+      error: false,
+      success: true,
+      message: "Successful",
+      data: orders,
+    });
   } catch (err) {
-    logger.error(
-      `Internal server error: ${err.message} in getconfirmedOrder api`
-    );
-    res.status(400).json({
+    console.error(`Internal server error: ${err.message} in getConfirmedOrder API`);
+    res.status(500).json({
       error: true,
-      message: "internal server error",
+      success: false,
+      message: "Internal server error.",
     });
   }
-}
+};
+
 
 
 
