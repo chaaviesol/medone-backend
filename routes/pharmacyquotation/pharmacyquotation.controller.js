@@ -184,7 +184,8 @@ const getpharmacies = async (request, response) => {
               select: {
                 id: true,
                 name: true,
-                address:true
+                address:true,
+                pincode:true
               },
             },
             status: true,
