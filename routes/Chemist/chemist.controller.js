@@ -294,11 +294,26 @@ const getConfirmedOrder = async(req,res)=>{
       }
     })
     console.log({getorder})
+    const orders = []
+    for(let i=0;i<getorder.length;i++){
+      const salesId = getorder[i].sales_id
+      console.log({salesId})
+      const getOrder = await prisma.sales_list.findMany({
+        where:{
+          sales_id:salesId
+        }
+      })
+      console.log({getOrder})
+      orders.push({
+        ...getorder[i],
+        productlist:getOrder
+      })
+    }
     res.status(200).json({
       error:false,
       success:true,
       message:"Successfull",
-      data:getorder
+      data:orders
     })
 
   } catch (err) {
