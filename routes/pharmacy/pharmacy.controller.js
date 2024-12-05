@@ -1415,7 +1415,7 @@ const createinvoice = async (request, response) => {
                 userId: userId,
                 medicine: medicine,
                 afterFd_beforeFd,
-                totalQuantity,
+                totalQuantity:totalQuantity.toString(),
                 timing: newtiming,
                 takingQuantity,
                 app_flag: false,
