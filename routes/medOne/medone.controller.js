@@ -2485,19 +2485,183 @@ const selectPastOrderMedicine = async (req, res) => {
 };
 
 
-//////add schedule automatically///
-// const pastOrderSchedule = async(req,res)=>{
-//   try{
+//////add new schedule////
+const addNewSchedule = async (request, response) => {
+  try {
+    const { userid,timetableId } = request.body;
+    process.env.TZ = 'Asia/Kolkata';
+
+    // Fetch user routine
+    const findRoutine = await prisma.dailyRoutine.findFirst({
+      where: { userId: userid },
+    });
+
+    if (!findRoutine) {
+      return response.status(404).json({
+        error: true,
+        success: false,
+        message: "User routine not found",
+      });
+    }
+
+    const routineData = findRoutine.routine;
+    const breakfastTimeString = routineData[0].breakfast || null;
+    const lunchTimeString = routineData[0].lunch || null;
+    const dinnerTimeString = routineData[0].dinner || null;
+
+    if (!breakfastTimeString || !lunchTimeString || !dinnerTimeString) {
+      return response.status(400).json({
+        error: true,
+        success: false,
+        message: "Invalid or missing meal times in user's routine",
+      });
+    }
+ 
+    // Fetch medicine schedule
+    const medicineSchedule = await prisma.medicine_timetable.findMany({
+      where: 
+      { 
+        userId: userid,
+        id:timetableId,
+        active_status:"true"
+      },
+      select: {
+        id: true,
+        medicine: true,
+        timing: true,
+        afterFd_beforeFd: true,
+        medicine_type: true,
+        startDate: true,
+        no_of_days: true,
+      },
+    });
+
+    if (!medicineSchedule || medicineSchedule.length === 0) {
+      return response.status(404).json({
+        error: true,
+        success: false,
+        message: "No medicine schedule found for this user",
+      });
+    }
+
+    const now = new Date();
+    const parseTime = (timeString) => {
+      const [hours, minutes] = timeString.split(/[: ]/).map(Number);
+      const isPM = timeString.includes("PM");
+      const date = new Date();
+      date.setHours(isPM && hours !== 12 ? hours + 12 : hours === 12 && !isPM ? 0 : hours, minutes);
+      return date;
+    };
+
+    const mealTimes = {
+      Morning: parseTime(breakfastTimeString),
+      lunch: parseTime(lunchTimeString),
+      dinner: parseTime(dinnerTimeString),
+    };
+
+    let notifications = [];
+    for (const medicine of medicineSchedule) {
+      const { timing, afterFd_beforeFd, id } = medicine;
+      const times = Object.values(timing[0]);
+
+      const startDateObj = new Date(medicine.startDate);
+      const numberOfDays = parseInt(medicine.no_of_days, 10);
+      const endDate = new Date(startDateObj);
+      endDate.setDate(endDate.getDate() + numberOfDays);
+
+      const currentDate = new Date();
+      if (currentDate < startDateObj || currentDate > endDate) {
+        console.log(`Skipping medicine ID: ${id} as it is out of the active range`);
+        continue;
+      }
+
+      for (const notifyTime of times) {
+        const notifyTimeOfDay = notifyTime.toLowerCase();
+         console.log({notifyTimeOfDay})
+        // Check if the medicine has already been taken
+        const existingTakenRecord = await prisma.medication_records.findFirst({
+          where: {
+            userId: userid,
+            timetable_id: id,
+            taken_time: notifyTimeOfDay,
+            created_date: {
+              gte: new Date(currentDate.toISOString().split("T")[0] + "T00:00:00.000Z"),
+              lt: new Date(currentDate.toISOString().split("T")[0] + "T23:59:59.999Z"),
+            },
+            status: "Taken",
+          },
+        });
+
+        if (existingTakenRecord) {
+          console.log(`Skipping notification for medicine ID: ${id} as it is already taken for ${notifyTimeOfDay}`);
+          continue;
+        }
+
+        let notificationTime;
+        if (notifyTimeOfDay === "morning") {
+          notificationTime = afterFd_beforeFd === "before food"
+            ? new Date(mealTimes.Morning.getTime() - 45 * 60000)
+            : mealTimes.Morning;
+        } else if (notifyTimeOfDay === "lunch") {
+          notificationTime = afterFd_beforeFd === "before food"
+            ? new Date(mealTimes.lunch.getTime() - 45 * 60000)
+            : mealTimes.lunch;
+        } else if (notifyTimeOfDay === "dinner") {
+          notificationTime = afterFd_beforeFd === "before food"
+            ? new Date(mealTimes.dinner.getTime() - 45 * 60000)
+            : mealTimes.dinner;
+        }
+
+        if (notificationTime) {
+          const validUntil = new Date(notificationTime.getTime() + 2 * 60 * 60 * 1000);
+
+          if (now <= validUntil) {
+            notifications.push({
+              medicine_timetableID: id,
+              medicine: medicine.medicine[0].name,
+              notificationTime: notificationTime.toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              }),
+              medicine_type: medicine.medicine_type,
+              validUntil: validUntil.toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              }),
+              timeOfDay: notifyTimeOfDay,
+            });
+          }
+        }
+      }
+    }
+    // Sort notifications by time of day
+    notifications.sort((a, b) => {
+      const timeOrder = { morning: 1, lunch: 2, dinner: 3 };
+      return timeOrder[a.timeOfDay] - timeOrder[b.timeOfDay];
+    });
 
 
-//   }catch (error) {
-//     console.log({ error });
-//     response.status(500).json(error.message);
-//     logger.error(`Internal server error: ${error.message} in medone-getAddedFeedback api`);
-//   } finally {
-//     await prisma.$disconnect();
-//   }
-// }
+    if (notifications.length === 0) {
+      return response.status(404).json({
+        error: true,
+        success: false,
+        message: "No notifications scheduled",
+      });
+    }
+
+    return response.status(200).json({
+      error: false,
+      success: true,
+      message: "Notifications scheduled",
+      notifications,
+    });
+  } catch (error) {
+    console.error({ error });
+    return response.status(500).json({ error: error.message });
+  }
+};
 
 
 
@@ -2529,6 +2693,8 @@ module.exports = {addUserData,
   addFeedback,
   getAddedFeedback,
   addQuotes,
-  selectPastOrderMedicine
-  // notificationData
+  selectPastOrderMedicine,
+  addNewSchedule
+  // notificationData,
+
 }
