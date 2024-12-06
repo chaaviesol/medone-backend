@@ -2,6 +2,8 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const logDirectory = "./logs";
 const winston = require("winston");
+// const crypto = require('crypto');
+
 const bcrypt = require("bcrypt");
 const { messaging } = require("firebase-admin");
 
@@ -167,6 +169,7 @@ const chemist_profile = async(req,res)=>{
       }
     })
     console.log({findchemist})
+   
     return res.status(200).json({
       error:false,
       success:true,
@@ -305,7 +308,7 @@ const orderResponse = async(req,res)=>{
 
 const getConfirmedOrder = async (req, res) => {
   try {
-    const { chemistId, status } = req.body;
+    const { chemistId } = req.body;
 
     if (!chemistId) {
       return res.status(400).json({
@@ -386,11 +389,89 @@ const getConfirmedOrder = async (req, res) => {
 
 
 
+const getproductspharmacy = async (request, response) => {
+  console.log({request})
+  try {
+    const { pharmacy_id } = request.body;
+
+    if (!pharmacy_id) {
+      return response.status(400).json({
+        error: true,
+        message: "pharmacy_id can't be null or empty.",
+      });
+    }
+
+    const pharmacyMedicines = await prisma.pharmacy_medicines.findFirst({
+      where: {
+        pharmacy_id: pharmacy_id,
+      },
+      select: {
+        pharmacy_id: true,
+        product_ids: true,
+        created_date: true,
+      },
+    });
+    console.log({pharmacyMedicines})
+    
+
+
+    if (!pharmacyMedicines) {
+      return response.status(404).json({
+        success: false,
+        error: true,
+        message: "No medicines found for the provided pharmacy_id.",
+      });
+    }
+
+    const productIds = pharmacyMedicines.product_ids;
+    const products = [];
+
+    // Fetch details for each product ID
+    for (const productId of productIds) {
+      const product = await prisma.generic_product.findFirst({
+        where: {
+          id: productId,
+        },
+        select:{
+          name:true,
+          // categ ory:true
+        }
+      });
+
+      console.log({product})
+      if (product) {
+        products.push(product);
+      }
+    }
+
+    return response.status(200).json({
+      success: true,
+      error: false,
+      message: "Products retrieved successfully.",
+      data: {
+        pharmacy_id: pharmacyMedicines.pharmacy_id,
+        products,
+      },
+    });
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in pharmacyquotation-getproducts API`
+    );
+    console.error(error);
+    return response.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+
+
 module.exports = {
     chemist_login,
     addChemist,
     chemist_profile,
     getOrder,
     orderResponse,
-    getConfirmedOrder
+    getConfirmedOrder,
+    getproductspharmacy
 }
