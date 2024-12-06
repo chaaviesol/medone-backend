@@ -184,6 +184,8 @@ const getpharmacies = async (request, response) => {
               select: {
                 id: true,
                 name: true,
+                address:true,
+                pincode:true
               },
             },
             status: true,
@@ -203,6 +205,7 @@ const getpharmacies = async (request, response) => {
     }
 
     pincode = finddata.pincode;
+    console.log({pincode})
     const product_ids =
       finddata?.sales_list.map((item) => item.product_id) || [];
 
@@ -230,6 +233,12 @@ const getpharmacies = async (request, response) => {
         where: {
           OR: [{ pincode: incrementPincode }, { pincode: decrementPincode }],
         },
+        select:{
+          id:true,
+          name:true,
+          address:true,
+          pincode:true
+        }
       });
 
       // Add unique pharmacies to the list
@@ -244,28 +253,42 @@ const getpharmacies = async (request, response) => {
         );
       }
       range++;
-      if (range > 100) break;
+      // if (range > 100) break;
     }
     // Limit to 3 pharmacies
     pharmacies = pharmacies.slice(0, 3);
-
-    // Check product availability and add count
-    for (let pharmacy of pharmacies) {
-      const products = await prisma.pharmacy_medicines.findFirst({
-        where: { pharmacy_id: pharmacy.id },
-        select: { product_ids: true },
-      });
-
+   
+    // // Check product availability and add count
+    // for (let pharmacy of pharmacies) {
+    //   const products = await prisma.pharmacy_medicines.findFirst({
+    //     where: { pharmacy_id: pharmacy.id },
+    //     select: { product_ids: true },
+    //   });
+    const productDetails = await Promise.all(
+      pharmacies.map(async (pharmacy) => {
+        const products = await prisma.pharmacy_medicines.findFirst({
+          where: { pharmacy_id: pharmacy.id },
+          select: { product_ids: true },
+        });
       const availableProducts = products?.product_ids || [];
       const matchingCount = product_ids.filter((pid) =>
         availableProducts.includes(pid)
       ).length;
 
-      pharmacy.count = matchingCount;
-    }
-
+      return {
+        pharm_id: {
+          id: pharmacy.id,
+          name: pharmacy.name,
+          address: pharmacy.address ,
+          pincode: pharmacy.pincode,
+        },
+        status: "", 
+        matchingCount, 
+      };
+    })
+  );
     return response.status(200).json({
-      data: pharmacies,
+      data:productDetails,
       success: true,
       error: false,
     });
@@ -288,7 +311,7 @@ const assignpharmacy = async (request, response) => {
     const datetime = getCurrentDateInIST();
 
     // Validate the required fields
-    if (!sales_id || pharmacy_id) {
+    if (!sales_id || !pharmacy_id) {
       return response.status(400).json({
         error: true,
         message: "sales_id and pharmacy_id can't be null or empty.",
@@ -394,16 +417,64 @@ const getorderdetails = async (request, response) => {
       },
     });
 
+    console.log("Sales Invoice:", getdata.sales_invoice);
+
     let user_name = null;
     if (getdata?.users?.name) {
       user_name = decrypt(getdata.users.name, secretKey);
     }
 
+    const salesInvoice  = await Promise.all(
+      getdata.sales_invoice[0]?.medicine_timetable.map(async (item, index) => {
+        console.log(`Processing item ${index}:`, item);
+
+        const detailedMedicines = await Promise.all(
+          (item.medicine || []).map(async (medicine, medIndex) => {
+            console.log(`Processing medicine ${medIndex}:`, medicine);
+
+            const medicinedetails = await prisma.sales_list.findFirst({
+              where: { product_id: medicine.id,
+                sales_id:sales_id
+               },
+              select: {
+                order_qty: true,
+                net_amount: true,
+                batch_no: true,
+                selling_price: true,
+                generic_prodid:{
+                  select:{
+                    hsn:true,
+                    mrp:true
+                  }
+                }
+              },
+            });
+
+            console.log(
+              `Details for medicine ${medicine.id}:`,
+              medicinedetails
+            );
+
+            return {
+              ...medicine,
+              details: medicinedetails,
+            };
+          })
+        );
+
+        return {
+          ...item,
+          medicine: detailedMedicines,
+        };
+      })
+    );
+    
     response.status(200).json({
       success: true,
       data: {
         ...getdata,
-        user_name, 
+        sales_invoice: salesInvoice, // Attach updated sales_invoice
+        user_name, // Add decrypted user name
       },
     });
   } catch (error) {
