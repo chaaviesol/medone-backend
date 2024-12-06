@@ -353,6 +353,7 @@ const getproducts = async (request, response) => {
 };
 
 const addToCart = async (request, response) => {
+  console.log("addddddddttoooo",request.body)
   const { prod_id, quantity } = request.body;
   const user_id = request.user.userId;
   const datetime = getCurrentDateInIST();
@@ -411,6 +412,7 @@ const addToCart = async (request, response) => {
     logger.error(
       `Internal server error: ${error.message} in pharmacy--> addToCart API`
     );
+    console.log(error)
     response.status(500).json({
       error: true,
       message: "Internal server error",
@@ -1358,6 +1360,7 @@ const createinvoice = async (request, response) => {
         },
         data: {
           doctor_name,
+          so_status:"bill_created"
         },
       });
       const create = await prisma.sales_invoice.create({
@@ -1478,6 +1481,7 @@ const prescriptioninvoice = async (request, response) => {
         },
         data: {
           doctor_name,
+          so_status:"bill_created"
         },
       });
       const saleinvoice=await prisma.sales_invoice.create({
