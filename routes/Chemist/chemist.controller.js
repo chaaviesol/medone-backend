@@ -281,6 +281,17 @@ const orderResponse = async(req,res)=>{
       }
     })
     console.log({addResponse})
+
+    const addPackedStatus = await prisma.sales_order.updateMany({
+      where:{
+        sales_id:quotationId
+      },
+      data:{
+        so_status:"packed"
+      }
+    })
+
+    console.log({addPackedStatus})
     return res.status(200).json({
       error:false,
       success:true,
