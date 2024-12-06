@@ -603,7 +603,7 @@ const salesorder = async (request, response) => {
         data: {
           so_number: so_number,
           total_amount: total_amount_fixed,
-          so_status: "Placed",
+          so_status: "placed",
           remarks,
           order_type,
           created_date: datetime,
@@ -793,7 +793,7 @@ const salesorder = async (request, response) => {
 //         data: {
 //           so_number: so_number,
 //           total_amount: total_amount_fixed,
-//           so_status: "Placed",
+//           so_status: "placed",
 //           remarks,
 //           order_type,
 //           created_date: datetime,
@@ -1381,6 +1381,7 @@ const createinvoice = async (request, response) => {
             takingQuantity,
             batch_no,
             selling_price,
+            no_of_days,
             category,
           } = medicinedet;
 
@@ -1389,7 +1390,6 @@ const createinvoice = async (request, response) => {
           if (category.some((item) => item.toLowerCase() === "medicines")) {
             console.log("insidee");
             const medicine = [{ id: id, name: name }];
-            console.log({ medicine });
             let newtiming = [];
 
             if (Array.isArray(timing)) {
@@ -1417,6 +1417,7 @@ const createinvoice = async (request, response) => {
                 userId: userId,
                 medicine: medicine,
                 afterFd_beforeFd,
+                no_of_days,
                 totalQuantity: totalQuantity.toString(),
                 timing: newtiming,
                 takingQuantity,
@@ -1502,12 +1503,12 @@ const prescriptioninvoice = async (request, response) => {
       });
 
       for (const medicinedet of medication_details) {
-        console.log({ medicinedet });
         const {
           id,
           name,
           afterFd_beforeFd,
           totalQuantity,
+          no_of_days,
           timing,
           takingQuantity,
           batch_no,
@@ -1517,9 +1518,7 @@ const prescriptioninvoice = async (request, response) => {
           category,
         } = medicinedet;
         if (category.some((item) => item.toLowerCase() === "medicines")) {
-          console.log("insidee");
           const medicine = [{ id: id, name: name }];
-          console.log({ medicine });
           let newtiming = [];
 
           if (Array.isArray(timing)) {
@@ -1547,6 +1546,7 @@ const prescriptioninvoice = async (request, response) => {
               userId: userId,
               medicine: medicine,
               afterFd_beforeFd,
+              no_of_days,
               totalQuantity,
               timing: newtiming,
               takingQuantity,
@@ -1558,7 +1558,6 @@ const prescriptioninvoice = async (request, response) => {
         }
 
         const net_amount = Number(totalQuantity) * Number(mrp);
-        console.log({ sales_id });
         await prisma.sales_list.create({
           data: {
             generic_prodid: {
