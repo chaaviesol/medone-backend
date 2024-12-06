@@ -2663,7 +2663,32 @@ const addNewSchedule = async (request, response) => {
   }
 };
 
+//////get medicine for schedule
+const getMedicineForSchedule = async(req,res)=>{
+  try{
+    const {userId} = req.body
 
+    const getMedicine = await prisma.medicine_timetable.findMany({
+      where:{
+        userId:userId,
+        app_flag:false
+      }
+    })
+    console.log({getMedicine})
+    res.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull",
+      data:getMedicine
+    })
+
+  } catch (error) {
+    console.error({ error });
+    res.status(500).json({ success: false, message: error.message });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
 
 
 
@@ -2694,7 +2719,7 @@ module.exports = {addUserData,
   getAddedFeedback,
   addQuotes,
   selectPastOrderMedicine,
-  addNewSchedule
+  addNewSchedule,
   // notificationData,
-
+  getMedicineForSchedule
 }
