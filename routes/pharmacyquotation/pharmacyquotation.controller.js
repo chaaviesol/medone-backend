@@ -184,8 +184,8 @@ const getpharmacies = async (request, response) => {
               select: {
                 id: true,
                 name: true,
-                address:true,
-                pincode:true
+                address: true,
+                pincode: true,
               },
             },
             status: true,
@@ -193,6 +193,16 @@ const getpharmacies = async (request, response) => {
         },
       },
     });
+    console.log({ finddata });
+    if (
+      finddata &&
+      (finddata.so_status === "Placed" || finddata.so_status === "placed")
+    ) {
+      return response.status(200).json({
+        data: [],
+        message: "Assignment not allowed. Please bill first.",
+      });
+    }
 
     if (
       Array.isArray(finddata.pharmacyquotation) &&
@@ -205,7 +215,7 @@ const getpharmacies = async (request, response) => {
     }
 
     pincode = finddata.pincode;
-    console.log({pincode})
+    console.log({ pincode });
     const product_ids =
       finddata?.sales_list.map((item) => item.product_id) || [];
 
@@ -216,48 +226,61 @@ const getpharmacies = async (request, response) => {
       });
     }
 
-    let pharmacies = await prisma.pharmacy_details.findMany({
-      where: { pincode: pincode },
-    });
+    let pharmacies = await prisma.pharmacy_details.findMany({});
 
-    let range = 1; // Initialize search range
-    while (pharmacies.length < 3) {
-      const incrementPincode = pincode + range;
-      const decrementPincode = pincode - range;
+    // let range = 1; // Initialize search range
+    // while (pharmacies.length < 3) {
+    //   const incrementPincode = pincode + range;
+    //   const decrementPincode = pincode - range;
 
-      console.log(
-        `Searching pincodes: ${incrementPincode} and ${decrementPincode}`
+    //   console.log(
+    //     `Searching pincodes: ${incrementPincode} and ${decrementPincode}`
+    //   );
+
+    //   const nearestPharmacies = await prisma.pharmacy_details.findMany({
+    //     where: {
+    //       OR: [{ pincode: incrementPincode }, { pincode: decrementPincode }],
+    //     },
+    //     select: {
+    //       id: true,
+    //       name: true,
+    //       address: true,
+    //       pincode: true,
+    //     },
+    //   });
+
+    //   // Add unique pharmacies to the list
+    //   pharmacies = [
+    //     ...new Map(
+    //       [...pharmacies, ...nearestPharmacies].map((p) => [p.id, p])
+    //     ).values(),
+    //   ];
+    //   if (nearestPharmacies.length === 0) {
+    //     // console.log(
+    //     //   `No pharmacies found for range ${range}. Expanding search.`
+    //     // );
+    //   }
+    //   range++;
+    //   // if (range > 100) break;
+    // }
+    // // Limit to 3 pharmacies
+    // pharmacies = pharmacies.slice(0, 3);
+    const givenPincode = pincode;
+    function findNearestPinCodes(pharmacies, givenPincode, count = 3) {
+      // Sort pin codes by the absolute difference from the given pincode
+      pharmacies.sort(
+        (a, b) =>
+          Math.abs(a.pincode - givenPincode) -
+          Math.abs(b.pincode - givenPincode)
       );
 
-      const nearestPharmacies = await prisma.pharmacy_details.findMany({
-        where: {
-          OR: [{ pincode: incrementPincode }, { pincode: decrementPincode }],
-        },
-        select:{
-          id:true,
-          name:true,
-          address:true,
-          pincode:true
-        }
-      });
-
-      // Add unique pharmacies to the list
-      pharmacies = [
-        ...new Map(
-          [...pharmacies, ...nearestPharmacies].map((p) => [p.id, p])
-        ).values(),
-      ];
-      if (nearestPharmacies.length === 0) {
-        console.log(
-          `No pharmacies found for range ${range}. Expanding search.`
-        );
-      }
-      range++;
-      // if (range > 100) break;
+      // Return the top 'count' nearest pin codes
+      return pharmacies.slice(0, count);
     }
-    // Limit to 3 pharmacies
-    pharmacies = pharmacies.slice(0, 3);
-   
+
+    // Get the nearest 3 pin codes
+    const nearestPharmacies = findNearestPinCodes(pharmacies, givenPincode);
+
     // // Check product availability and add count
     // for (let pharmacy of pharmacies) {
     //   const products = await prisma.pharmacy_medicines.findFirst({
@@ -265,30 +288,30 @@ const getpharmacies = async (request, response) => {
     //     select: { product_ids: true },
     //   });
     const productDetails = await Promise.all(
-      pharmacies.map(async (pharmacy) => {
+      nearestPharmacies.map(async (pharmacy) => {
         const products = await prisma.pharmacy_medicines.findFirst({
           where: { pharmacy_id: pharmacy.id },
           select: { product_ids: true },
         });
-      const availableProducts = products?.product_ids || [];
-      const matchingCount = product_ids.filter((pid) =>
-        availableProducts.includes(pid)
-      ).length;
+        const availableProducts = products?.product_ids || [];
+        const matchingCount = product_ids.filter((pid) =>
+          availableProducts.includes(pid)
+        ).length;
 
-      return {
-        pharm_id: {
-          id: pharmacy.id,
-          name: pharmacy.name,
-          address: pharmacy.address ,
-          pincode: pharmacy.pincode,
-        },
-        status: "", 
-        matchingCount, 
-      };
-    })
-  );
+        return {
+          pharm_id: {
+            id: pharmacy.id,
+            name: pharmacy.name,
+            address: pharmacy.address,
+            pincode: pharmacy.pincode,
+          },
+          status: "",
+          matchingCount,
+        };
+      })
+    );
     return response.status(200).json({
-      data:productDetails,
+      data: productDetails,
       success: true,
       error: false,
     });
@@ -306,8 +329,8 @@ const getpharmacies = async (request, response) => {
 ///////////assign pharmacy/////////////////
 const assignpharmacy = async (request, response) => {
   try {
-    let { sales_id, pharmacy_id, status } = request.body;
-
+    const { sales_id, pharmacy_id, status } = request.body;
+console.log(request.body)
     const datetime = getCurrentDateInIST();
 
     // Validate the required fields
@@ -325,6 +348,14 @@ const assignpharmacy = async (request, response) => {
         pharmacy_id: pharmacy_id,
         created_date: datetime,
         Stmodified_date: datetime,
+      },
+    });
+    const update = await prisma.sales_order.update({
+      where: {
+        sales_id: sales_id,
+      },
+      data: {
+        pharmacy_id: pharmacy_id,
       },
     });
 
@@ -373,10 +404,11 @@ const getpackedorders = async (request, response) => {
 };
 
 ////////get ordered details/////////////////
-const getorderdetails = async (request, response) => {
+const getorderdetailsss = async (request, response) => {
   const secretKey = process.env.ENCRYPTION_KEY;
   try {
     const sales_id = request.body.sales_id;
+    console.log({ sales_id });
     if (!sales_id) {
       return response.status(400).json({
         message: "sales_id can't be null",
@@ -408,6 +440,20 @@ const getorderdetails = async (request, response) => {
         pincode: true,
         prescription_image: true,
         patient_name: true,
+        sales_list: {
+          select: {
+            product_id: true,
+            order_qty: true,
+            net_amount: true,
+            selling_price: true,
+            batch_no: true,
+            generic_prodid: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
         sales_invoice: {
           select: {
             created_date: true,
@@ -417,64 +463,217 @@ const getorderdetails = async (request, response) => {
       },
     });
 
-    console.log("Sales Invoice:", getdata.sales_invoice);
+    console.log("Sales Invoice:", getdata);
 
     let user_name = null;
     if (getdata?.users?.name) {
       user_name = decrypt(getdata.users.name, secretKey);
     }
+    if (getdata.sales_invoice.length > 0) {
+      const salesInvoice = await Promise.all(
+        getdata.sales_invoice[0]?.medicine_timetable.map(
+          async (item, index) => {
+            console.log(`Processing item ${index}:`, item);
 
-    const salesInvoice  = await Promise.all(
-      getdata.sales_invoice[0]?.medicine_timetable.map(async (item, index) => {
-        console.log(`Processing item ${index}:`, item);
+            const detailedMedicines = await Promise.all(
+              (item.medicine || []).map(async (medicine, medIndex) => {
+                console.log(`Processing medicine ${medIndex}:`, medicine);
 
-        const detailedMedicines = await Promise.all(
-          (item.medicine || []).map(async (medicine, medIndex) => {
-            console.log(`Processing medicine ${medIndex}:`, medicine);
+                const medicinedetails = await prisma.sales_list.findFirst({
+                  where: { product_id: medicine.id, sales_id: sales_id },
+                  select: {
+                    order_qty: true,
+                    net_amount: true,
+                    batch_no: true,
+                    selling_price: true,
+                    generic_prodid: {
+                      select: {
+                        hsn: true,
+                        mrp: true,
+                      },
+                    },
+                  },
+                });
 
-            const medicinedetails = await prisma.sales_list.findFirst({
-              where: { product_id: medicine.id,
-                sales_id:sales_id
-               },
-              select: {
-                order_qty: true,
-                net_amount: true,
-                batch_no: true,
-                selling_price: true,
-                generic_prodid:{
-                  select:{
-                    hsn:true,
-                    mrp:true
-                  }
-                }
-              },
-            });
+                console.log(
+                  `Details for medicine ${medicine.id}:`,
+                  medicinedetails
+                );
 
-            console.log(
-              `Details for medicine ${medicine.id}:`,
-              medicinedetails
+                return {
+                  ...medicine,
+                  details: medicinedetails,
+                };
+              })
             );
 
             return {
-              ...medicine,
-              details: medicinedetails,
+              ...item,
+              medicine: detailedMedicines,
             };
-          })
-        );
+          }
+        )
+      );
 
-        return {
-          ...item,
-          medicine: detailedMedicines,
-        };
-      })
+      response.status(200).json({
+        success: true,
+        data: {
+          ...getdata,
+          sales_invoice: salesInvoice,
+          user_name,
+        },
+      });
+    } else {
+      response.status(200).json({
+        success: true,
+        data: {
+          ...getdata,
+          sales_invoice: getdata.sales_list,
+          user_name,
+        },
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in pharmacyquotation-getorderdetails API`
     );
-    
+    response.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+const getorderdetails = async (request, response) => {
+  const secretKey = process.env.ENCRYPTION_KEY;
+  try {
+    const sales_id = request.body.sales_id;
+    if (!sales_id) {
+      return response.status(400).json({
+        message: "sales_id can't be null",
+        error: true,
+      });
+    }
+
+    // Fetch sales order data
+    const getdata = await prisma.sales_order.findUnique({
+      where: { sales_id: sales_id },
+      select: {
+        sales_id: true,
+        so_number: true,
+        so_status: true,
+        order_type: true,
+        remarks: true,
+        users: {
+          select: { id: true, name: true },
+        },
+        contact_no: true,
+        created_date: true,
+        delivery_address: true,
+        doctor_name: true,
+        city: true,
+        district: true,
+        pincode: true,
+        prescription_image: true,
+        patient_name: true,
+        updated_date: true,
+        sales_list: {
+          select: {
+            product_id: true,
+            order_qty: true,
+            net_amount: true,
+            selling_price: true,
+            batch_no: true,
+            generic_prodid: {
+              select: { id: true, name: true, hsn: true, mrp: true },
+            },
+          },
+        },
+        sales_invoice: {
+          select: {
+            created_date: true,
+            medicine_timetable: {
+              select: {
+                medicine: true,
+                medicine_type: true,
+                no_of_days: true,
+                afterFd_beforeFd: true,
+                totalQuantity: true,
+                timing: true,
+                timeInterval: true,
+                takingQuantity: true,
+                daysInterval: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!getdata) {
+      return response.status(404).json({
+        message: "Sales order not found",
+        error: true,
+      });
+    }
+
+    // Decrypt user name if available
+    let user_name = null;
+    if (getdata?.users?.name) {
+      user_name = decrypt(getdata.users.name, secretKey);
+    }
+
+    // Combine sales_list and medicine_timetable
+    const medicineTimetables =
+      getdata.sales_invoice?.[0]?.medicine_timetable || [];
+    const combinedProducts = getdata.sales_list.map((product) => {
+      const matchingMedicine = medicineTimetables.find((timetable) =>
+        timetable.medicine.some((med) => med.id === product.generic_prodid.id)
+      );
+
+      return matchingMedicine
+        ? {
+            ...product,
+            generic_prodid: {
+              ...product.generic_prodid,
+              medicine_timetable: matchingMedicine,
+            },
+          }
+        : product;
+    });
+    const packed=await prisma.pharmacyquotation.findFirst({
+      where:{
+        sales_id:sales_id
+      },
+      select:{
+        Stmodified_date:true
+      }
+    })
+    console.log({packed})
+    // Respond with transformed data
     response.status(200).json({
       success: true,
       data: {
-        ...getdata,
-        sales_invoice: salesInvoice, // Attach updated sales_invoice
-        user_name, // Add decrypted user name
+        sales_id: getdata.sales_id,
+        so_number: getdata.so_number,
+        so_status: getdata.so_status,
+        order_type: getdata.order_type,
+        remarks: getdata.remarks,
+        contact_no: getdata.contact_no,
+        created_date: getdata.created_date,
+        updated_date: getdata.updated_date,
+        delivery_address: getdata.delivery_address,
+        doctor_name: getdata.doctor_name,
+        city: getdata.city,
+        district: getdata.district,
+        pincode: getdata.pincode,
+        prescription_image: getdata.prescription_image,
+        patient_name: getdata.patient_name,
+        products: combinedProducts,
+        packedDate:packed?.Stmodified_date || "",
+        user_name,
       },
     });
   } catch (error) {
@@ -496,4 +695,5 @@ module.exports = {
   getpharmacies,
   getproductspharmacy,
   getorderdetails,
+  getorderdetailsss,
 };

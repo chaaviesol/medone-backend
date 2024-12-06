@@ -353,6 +353,7 @@ const getproducts = async (request, response) => {
 };
 
 const addToCart = async (request, response) => {
+  console.log("addddddddttoooo", request.body);
   const { prod_id, quantity } = request.body;
   const user_id = request.user.userId;
   const datetime = getCurrentDateInIST();
@@ -411,6 +412,7 @@ const addToCart = async (request, response) => {
     logger.error(
       `Internal server error: ${error.message} in pharmacy--> addToCart API`
     );
+    console.log(error);
     response.status(500).json({
       error: true,
       message: "Internal server error",
@@ -605,7 +607,6 @@ const salesorder = async (request, response) => {
           remarks,
           order_type,
           created_date: datetime,
-          updated_date: datetime,
           customer_id: userId,
           delivery_address: delivery_address,
           city,
@@ -796,7 +797,6 @@ const salesorder = async (request, response) => {
 //           remarks,
 //           order_type,
 //           created_date: datetime,
-//           updated_date: datetime,
 //           customer_id: userId,
 //           delivery_address: delivery_address,
 //           city,
@@ -1266,6 +1266,7 @@ const getinvsalesorder = async (request, response) => {
             pharmacy_name: true,
             generic_prodid: {
               select: {
+                id:true,
                 name: true,
                 category: true,
                 mrp: true,
@@ -1281,7 +1282,7 @@ const getinvsalesorder = async (request, response) => {
     const decryptedUsername = decrypt(getdata?.users.name, secretKey);
     const userId = getdata?.users.id;
     const medication_details = (getdata.sales_list || getdata).map((item) => ({
-      id: item?.id || "",
+      id: item?.generic_prodid?.id || "",
       name: item?.generic_prodid?.name || "",
       category: item?.generic_prodid?.category || "",
       batch_no: "",
@@ -1340,7 +1341,6 @@ const getinvsalesorder = async (request, response) => {
 };
 //////for normal type salesorder////////////////////////
 
-
 const createinvoice = async (request, response) => {
   console.log("cretttttt", request.body);
   try {
@@ -1358,6 +1358,8 @@ const createinvoice = async (request, response) => {
         },
         data: {
           doctor_name,
+          so_status: "confirmed",
+          updated_date: istDate,
         },
       });
       const create = await prisma.sales_invoice.create({
@@ -1415,12 +1417,12 @@ const createinvoice = async (request, response) => {
                 userId: userId,
                 medicine: medicine,
                 afterFd_beforeFd,
-                totalQuantity:totalQuantity.toString(),
+                totalQuantity: totalQuantity.toString(),
                 timing: newtiming,
                 takingQuantity,
                 app_flag: false,
                 created_date: datetime,
-                sales_invoiceid:create.id
+                sales_invoiceid: create.id,
               },
             });
           }
@@ -1432,7 +1434,7 @@ const createinvoice = async (request, response) => {
             },
             data: {
               batch_no: batch_no,
-              selling_price: selling_price,
+              selling_price: Number(selling_price),
             },
           });
         }
@@ -1478,9 +1480,11 @@ const prescriptioninvoice = async (request, response) => {
         },
         data: {
           doctor_name,
+          so_status: "confirmed",
+          updated_date: istDate,
         },
       });
-      const saleinvoice=await prisma.sales_invoice.create({
+      const saleinvoice = await prisma.sales_invoice.create({
         data: {
           sales_id,
           sold_by,
@@ -1548,7 +1552,7 @@ const prescriptioninvoice = async (request, response) => {
               takingQuantity,
               app_flag: false,
               created_date: datetime,
-              sales_invoiceid:saleinvoice.id
+              sales_invoiceid: saleinvoice.id,
             },
           });
         }
