@@ -194,12 +194,12 @@ const getpharmacies = async (request, response) => {
       },
     });
     console.log({ finddata });
-    if (finddata && finddata.so_status === "placed") {
-      console.log(
-        "heyyyyyyyyyyyyyyyyyyyyyyyyy notbilllllllllllllllledddddddddd"
-      );
-      return response.status(400).json({
-        success: false,
+    if (
+      finddata &&
+      (finddata.so_status === "Placed" || finddata.so_status === "placed")
+    ) {
+      return response.status(200).json({
+        data: [],
         message: "Assignment not allowed. Please bill first.",
       });
     }
@@ -227,7 +227,7 @@ const getpharmacies = async (request, response) => {
     }
 
     let pharmacies = await prisma.pharmacy_details.findMany({});
-   
+
     // let range = 1; // Initialize search range
     // while (pharmacies.length < 3) {
     //   const incrementPincode = pincode + range;
@@ -280,7 +280,7 @@ const getpharmacies = async (request, response) => {
 
     // Get the nearest 3 pin codes
     const nearestPharmacies = findNearestPinCodes(pharmacies, givenPincode);
-    
+
     // // Check product availability and add count
     // for (let pharmacy of pharmacies) {
     //   const products = await prisma.pharmacy_medicines.findFirst({
@@ -329,8 +329,8 @@ const getpharmacies = async (request, response) => {
 ///////////assign pharmacy/////////////////
 const assignpharmacy = async (request, response) => {
   try {
-    let { sales_id, pharmacy_id, status } = request.body;
-
+    const { sales_id, pharmacy_id, status } = request.body;
+console.log(request.body)
     const datetime = getCurrentDateInIST();
 
     // Validate the required fields
@@ -348,6 +348,14 @@ const assignpharmacy = async (request, response) => {
         pharmacy_id: pharmacy_id,
         created_date: datetime,
         Stmodified_date: datetime,
+      },
+    });
+    const update = await prisma.sales_order.update({
+      where: {
+        sales_id: sales_id,
+      },
+      data: {
+        pharmacy_id: pharmacy_id,
       },
     });
 
@@ -396,7 +404,7 @@ const getpackedorders = async (request, response) => {
 };
 
 ////////get ordered details/////////////////
-const getorderdetails = async (request, response) => {
+const getorderdetailsss = async (request, response) => {
   const secretKey = process.env.ENCRYPTION_KEY;
   try {
     const sales_id = request.body.sales_id;
@@ -432,6 +440,20 @@ const getorderdetails = async (request, response) => {
         pincode: true,
         prescription_image: true,
         patient_name: true,
+        sales_list: {
+          select: {
+            product_id: true,
+            order_qty: true,
+            net_amount: true,
+            selling_price: true,
+            batch_no: true,
+            generic_prodid: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
         sales_invoice: {
           select: {
             created_date: true,
@@ -506,10 +528,154 @@ const getorderdetails = async (request, response) => {
         success: true,
         data: {
           ...getdata,
+          sales_invoice: getdata.sales_list,
           user_name,
         },
       });
     }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in pharmacyquotation-getorderdetails API`
+    );
+    response.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+const getorderdetails = async (request, response) => {
+  const secretKey = process.env.ENCRYPTION_KEY;
+  try {
+    const sales_id = request.body.sales_id;
+    if (!sales_id) {
+      return response.status(400).json({
+        message: "sales_id can't be null",
+        error: true,
+      });
+    }
+
+    // Fetch sales order data
+    const getdata = await prisma.sales_order.findUnique({
+      where: { sales_id: sales_id },
+      select: {
+        sales_id: true,
+        so_number: true,
+        so_status: true,
+        order_type: true,
+        remarks: true,
+        users: {
+          select: { id: true, name: true },
+        },
+        contact_no: true,
+        created_date: true,
+        delivery_address: true,
+        doctor_name: true,
+        city: true,
+        district: true,
+        pincode: true,
+        prescription_image: true,
+        patient_name: true,
+        updated_date: true,
+        sales_list: {
+          select: {
+            product_id: true,
+            order_qty: true,
+            net_amount: true,
+            selling_price: true,
+            batch_no: true,
+            generic_prodid: {
+              select: { id: true, name: true, hsn: true, mrp: true },
+            },
+          },
+        },
+        sales_invoice: {
+          select: {
+            created_date: true,
+            medicine_timetable: {
+              select: {
+                medicine: true,
+                medicine_type: true,
+                no_of_days: true,
+                afterFd_beforeFd: true,
+                totalQuantity: true,
+                timing: true,
+                timeInterval: true,
+                takingQuantity: true,
+                daysInterval: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!getdata) {
+      return response.status(404).json({
+        message: "Sales order not found",
+        error: true,
+      });
+    }
+
+    // Decrypt user name if available
+    let user_name = null;
+    if (getdata?.users?.name) {
+      user_name = decrypt(getdata.users.name, secretKey);
+    }
+
+    // Combine sales_list and medicine_timetable
+    const medicineTimetables =
+      getdata.sales_invoice?.[0]?.medicine_timetable || [];
+    const combinedProducts = getdata.sales_list.map((product) => {
+      const matchingMedicine = medicineTimetables.find((timetable) =>
+        timetable.medicine.some((med) => med.id === product.generic_prodid.id)
+      );
+
+      return matchingMedicine
+        ? {
+            ...product,
+            generic_prodid: {
+              ...product.generic_prodid,
+              medicine_timetable: matchingMedicine,
+            },
+          }
+        : product;
+    });
+    const packed=await prisma.pharmacyquotation.findFirst({
+      where:{
+        sales_id:sales_id
+      },
+      select:{
+        Stmodified_date:true
+      }
+    })
+    console.log({packed})
+    // Respond with transformed data
+    response.status(200).json({
+      success: true,
+      data: {
+        sales_id: getdata.sales_id,
+        so_number: getdata.so_number,
+        so_status: getdata.so_status,
+        order_type: getdata.order_type,
+        remarks: getdata.remarks,
+        contact_no: getdata.contact_no,
+        created_date: getdata.created_date,
+        updated_date: getdata.updated_date,
+        delivery_address: getdata.delivery_address,
+        doctor_name: getdata.doctor_name,
+        city: getdata.city,
+        district: getdata.district,
+        pincode: getdata.pincode,
+        prescription_image: getdata.prescription_image,
+        patient_name: getdata.patient_name,
+        products: combinedProducts,
+        packedDate:packed?.Stmodified_date || "",
+        user_name,
+      },
+    });
   } catch (error) {
     logger.error(
       `Internal server error: ${error.message} in pharmacyquotation-getorderdetails API`
@@ -529,4 +695,5 @@ module.exports = {
   getpharmacies,
   getproductspharmacy,
   getorderdetails,
+  getorderdetailsss,
 };

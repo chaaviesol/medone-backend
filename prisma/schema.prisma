@@ -222,7 +222,8 @@ model pharmacy_details{
     pincode                  Int?
     created_by               Int? 
     pharmacyquotation        pharmacyquotation[]
-    pharmacy_medicines       pharmacy_medicines[]   
+    pharmacy_medicines       pharmacy_medicines[]
+    sales_order              sales_order[]   
   }
 
    model pharmacyquotation{
@@ -255,11 +256,14 @@ model pharmacy_details{
   pincode                Int?
   prescription_image     Json?   
   patient_name           String?
-  doctor_name            String?         
+  doctor_name            String? 
+  pharmacy_id            Int?        
   sales_list             sales_list[]
   sales_invoice          sales_invoice[]
   users                  user_details? @relation(fields: [customer_id],references: [id])
+  pharmacy               pharmacy_details? @relation(fields: [pharmacy_id],references: [id])
   pharmacyquotation      pharmacyquotation[]
+  
 }
 
   model pharmacy_medicines{
