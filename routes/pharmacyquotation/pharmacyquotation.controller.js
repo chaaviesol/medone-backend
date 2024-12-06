@@ -193,7 +193,7 @@ const getpharmacies = async (request, response) => {
         },
       },
     });
-    console.log({ finddata });
+
     if (
       finddata &&
       (finddata.so_status === "Placed" || finddata.so_status === "placed")
@@ -215,7 +215,6 @@ const getpharmacies = async (request, response) => {
     }
 
     pincode = finddata.pincode;
-    console.log({ pincode });
     const product_ids =
       finddata?.sales_list.map((item) => item.product_id) || [];
 
@@ -267,18 +266,15 @@ const getpharmacies = async (request, response) => {
     // pharmacies = pharmacies.slice(0, 3);
     const givenPincode = pincode;
     function findNearestPinCodes(pharmacies, givenPincode, count = 3) {
-      // Sort pin codes by the absolute difference from the given pincode
       pharmacies.sort(
         (a, b) =>
           Math.abs(a.pincode - givenPincode) -
           Math.abs(b.pincode - givenPincode)
       );
 
-      // Return the top 'count' nearest pin codes
       return pharmacies.slice(0, count);
     }
 
-    // Get the nearest 3 pin codes
     const nearestPharmacies = findNearestPinCodes(pharmacies, givenPincode);
 
     // // Check product availability and add count
@@ -319,7 +315,6 @@ const getpharmacies = async (request, response) => {
     logger.error(
       `Internal server error: ${error.message} in pharmacy-assignpharmacy API`
     );
-    console.error(error);
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -330,7 +325,6 @@ const getpharmacies = async (request, response) => {
 const assignpharmacy = async (request, response) => {
   try {
     const { sales_id, pharmacy_id, status } = request.body;
-console.log(request.body)
     const datetime = getCurrentDateInIST();
 
     // Validate the required fields
@@ -370,7 +364,6 @@ console.log(request.body)
     logger.error(
       `Internal server error: ${error.message} in pharmacy-assignpharmacy API`
     );
-    console.error(error);
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -463,8 +456,6 @@ const getorderdetailsss = async (request, response) => {
       },
     });
 
-    console.log("Sales Invoice:", getdata);
-
     let user_name = null;
     if (getdata?.users?.name) {
       user_name = decrypt(getdata.users.name, secretKey);
@@ -473,12 +464,8 @@ const getorderdetailsss = async (request, response) => {
       const salesInvoice = await Promise.all(
         getdata.sales_invoice[0]?.medicine_timetable.map(
           async (item, index) => {
-            console.log(`Processing item ${index}:`, item);
-
             const detailedMedicines = await Promise.all(
               (item.medicine || []).map(async (medicine, medIndex) => {
-                console.log(`Processing medicine ${medIndex}:`, medicine);
-
                 const medicinedetails = await prisma.sales_list.findFirst({
                   where: { product_id: medicine.id, sales_id: sales_id },
                   select: {
@@ -494,11 +481,6 @@ const getorderdetailsss = async (request, response) => {
                     },
                   },
                 });
-
-                console.log(
-                  `Details for medicine ${medicine.id}:`,
-                  medicinedetails
-                );
 
                 return {
                   ...medicine,
@@ -643,15 +625,15 @@ const getorderdetails = async (request, response) => {
           }
         : product;
     });
-    const packed=await prisma.pharmacyquotation.findFirst({
-      where:{
-        sales_id:sales_id
+    const packed = await prisma.pharmacyquotation.findFirst({
+      where: {
+        sales_id: sales_id,
       },
-      select:{
-        Stmodified_date:true
-      }
-    })
-    console.log({packed})
+      select: {
+        Stmodified_date: true,
+      },
+    });
+    console.log({ packed });
     // Respond with transformed data
     response.status(200).json({
       success: true,
@@ -672,7 +654,7 @@ const getorderdetails = async (request, response) => {
         prescription_image: getdata.prescription_image,
         patient_name: getdata.patient_name,
         products: combinedProducts,
-        packedDate:packed?.Stmodified_date || "",
+        packedDate: packed?.Stmodified_date || "",
         user_name,
       },
     });
