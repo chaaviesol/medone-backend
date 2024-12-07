@@ -3,9 +3,11 @@ const prisma = new PrismaClient();
 const logDirectory = "./logs";
 const winston = require("winston");
 // const crypto = require('crypto');
-
+const admin = require('../../firebase')
 const bcrypt = require("bcrypt");
 const { messaging } = require("firebase-admin");
+const nodemailer = require('nodemailer')
+
 
 
 
@@ -505,6 +507,258 @@ const getproductspharmacy = async (request, response) => {
 };
 
 
+//getting notification while assinging the order
+const assignpharmacy = async (request, response) => {
+  try {
+    const { sales_id, pharmacy_id, status,fcmToken } = request.body;
+    const datetime = getCurrentDateInIST();
+
+    // Validate the required fields
+    if (!sales_id || !pharmacy_id) {
+      return response.status(400).json({
+        error: true,
+        message: "sales_id and pharmacy_id can't be null or empty.",
+      });
+    }
+
+    const add = await prisma.pharmacyquotation.create({
+      data: {
+        status: status,
+        sales_id: sales_id,
+        pharmacy_id: pharmacy_id,
+        created_date: datetime,
+        Stmodified_date: datetime,
+      },
+    });
+    const update = await prisma.sales_order.update({
+      where: {
+        sales_id: sales_id,
+      },
+      data: {
+        pharmacy_id: pharmacy_id,
+      },
+    });
+    if(update){
+      const message = {
+        notifiaction:{
+          title:"Pharmacy Assigned",
+          body:`Your pharmacy with pharmacy id ${pharmacy_id} has been assigned with some orders`
+        },
+        toekn:fcmToken
+      }
+    
+    try{
+      await admin.messaging().send(message)
+      console.log("Notification send Successfully")
+    }catch(err){
+      console.error({err})
+    }
+  }
+    if (add) {
+      return response.status(200).json({
+        success: true,
+        error: false,
+        message: "Pharmacy assigned successfully.",
+      });
+    }
+  } catch (error) {
+    logger.error(`Internal server error: ${error.message} in pharmacy-assignpharmacy API`);
+    
+    response.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+
+//add token for pharmacy
+const addTokenPh = async(req,res)=>{
+  try{
+    const {id,token} = req.body
+    if(id && token){
+    const addToken = await prisma.pharmacy_details.update({
+      where:{
+        id:id
+      },
+      data:{
+        token:token
+      }
+    })
+    console.log({addToken})
+    return res.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull..........",
+      data:addToken
+    })
+  }else{
+    return res.status(404).json({
+      error:true,
+      success:false,
+      message:"id and token are required........."
+    })
+  }
+  } catch (error) {
+    logger.error(`Internal server error: ${error.message} in pharmacy-addTokenPh API`);
+    
+    response.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+////change password////
+const changePassword = async(req,res)=>{
+  try{
+    const {pharmacy_id,password} = req.body
+    if(pharmacy_id && password){
+      const findUser = await prisma.pharmacy_details.findFirst({
+        where:{
+          id:pharmacy_id
+        }
+      })
+      console.log({findUser})
+      if(findUser){
+        const hashedpassword = await bcrypt.hash(password, 10);
+        const change_password = await prisma.pharmacy_details.update({
+          where:{
+            id:pharmacy_id
+          },
+          data:{
+            password:hashedpassword
+          }
+        })
+        console.log({change_password})
+      
+      return res.status(200).json({
+        error:false,
+        succes:true,
+        message:"Successfully changed the password............",
+        data:change_password
+      })
+    }else{
+      return res.status(404).json({
+        error:true,
+        succes:false,
+        message:"user not found............",
+      })
+    }
+     }else{
+      return res.status(200).json({
+        error:false,
+        succes:true,
+        message:"pharmacy id and password are required..............",
+      
+      })
+     }
+
+  }catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in pharmacyquotation-changePassword API`
+    );
+    console.error(error);
+    return response.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+////forgot password//////
+// const forgotPassword = async(req,res)=>{
+//   try{
+
+//   }catch (error) {
+//     logger.error(
+//       `Internal server error: ${error.message} in pharmacyquotation-changePassword API`
+//     );
+//     console.error(error);
+//     return response.status(500).json({ error: "Internal Server Error" });
+//   } finally {
+//     await prisma.$disconnect();
+//   }
+// }
+
+const forgot_password = async (req, res) => {
+  const { email } = req.body
+  try {
+
+    const check_user = await prisma.pharmacy_details.findFirst({
+      where: {
+        email: email
+      }
+
+    })
+    // console.log("check_user----",check_user)
+    if (check_user) {
+      // console.log("first")
+      // const randomPassword = crypto.randomBytes(8).toString('hex');
+      function generateOTP() {
+        // Generate a random 5-digit number
+        const otp = Math.floor(10000 + Math.random() * 90000);
+        return otp.toString();
+      }
+
+      const randomOTP = generateOTP();
+      console.log(randomOTP);
+      const hashedPassword = await bcrypt.hash(randomOTP, 10)
+      await prisma.pharmacy_details.updateMany({
+        where: {
+          email: email
+        },
+        data: {
+          password: hashedPassword
+        }
+      })
+      const transpoter = nodemailer.createTransport({
+        host: "smtp.zoho.in",
+        port: 465,
+        auth: {
+          user: "support@chaavie.com",
+          pass: "GWExAA8yGEnC",
+        },
+      });
+      const mailOptions = {
+        from: "support@chaavie.com",
+        to: email,
+        subject: 'new password',
+        text: `Dear user ,\nYour new password:\nPassword: ${randomOTP}\n\nThank you.`,
+      }
+      transpoter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.error("error sending in mail:-----", error);
+          res.status(400).json({
+            error: true,
+            success: false,
+            meassage: "Error happend in sending the mail"
+          })
+
+        } else {
+          res.status(200).json({
+            error: false,
+            success: true,
+            message: "new password send successfully",
+            data: check_user
+          })
+        }
+      })
+    } else {
+      console.log("user not found")
+      res.status(404).json({
+        error: true,
+        success: false,
+        message: "user with entered mail not found"
+      })
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in pharmacyquotation-forgot_password API`
+    );
+    console.error(error);
+    return response.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
 
 module.exports = {
     chemist_login,
@@ -513,5 +767,9 @@ module.exports = {
     getOrder,
     orderResponse,
     getConfirmedOrder,
-    getproductspharmacy
+    getproductspharmacy,
+    assignpharmacy,
+    addTokenPh,
+    changePassword,
+    forgot_password
 }

@@ -221,6 +221,7 @@ model pharmacy_details{
     password                 String?
     pincode                  Int?
     created_by               Int? 
+    token                    String?
     pharmacyquotation        pharmacyquotation[]
     pharmacy_medicines       pharmacy_medicines[]
     sales_order              sales_order[]   
