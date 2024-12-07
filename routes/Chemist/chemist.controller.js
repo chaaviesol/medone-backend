@@ -170,7 +170,7 @@ const chemist_profile = async(req,res)=>{
     })
     console.log({findchemist})
    
-    return res.status(200).json({
+    return res.status(404).json({
       error:false,
       success:true,
       message:"successfull.......",
@@ -333,7 +333,7 @@ const getConfirmedOrder = async (req, res) => {
       where: {
         pharmacy_id: chemistId,
         status: {
-          in: ["Packed", "Accepted", "ready to ship"],
+          in: ["packed", "Accepted", "ready to ship"],
         },
       },
     });
