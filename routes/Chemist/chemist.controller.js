@@ -157,7 +157,7 @@ const chemist_profile = async(req,res)=>{
   try{
     const {chemistId} = req.body
      if(!chemistId){
-      return res.status(200).json({
+      return res.status(404).json({
         error:true,
         success:false,
         message:"chemist id is required..........."
@@ -170,7 +170,7 @@ const chemist_profile = async(req,res)=>{
     })
     console.log({findchemist})
    
-    return res.status(404).json({
+    return res.status(200).json({
       error:false,
       success:true,
       message:"successfull.......",
@@ -353,7 +353,7 @@ const getConfirmedOrder = async (req, res) => {
         },
       },
     });
-
+   
     if (getorder.length === 0) {
       return res.status(404).json({
         error: true,
@@ -390,9 +390,22 @@ const getConfirmedOrder = async (req, res) => {
           productName: getProduct ? getProduct.name : null,
         });
       }
-
+      
+      ////get net amount
+      const getAmt = await prisma.sales_order.findFirst({
+        where:{
+          sales_id:salesId
+        },
+        select:{
+          total_amount:true
+        }
+      })
+      console.log({getAmt})
+      const price = getAmt.total_amount
+      console.log({price})
       orders.push({
         ...getorder[i],
+        price:price,
         productlist, // Include the enhanced product list
       });
     }
