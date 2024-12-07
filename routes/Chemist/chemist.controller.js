@@ -204,7 +204,11 @@ const getOrder = async (req, res) => {
       where: {
         pharmacy_id: chemistId,
         status: "requested",
+        
       },
+      orderBy:{
+        created_date:"desc"
+      }
     });
 
     if (getCompleteOrder.length === 0) {
@@ -216,7 +220,7 @@ const getOrder = async (req, res) => {
     }
 
     const order = [];
-
+    
     for (let i = 0; i < getCompleteOrder.length; i++) {
       const salesId = getCompleteOrder[i].sales_id;
 
@@ -243,9 +247,21 @@ const getOrder = async (req, res) => {
           productName: getProduct ? getProduct.name : null,
         });
       }
-
+    ///get price of the order
+      const getPrice = await prisma.sales_order.findFirst({
+      where:{
+        sales_id:salesId
+      },
+      select:{
+        total_amount:true
+      }
+     })
+     console.log({getPrice})
+     const price = getPrice.total_amount
+     console.log({price})
       order.push({
         ...getCompleteOrder[i],
+        product_amt:price,
         productlist, // Include the modified product list with product names
       });
     }
