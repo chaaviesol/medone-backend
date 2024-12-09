@@ -210,7 +210,6 @@ const productadd = async (request, response) => {
 
     if (id) {
       const product_images = request.files;
-      console.log({ product_images });
       let index = 0;
       let productImage = {};
 
@@ -218,18 +217,12 @@ const productadd = async (request, response) => {
         let keyName = `image${i + 1}`;
 
         if (images[i].file) {
-          console.log(index);
-          console.log(`Using uploaded file for ${keyName}`);
           productImage[keyName] = product_images[index].location;
           index = index + 1;
         } else {
-          console.log(`Using existing image URL for ${keyName}: ${images[i]}`);
           productImage[keyName] = images[i];
         }
       }
-
-      console.log("heyyyyyyyyyyyyyyyyyyy");
-      console.log({ productImage });
 
       const create = await prisma.generic_product.update({
         where: {
@@ -263,7 +256,7 @@ const productadd = async (request, response) => {
         let keyName = `image${i + 1}`;
         productImage[keyName] = product_images[i]?.location;
       }
-      console.log({ productImage });
+
       const create = await prisma.generic_product.create({
         data: {
           name,
@@ -353,7 +346,6 @@ const getproducts = async (request, response) => {
 };
 
 const addToCart = async (request, response) => {
-  console.log("addddddddttoooo", request.body);
   const { prod_id, quantity } = request.body;
   const user_id = request.user.userId;
   const datetime = getCurrentDateInIST();
@@ -412,7 +404,7 @@ const addToCart = async (request, response) => {
     logger.error(
       `Internal server error: ${error.message} in pharmacy--> addToCart API`
     );
-    console.log(error);
+
     response.status(500).json({
       error: true,
       message: "Internal server error",
@@ -524,7 +516,6 @@ const removeFromCart = async (request, response) => {
 ////////////sales_order////////////
 
 const salesorder = async (request, response) => {
-  console.log("gffffffffffffff", request.body);
   const usertype = request.user.userType;
   const {
     name, //customername
@@ -590,7 +581,6 @@ const salesorder = async (request, response) => {
       const newid = existingsalesOrders.length + 1;
       const formattedNewId = ("0000" + newid).slice(-4);
       const so_number = so_num + lastTwoDigits + formattedNewId;
-      console.log({ so_number });
       let total_amount_fixed;
 
       if (total_amount) {
@@ -645,7 +635,6 @@ const salesorder = async (request, response) => {
           },
         });
 
-        console.log("successssssssssss");
         return response.status(200).json({
           success: true,
           message: "Successfully placed your order",
@@ -666,8 +655,6 @@ const salesorder = async (request, response) => {
           imageprescription[keyName] = prescription_image[i].location;
         }
 
-        console.log("heyyy");
-
         await prisma.sales_order.update({
           where: {
             sales_id: sales_order.sales_id,
@@ -686,7 +673,7 @@ const salesorder = async (request, response) => {
       }
     });
   } catch (error) {
-    console.log(error);
+
     logger.error(`Internal server error: ${error.message} in salesorder API`);
     response.status(500).json({
       error: true,
@@ -698,178 +685,6 @@ const salesorder = async (request, response) => {
 };
 
 /////////////new salesorder with prescription and prescription order
-
-// const salesorder = async (request, response) => {
-//   console.log("gffffffffffffff", request.body);
-//   const usertype = request.user.userType;
-//   const {
-//     name, //customername
-//     total_amount,
-//     so_status,
-//     remarks,
-//     order_type,
-//     products,
-//     delivery_address,
-//     city,
-//     district,
-//     pincode,
-//     contact_no,
-//   } = request.body;
-
-//   const userId = parseInt(request.user.userId);
-//   let sales_order;
-
-//   try {
-//     if (!userId) {
-//       logger.error("user_id is undefined in salesorder API");
-//       return response.status(400).json({
-//         error: true,
-//         message: "user_id is required",
-//       });
-//     }
-//     if (usertype != "customer") {
-//       return response.status(400).json({
-//         error: true,
-//         message: "Please login as a customer",
-//       });
-//     }
-//     if (!delivery_address || !contact_no) {
-//       return response.status(400).json({
-//         error: true,
-//         message: "Missing delivery details",
-//       });
-//     }
-
-//     if (!order_type) {
-//       return response.status(400).json({
-//         error: true,
-//         message: "Missing order_type field",
-//       });
-//     }
-
-//     await prisma.$transaction(async (prisma) => {
-//       const currentDate = new Date();
-//       const year = currentDate.getFullYear();
-
-//       const lastTwoDigits = year.toString().slice(-2);
-//       const so_num = "SO";
-//       const startOfYear = new Date(new Date().getFullYear(), 0, 1);
-//       const endOfYear = new Date(new Date().getFullYear() + 1, 0, 1);
-//       const existingsalesOrders = await prisma.sales_order.findMany({
-//         where: {
-//           created_date: {
-//             gte: startOfYear,
-//             lt: endOfYear,
-//           },
-//         },
-//       });
-//       const newid = existingsalesOrders.length + 1;
-//       const formattedNewId = ("0000" + newid).slice(-4);
-//       const so_number = so_num + lastTwoDigits + formattedNewId;
-//       console.log({ so_number });
-//       let total_amount_fixed;
-
-//       if (total_amount) {
-//         total_amount_fixed = parseFloat(total_amount).toFixed(2);
-//       }
-
-//       const datetime = getCurrentDateInIST();
-//       const prescription_image = request?.files;
-//       let imageprescription = {};
-
-//       if (!prescription_image || prescription_image.length === 0) {
-//         return response.status(400).json({
-//           message: "Please attach at least one report",
-//           error: true,
-//         });
-//       }
-
-//       for (i = 0; i < prescription_image?.length; i++) {
-//         let keyName = `image${i + 1}`;
-//         imageprescription[keyName] = prescription_image[i].location;
-//       }
-
-//       sales_order = await prisma.sales_order.create({
-//         data: {
-//           so_number: so_number,
-//           total_amount: total_amount_fixed,
-//           so_status: "placed",
-//           remarks,
-//           order_type,
-//           created_date: datetime,
-//           customer_id: userId,
-//           delivery_address: delivery_address,
-//           city,
-//           district,
-//           contact_no: contact_no,
-//           prescription_image: imageprescription,
-//           pincode: parseInt(pincode),
-//         },
-//       });
-
-//       if (order_type != "prescription") {
-//         for (let product of products) {
-//           const net_amount = parseInt(product.quantity) * parseInt(product.mrp);
-
-//           await prisma.sales_list.create({
-//             data: {
-//               sales_order: {
-//                 connect: {
-//                   sales_id: sales_order.sales_id,
-//                 },
-//               },
-//               generic_prodid: {
-//                 connect: {
-//                   id: product.product_id,
-//                 },
-//               },
-//               order_qty: parseInt(product.quantity),
-//               net_amount: net_amount,
-//               created_date: datetime,
-//             },
-//           });
-//         }
-
-//         await prisma.customer_cart.deleteMany({
-//           where: {
-//             user_id: userId,
-//           },
-//         });
-
-//         console.log("successssssssssss");
-//         return response.status(200).json({
-//           success: true,
-//           message: "Successfully placed your order",
-//         });
-//       } else if (order_type === "prescription") {
-//         await prisma.sales_order.update({
-//           where: {
-//             sales_id: sales_order.sales_id,
-//           },
-//           data: {
-//             patient_name: name,
-//             prescription_image: imageprescription,
-//             created_date: datetime,
-//           },
-//         });
-
-//         response.status(200).json({
-//           success: true,
-//           message: "Prescription submitted.",
-//         });
-//       }
-//     });
-//   } catch (error) {
-//     console.log(error);
-//     logger.error(`Internal server error: ${error.message} in salesorder API`);
-//     response.status(500).json({
-//       error: true,
-//       message: "Internal server error",
-//     });
-//   } finally {
-//     await prisma.$disconnect();
-//   }
-// };
 
 const getasalesorder = async (request, response) => {
   const secretKey = process.env.ENCRYPTION_KEY;
@@ -1109,7 +924,6 @@ const allsalelistorders = async (request, response) => {
 };
 
 const checkaddress = async (request, response) => {
-  console.log("checkDDRESSS");
   try {
     const user_id = request.user.userId;
 
@@ -1125,7 +939,7 @@ const checkaddress = async (request, response) => {
           district: true,
         },
       });
-      console.log({ check });
+
       if (check.length > 0) {
         const defaultaddress = [...new Set(check)];
         return response.status(200).json({
@@ -1266,7 +1080,7 @@ const getinvsalesorder = async (request, response) => {
             pharmacy_name: true,
             generic_prodid: {
               select: {
-                id:true,
+                id: true,
                 name: true,
                 category: true,
                 mrp: true,
@@ -1288,6 +1102,7 @@ const getinvsalesorder = async (request, response) => {
       batch_no: "",
       timing: [],
       afterFd_beforeFd: "",
+      no_of_days: "",
       takingQuantity: "",
       totalQuantity: item?.order_qty || "",
       hsn: item?.generic_prodid?.hsn || "",
@@ -1304,6 +1119,7 @@ const getinvsalesorder = async (request, response) => {
         afterFd_beforeFd: "",
         takingQuantity: "",
         totalQuantity: "",
+        no_of_days: "",
         hsn: "",
         mrp: "",
         selling_price: "",
@@ -1388,7 +1204,6 @@ const createinvoice = async (request, response) => {
           // Check if the category array includes "MEDICINES"
 
           if (category.some((item) => item.toLowerCase() === "medicines")) {
-            console.log("insidee");
             const medicine = [{ id: id, name: name }];
             let newtiming = [];
 
@@ -1427,7 +1242,7 @@ const createinvoice = async (request, response) => {
               },
             });
           }
-          console.log("opop");
+
           await prisma.sales_list.updateMany({
             where: {
               sales_id: sales_id,
@@ -1447,7 +1262,6 @@ const createinvoice = async (request, response) => {
       success: true,
     });
   } catch (error) {
-    console.log(error);
     logger.error(
       `Internal server error: ${error.message} in createinvoice API`
     );
@@ -1628,7 +1442,7 @@ const myorders = async (request, response) => {
   try {
     const user_id = request.user.userId;
     const usertype = request.user.userType;
-
+console.log("userrrrrrrrr",request.user)
     if (!user_id) {
       return response.status(400).json({
         error: true,
@@ -1641,7 +1455,7 @@ const myorders = async (request, response) => {
         message: "Please login as a customer",
       });
     }
-    const salesorders = await prisma.sales_order.findMany({
+    const salesordersdata = await prisma.sales_order.findMany({
       where: {
         customer_id: user_id,
       },
@@ -1679,7 +1493,80 @@ const myorders = async (request, response) => {
         },
       },
     });
-    if (salesorders.length > 0) {
+    console.log({salesordersdata})
+    if (salesordersdata.length > 0) {
+      const salesorders = [];
+
+      for (const order of salesordersdata) {
+        const { sales_id, so_status, created_date, updated_date } = order;
+        let data = {
+          placed: true,
+          placedDate: created_date,
+          confirmed: false,
+          confirmedDate: null,
+          packed: false,
+          packedDate: null,
+          shipped: false,
+          shippedDate: null,
+          delivered: false,
+          deliveryDate: null,
+        };
+
+        // Handle status-specific logic
+        if (so_status === "confirmed") {
+          data = {
+            ...data,
+            confirmed: true,
+            confirmedDate: updated_date,
+          };
+        } else if (so_status === "packed" || so_status === "shipped" || so_status === "delivered") {
+          const packedData = await prisma.pharmacyquotation.findFirst({
+            where: { sales_id: sales_id },
+            select: { Stmodified_date: true },
+          });
+
+          if (packedData) {
+            data = {
+              ...data,
+              confirmed: true,
+              confirmedDate: updated_date,
+              packed: true,
+              packedDate: packedData.Stmodified_date,
+            };
+          }
+
+          if (so_status === "shipped" || so_status === "delivered") {
+            const deliveryAgent = await prisma.deliveryassign.findFirst({
+              where: { sales_id: sales_id },
+              select: {
+                status: true,
+                assigned_date: true,
+                delivered_date: true,
+              },
+            });
+
+            if (deliveryAgent) {
+              data = {
+                ...data,
+                shipped: true,
+                shippedDate: deliveryAgent.assigned_date,
+              };
+
+              if (so_status === "delivered") {
+                data = {
+                  ...data,
+                  delivered: true,
+                  deliveryDate: deliveryAgent.delivered_date,
+                };
+              }
+            }
+          }
+        }
+
+        // Append enriched data to the order
+        salesorders.push({ ...order, statusDetails: data });
+      }
+  
       return response.status(200).json({
         success: true,
         error: false,
@@ -1739,7 +1626,7 @@ const updatedchat = async (request, response) => {
 
     if (userInput.toLowerCase() !== "quit") {
       const result = await chatSession.sendMessage(userInput);
-      // console.log(result.response.text());
+
       response.status(200).json({
         message: result.response.candidates[0].content.parts[0]?.text,
       });
