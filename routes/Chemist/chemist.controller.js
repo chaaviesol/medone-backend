@@ -778,6 +778,12 @@ const get_notification = async(req,res)=>{
       }
     })
     console.log({getNotification})
+    return res.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull...............",
+      data:getNotification
+    })
   }catch (error) {
     logger.error(
       `Internal server error: ${error.message} in chemist-get_notification API`
