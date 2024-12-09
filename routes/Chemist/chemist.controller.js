@@ -7,7 +7,7 @@ const admin = require('../../firebase')
 const bcrypt = require("bcrypt");
 const { messaging } = require("firebase-admin");
 const nodemailer = require('nodemailer')
-
+const {getCurrentDateInIST} = require('../../utils')
 
 
 
@@ -209,7 +209,7 @@ const getOrder = async (req, res) => {
         
       },
       orderBy:{
-        created_date:"desc"
+        id:"asc"
       }
     });
 
@@ -290,7 +290,7 @@ const orderResponse = async(req,res)=>{
   try{
     const {quotationId,status} = req.body
    if(quotationId && status){
-    const addResponse = await prisma.pharmacyquotation.updateMany({
+    const addResponse = await prisma.pharmacyquotation.update({
       where:{
         id:quotationId
       },
@@ -299,10 +299,10 @@ const orderResponse = async(req,res)=>{
       }
     })
     console.log({addResponse})
-
+    
     const addPackedStatus = await prisma.sales_order.updateMany({
       where:{
-        sales_id:quotationId
+        sales_id:addResponse.sales_id
       },
       data:{
         so_status:"packed"
@@ -497,7 +497,7 @@ const getproductspharmacy = async (request, response) => {
     });
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in pharmacyquotation-getproducts API`
+      `Internal server error: ${error.message} in chemist-getproducts API`
     );
     console.error(error);
     return response.status(500).json({ error: "Internal Server Error" });
@@ -528,6 +528,7 @@ const assignpharmacy = async (request, response) => {
         pharmacy_id: pharmacy_id,
         created_date: datetime,
         Stmodified_date: datetime,
+        
       },
     });
     const update = await prisma.sales_order.update({
@@ -538,13 +539,26 @@ const assignpharmacy = async (request, response) => {
         pharmacy_id: pharmacy_id,
       },
     });
+    
     if(update){
+      // const messageNotification = 
+      const addNotification = await prisma.pharmacy_notification.create({
+    
+       data:{
+        pharmacyId:pharmacy_id,
+        message:"New order has been assigned",
+        created_date:datetime,
+        view_status:"Not seen"
+       }
+      })
+      console.log({addNotification})
+
       const message = {
-        notifiaction:{
+        notification:{
           title:"Pharmacy Assigned",
-          body:`Your pharmacy with pharmacy id ${pharmacy_id} has been assigned with some orders`
+          body:"New order assigned.....❗"
         },
-        toekn:fcmToken
+        token:fcmToken
       }
     
     try{
@@ -562,8 +576,8 @@ const assignpharmacy = async (request, response) => {
       });
     }
   } catch (error) {
-    logger.error(`Internal server error: ${error.message} in pharmacy-assignpharmacy API`);
-    
+    logger.error(`Internal server error: ${error.message} in chemist-assignpharmacy API`);
+    console.log({error})
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -599,7 +613,7 @@ const addTokenPh = async(req,res)=>{
     })
   }
   } catch (error) {
-    logger.error(`Internal server error: ${error.message} in pharmacy-addTokenPh API`);
+    logger.error(`Internal server error: ${error.message} in chemist-addTokenPh API`);
     
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
@@ -654,7 +668,7 @@ const changePassword = async(req,res)=>{
 
   }catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in pharmacyquotation-changePassword API`
+      `Internal server error: ${error.message} in chemist-changePassword API`
     );
     console.error(error);
     return response.status(500).json({ error: "Internal Server Error" });
@@ -664,20 +678,6 @@ const changePassword = async(req,res)=>{
 }
 
 ////forgot password//////
-// const forgotPassword = async(req,res)=>{
-//   try{
-
-//   }catch (error) {
-//     logger.error(
-//       `Internal server error: ${error.message} in pharmacyquotation-changePassword API`
-//     );
-//     console.error(error);
-//     return response.status(500).json({ error: "Internal Server Error" });
-//   } finally {
-//     await prisma.$disconnect();
-//   }
-// }
-
 const forgot_password = async (req, res) => {
   const { email } = req.body
   try {
@@ -751,7 +751,75 @@ const forgot_password = async (req, res) => {
     }
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in pharmacyquotation-forgot_password API`
+      `Internal server error: ${error.message} in chemist-forgot_password API`
+    );
+    console.error(error);
+    return response.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+
+//get notification
+const get_notification = async(req,res)=>{
+  try{
+    const{pharmacyId} = req.body
+    if(!pharmacyId){
+      return res.status(404).json({
+        error:true,
+        success:false,
+        message:"PharmacyId is required..............."
+      })
+    }
+    const getNotification = await prisma.pharmacy_notification.findMany({
+      where:{
+        pharmacyId:pharmacyId
+      }
+    })
+    console.log({getNotification})
+  }catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in chemist-get_notification API`
+    );
+    console.error(error);
+    return response.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+//add seen status
+const addSeenStatus = async(req,res)=>{
+  try{
+    const {pharmacyId,notificationId} = req.body
+    if(pharmacyId && notificationId){
+    const addStatus = await prisma.pharmacy_notification.update({
+      where:{
+        pharmacyId:pharmacyId,
+        id:notificationId
+      },
+      data:{
+        view_status:"Seen"
+      }
+    })
+   return res.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull.....",
+      data:addStatus
+    })
+  }else{
+    return res.status(400).json({
+      error:true,
+      success:false,
+      message:"pharmacyid and notificationId are required.....",
+      data:addStatus
+    })
+  }
+  }catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in chemist-addSeenStatus API`
     );
     console.error(error);
     return response.status(500).json({ error: "Internal Server Error" });
@@ -771,5 +839,7 @@ module.exports = {
     assignpharmacy,
     addTokenPh,
     changePassword,
-    forgot_password
+    forgot_password,
+    get_notification,
+    addSeenStatus
 }

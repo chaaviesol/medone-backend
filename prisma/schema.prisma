@@ -275,3 +275,11 @@ model pharmacy_details{
     updated_date             DateTime?
     pharmacy                 pharmacy_details? @relation(fields: [pharmacy_id],references: [id])  
   }
+
+  model pharmacy_notification{
+    id                       Int @id @default(autoincrement())
+    pharmacyId               Int?
+    message                  String?
+    view_status              String?
+    created_date             DateTime
+  }

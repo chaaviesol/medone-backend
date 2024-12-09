@@ -1,5 +1,6 @@
 const express = require("express")
-const {chemist_login,addChemist,
+const {chemist_login,
+    addChemist,
     chemist_profile,
     getOrder,
     orderResponse,
@@ -8,7 +9,9 @@ const {chemist_login,addChemist,
     assignpharmacy,
     addTokenPh,
     changePassword,
-    forgot_password
+    forgot_password,
+    get_notification,
+    addSeenStatus
 } = require('./chemist.controller')
 
 const chemistRouter = express.Router()
@@ -26,8 +29,8 @@ chemistRouter.post('/assignpharmacy',assignpharmacy)
 chemistRouter.post('/addTokenPh',addTokenPh)
 chemistRouter.post('/changePassword',changePassword)
 chemistRouter.post('/forgot_password',forgot_password)
-
-
+chemistRouter.post('/get_notification',get_notification)
+chemistRouter.post('/addSeenStatus',addSeenStatus)
 
 
 
