@@ -202,7 +202,7 @@ const getOrder = async (req, res) => {
       });
     }
 
-    const getCompleteOrder = await prisma.pharmacyquotation.findMany({
+    const getCompleteOrder = await prisma.pharmacy_assign.findMany({
       where: {
         pharmacy_id: chemistId,
         status: "requested",
@@ -290,7 +290,7 @@ const orderResponse = async(req,res)=>{
   try{
     const {quotationId,status} = req.body
    if(quotationId && status){
-    const addResponse = await prisma.pharmacyquotation.update({
+    const addResponse = await prisma.pharmacy_assign.update({
       where:{
         id:quotationId
       },
@@ -347,7 +347,7 @@ const getConfirmedOrder = async (req, res) => {
       });
     }
 
-    const getorder = await prisma.pharmacyquotation.findMany({
+    const getorder = await prisma.pharmacy_assign.findMany({
       where: {
         pharmacy_id: chemistId,
         status: {
@@ -521,7 +521,7 @@ const assignpharmacy = async (request, response) => {
       });
     }
 
-    const add = await prisma.pharmacyquotation.create({
+    const add = await prisma.pharmacy_assign.create({
       data: {
         status: status,
         sales_id: sales_id,

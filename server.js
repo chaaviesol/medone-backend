@@ -20,6 +20,10 @@ const { checkPrime } = require("crypto");
 const chemistRouter = require("./routes/Chemist/chemist.routes");
 const prisma = new PrismaClient();
 
+//for zoom meeting////
+const axios = require('axios')
+// const bodyParser = require('body-parser')
+
 
 server.use(
   cors({
@@ -50,174 +54,6 @@ if (process.env.NODE_ENV === "development") {
 
 
 
-
-
-
-
-
-
-
-
-
-
-// const sendNotification = async (token, title, message) => {
-//   const messagePayload = {
-//     token: token,
-//     notification: {
-//       title: title,
-//       body: message
-//     },
-//     android: {
-//       priority: "high"
-//     },
-//     apns: {  //apple push notification service
-//       payload: {
-//         aps: {
-//           contentAvailable: true
-//         }
-//       }
-//     },
-//     // time_to_live: 120,  // TTL in seconds (1 hour)
-//   };
-
-
-// };
-
-// const scheduleNotificationForUser = async (userId) => {
-//   try {
-//     const user = await prisma.user_details.findUnique({
-//       where: {
-//         id: userId
-//       }
-//     });
-
-//     if (!user) {
-//       console.log("User not found");
-//       return "User not found";
-//     }
-
-//     const getNotification = await prisma.notification.findMany({
-//       where: {
-//         user_id: userId
-//       }
-//     });
-
-//     for (let notification of getNotification) {
-//       const message = notification.message;
-//       console.log("Sending notification with message:", message);
-
-//       // Send the notification
-//       const notificationResponse = await sendNotification(user.token, "Reminder", message);
-//       console.log(notificationResponse);
-//     }
-
-//     return "Notifications scheduled successfully!";
-//   } catch (error) {
-//     console.error("Error in scheduleNotificationForUser:", error);
-//     return "Error scheduling notifications";
-//   }
-// };
-
-// server.post('/send-notification', async (req, res) => {
-//   const { userId } = req.body;
-
-//   try {
-//     const findnotification =  await prisma.notification.update({
-//       where:{
-//         user_id:userId,
-//         view_status:"false"
-//       },
-//       data:{
-//         view_status:"true"
-//       }
-//     })
-//     console.log({findnotification})
-//     const getNotification = await prisma.notification.findMany({
-//       where: {
-//         user_id: userId,
-//          status:"Not seen",
-//          view_status:"true"
-//       },
-     
-     
-//     });
-//     console.log({ getNotification });
-
-//     const notificationMessage = await scheduleNotificationForUser(userId);
-
-//     res.status(200).json({
-//       error: false,
-//       success: true,
-//       message: notificationMessage,
-//       data: getNotification
-//     });
-//   } catch (error) {
-//     console.error("Error in /send-notification:", error);
-//     res.status(500).json({
-//       error: true,
-//       message: "Failed to send notification"
-//     });
-//   }
-// });
-
-// server.post('/send-notification', async (req, res) => {
-//   const { userId } = req.body;
-
-//   try {
-//     // Step 1: Update all notifications with `view_status: false` to `view_status: true`
-//     // const updatedNotifications = await prisma.notification.updateMany({
-//     //   where: {
-//     //     user_id: userId,
-//     //     view_status: "false", // Only update notifications with `view_status: false`
-//     //   },
-//     //   data: {
-//     //     view_status: "true",
-//     //   },
-//     // });
-
-//     // Log how many notifications were updated
-//     // console.log(`Updated ${updatedNotifications.count} notifications for user ${userId}.`);
-
-//     // Step 2: Retrieve all notifications with `view_status: true` but ensure they haven't been "seen"
-//     const getNotification = await prisma.notification.findMany({
-//       where: {
-//         user_id: userId,
-//         status: "Not seen", // Ensure only unseen notifications are fetched
-//         // view_status: "false",
-//       },
-//     });
-
-//     // Log the notifications retrieved
-//     console.log({ getNotification });
-
-//     // Step 3: Call the function to schedule notifications for the user
-//     const notificationMessage = await scheduleNotificationForUser(userId);
-    
-//    if(getNotification){
-//     try {
-//       const response = await admin.messaging().send(messagePayload);
-//       console.log("Successfully sent the notification ----->", response);
-//       return "Notification sent successfully!";
-//     } catch (error) {
-//       console.error("Error sending notification ----->", error);
-//       return `Failed to send notification: ${error.message}`;
-//     }
-//    }
-//     res.status(200).json({
-//       error: false,
-//       success: true,
-//       message: notificationMessage,
-//       data: getNotification,
-//     });
-
-//   } catch (error) {
-//     console.error("Error in /send-notification:", error);
-//     res.status(500).json({
-//       error: true,
-//       message: "Failed to send notification",
-//     });
-//   }
-// });
 
 
 
@@ -331,4 +167,136 @@ const sendNotification = async (token, title, message) => {
 };
 
    
+///////for zoom////////
 
+// const CLIENT_ID = 'sBjEpNMUQO6iFNijmKM8hw';
+// const CLIENT_SECRET = 'TOo0N689dC2Y5zXw4QKtGdMWWRbf8tgl';
+
+
+
+// // Function to generate access token
+// const getAccessToken = async () => {
+//   const tokenUrl = 'https://zoom.us/oauth/token';
+//   const authHeader = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
+
+//   try {
+//     const response = await axios.post(
+//       tokenUrl,
+//       new URLSearchParams({ grant_type: 'client_credentials' }).toString(),
+//       {
+//         headers: {
+//           Authorization: `Basic ${authHeader}`,
+//           'Content-Type': 'application/x-www-form-urlencoded',
+//         },
+//       }
+//     );
+//     return response.data.access_token;
+//   } catch (error) {
+//     console.error('Error fetching access token:', error.response.data);
+//     throw new Error('Failed to generate access token');
+//   }
+// };
+
+// // Function to create a Zoom meeting
+// const createZoomMeeting = async (accessToken) => {
+//   const url = 'https://api.zoom.us/v2/users/me/meetings';
+//   const meetingDetails = {
+//     topic: 'Meeting with User',
+//     type: 2, // Scheduled meeting
+//     start_time: new Date(Date.now() + 3600000).toISOString(), // 1 hour from now
+//     duration: 30, // 30 minutes
+//     timezone: 'UTC',
+//     settings: {
+//       host_video: true,
+//       participant_video: true,
+//     },
+//   };
+
+//   try {
+//     const response = await axios.post(url, meetingDetails, {
+//       headers: {
+//         Authorization: `Bearer ${accessToken}`,
+//         'Content-Type': 'application/json',
+//       },
+//     });
+//     return response.data;
+//   } catch (error) {
+//     console.error('Error creating Zoom meeting:', error.response.data);
+//     throw new Error('Failed to create meeting');
+//   }
+// };
+
+// // Route to create and return a meeting link
+// server.post('/createMeeting', async (req, res) => {
+//   try {
+//     const accessToken = await getAccessToken();
+//     const meetingData = await createZoomMeeting(accessToken);
+//     res.json({
+//       message: 'Meeting created successfully',
+//       join_url: meetingData.join_url,
+//       start_url: meetingData.start_url,
+//     });
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// });
+
+
+
+
+
+
+
+
+
+// const CLIENT_ID = 'sBjEpNMUQO6iFNijmKM8hw';
+// const CLIENT_SECRET = 'TOo0N689dC2Y5zXw4QKtGdMWWRbf8tgl';
+
+// const getAccessToken = async () => {
+//   const tokenUrl = 'https://zoom.us/oauth/token';
+//   const authHeader = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
+
+//   try {
+//     const response = await axios.post(
+//       tokenUrl,
+//       new URLSearchParams({ grant_type: 'client_credentials' }).toString(),
+//       {
+//         headers: {
+//           Authorization: `Basic ${authHeader}`,
+//           'Content-Type': 'application/x-www-form-urlencoded',
+//         },
+//       }
+//     );
+//     return response.data.access_token;  // Access token generated here
+//   } catch (error) {
+//     console.error('Error fetching access token:', error.response.data);
+//     throw new Error('Failed to generate access token');
+//   }
+// };
+// const createZoomMeeting = async (accessToken) => {
+//   const url = 'https://api.zoom.us/v2/users/me/meetings';
+//   const meetingDetails = {
+//     topic: 'Meeting with User',
+//     type: 2, // Scheduled meeting
+//     start_time: new Date(Date.now() + 3600000).toISOString(), // 1 hour from now
+//     duration: 30, // 30 minutes
+//     timezone: 'UTC',
+//     settings: {
+//       host_video: true,
+//       participant_video: true,
+//     },
+//   };
+
+//   try {
+//     const response = await axios.post(url, meetingDetails, {
+//       headers: {
+//         Authorization: `Bearer ${accessToken}`,  // Use access token here
+//         'Content-Type': 'application/json',
+//       },
+//     });
+//     return response.data;
+//   } catch (error) {
+//     console.error('Error creating Zoom meeting:', error.response.data);
+//     throw new Error('Failed to create meeting');
+//   }
+// };
