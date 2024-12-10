@@ -658,7 +658,7 @@ const myorderstatus = async (request, response) => {
       };
 
       if (so_status === "shipped" || so_status === "delivered") {
-        const deliveryAgent = await prisma.deliveryassign.findFirst({
+        const deliveryAgent = await prisma.delivery_assign.findFirst({
           where: { sales_id: sales_id },
           select: {
             status: true,

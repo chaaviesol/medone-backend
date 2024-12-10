@@ -1523,7 +1523,7 @@ console.log("userrrrrrrrr",request.user)
             confirmedDate: updated_date,
           };
         } else if (so_status === "packed" || so_status === "shipped" || so_status === "delivered") {
-          const packedData = await prisma.pharmacyquotation.findFirst({
+          const packedData = await prisma.pharmacy_assign.findFirst({
             where: { sales_id: sales_id },
             select: { Stmodified_date: true },
           });
@@ -1539,7 +1539,7 @@ console.log("userrrrrrrrr",request.user)
           }
 
           if (so_status === "shipped" || so_status === "delivered") {
-            const deliveryAgent = await prisma.deliveryassign.findFirst({
+            const deliveryAgent = await prisma.delivery_assign.findFirst({
               where: { sales_id: sales_id },
               select: {
                 status: true,
