@@ -65,7 +65,7 @@ const getproductspharmacy = async (request, response) => {
     });
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in pharmacyquotation-getproducts API`
+      `Internal server error: ${error.message} in pharmacy_assign-getproducts API`
     );
     return response.status(500).json({ error: "Internal Server Error" });
   } finally {
@@ -97,7 +97,7 @@ const getpharmacies = async (request, response) => {
             product_id: true,
           },
         },
-        pharmacyquotation: {
+        pharmacy_assign: {
           select: {
             pharm_id: {
               select: {
@@ -124,12 +124,12 @@ const getpharmacies = async (request, response) => {
     }
 
     if (
-      Array.isArray(finddata.pharmacyquotation) &&
-      finddata.pharmacyquotation.length > 0
+      Array.isArray(finddata.pharmacy_assign) &&
+      finddata.pharmacy_assign.length > 0
     ) {
       return response.status(200).json({
         success: true,
-        data: finddata.pharmacyquotation,
+        data: finddata.pharmacy_assign,
       });
     }
 
@@ -254,7 +254,7 @@ const assignpharmacy = async (request, response) => {
       });
     }
 
-    const add = await prisma.pharmacyquotation.create({
+    const add = await prisma.pharmacy_assign.create({
       data: {
         status: status,
         sales_id: sales_id,
@@ -281,7 +281,7 @@ const assignpharmacy = async (request, response) => {
     }
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in pharmacyquotation-assignpharmacy API`
+      `Internal server error: ${error.message} in pharmacy_assign-assignpharmacy API`
     );
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
@@ -291,7 +291,7 @@ const assignpharmacy = async (request, response) => {
 
 const getpackedorders = async (request, response) => {
   try {
-    const allorders = await prisma.pharmacyquotation.findMany({
+    const allorders = await prisma.pharmacy_assign.findMany({
       where: {
         status: "packed",
       },
@@ -304,7 +304,7 @@ const getpackedorders = async (request, response) => {
     }
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in  getpackedorders- pharmacyquotation API`
+      `Internal server error: ${error.message} in  getpackedorders- pharmacy_assign API`
     );
     response.status(500).json({
       error: true,
@@ -436,7 +436,7 @@ const getorderdetailsss = async (request, response) => {
     }
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in pharmacyquotation-getorderdetails API`
+      `Internal server error: ${error.message} in pharmacy_assign-getorderdetails API`
     );
     response.status(500).json({
       error: true,
@@ -544,7 +544,7 @@ const getorderdetails = async (request, response) => {
           }
         : product;
     });
-    const packed = await prisma.pharmacyquotation.findFirst({
+    const packed = await prisma.pharmacy_assign.findFirst({
       where: {
         sales_id: sales_id,
       },
@@ -578,7 +578,7 @@ const getorderdetails = async (request, response) => {
     });
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in pharmacyquotation-getorderdetails API`
+      `Internal server error: ${error.message} in pharmacy_assign-getorderdetails API`
     );
     response.status(500).json({
       error: true,
@@ -641,7 +641,7 @@ const myorderstatus = async (request, response) => {
         confirmedDate: updated_date,
       };
     } else if (so_status === "packed" || so_status === "shipped" || so_status === "delivered") {
-      const packedData = await prisma.pharmacyquotation.findFirst({
+      const packedData = await prisma.pharmacy_assign.findFirst({
         where: { sales_id: sales_id },
         select: { Stmodified_date: true },
       });
@@ -703,7 +703,7 @@ const myorderstatus = async (request, response) => {
     });
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in pharmacyquotation-myorderstatus API`
+      `Internal server error: ${error.message} in pharmacy_assign-myorderstatus API`
     );
     response.status(500).json({
       error: true,
@@ -749,7 +749,7 @@ const assigndeliverypartner = async (request, response) => {
     }
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in pharmacyquotation-assigndeliverypartner API`
+      `Internal server error: ${error.message} in pharmacy_assign-assigndeliverypartner API`
     );
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
