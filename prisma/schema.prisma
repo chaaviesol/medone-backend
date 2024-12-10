@@ -264,6 +264,7 @@ model pharmacy_details{
   users                  user_details? @relation(fields: [customer_id],references: [id])
   pharmacy               pharmacy_details? @relation(fields: [pharmacy_id],references: [id])
   pharmacyquotation      pharmacyquotation[]
+  delivery_assign        delivery_assign[]
   
 }
 
@@ -283,3 +284,27 @@ model pharmacy_details{
     view_status              String?
     created_date             DateTime
   }
+
+  model delivery_partner{
+    id                       Int @id @default(autoincrement())
+    name                     String?
+    vehicle_id               String?
+    is_active                Boolean?
+    pharmacy_is              Json?
+    created_date             DateTime?
+    delivery_assign          delivery_assign[]
+}
+
+
+
+model delivery_assign{
+  id                       Int @id @default(autoincrement())
+  sales_id                 Int?
+  deliverypartner_id       Int?
+  status                   String?
+  assigned_date            DateTime?
+  picked_update            DateTime?  
+  delivered_date           DateTime?
+  delivery_partner         delivery_partner? @relation(fields: [deliverypartner_id],references: [id])
+  sales_order              sales_order? @relation(fields: [sales_id],references: [sales_id])   
+}

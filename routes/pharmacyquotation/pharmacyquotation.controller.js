@@ -717,6 +717,46 @@ const myorderstatus = async (request, response) => {
 
 /////////////////////delivery partner///////////////////////
 
+const assigndeliverypartner = async (request, response) => {
+  try {
+    const { sales_id, deliverypartner_id, status } = request.body;
+    const datetime = getCurrentDateInIST();
+
+    // Validate the required fields
+    if (!sales_id || !deliverypartner_id) {
+      return response.status(400).json({
+        error: true,
+        message: "sales_id and deliverypartner_id can't be null or empty.",
+      });
+    }
+
+    const add = await prisma.delivery_assign.create({
+      data: {
+        status: status,
+        sales_id: sales_id,
+        deliverypartner_id: deliverypartner_id,
+        assigned_date: datetime,
+        
+      },
+    });
+    
+    if (add) {
+      return response.status(200).json({
+        success: true,
+        error: false,
+        message: "Delivery partner assigned successfully.",
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in pharmacyquotation-assigndeliverypartner API`
+    );
+    response.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
 module.exports = {
   assignpharmacy,
   getpackedorders,
@@ -724,5 +764,6 @@ module.exports = {
   getproductspharmacy,
   getorderdetails,
   getorderdetailsss,
-  myorderstatus
+  myorderstatus,
+  assigndeliverypartner
 };
