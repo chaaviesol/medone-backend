@@ -21,8 +21,9 @@ const chemistRouter = require("./routes/Chemist/chemist.routes");
 const prisma = new PrismaClient();
 
 //for zoom meeting////
-const axios = require('axios')
-// const bodyParser = require('body-parser')
+const axios = require('axios');
+const driverRouter = require("./routes/driverApp/driverApp.routes");
+
 
 
 server.use(
@@ -45,6 +46,7 @@ server.use("/product", productRouter);
 server.use("/pharmacyquotation",pharmacyquotationRouter)
 server.use("/chemist",chemistRouter)
 server.use("/googlemap",googleMapRouter)
+server.use('/driver',driverRouter)
 
 if (process.env.NODE_ENV === "development") {
   server.listen(PORT, () => {

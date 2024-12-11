@@ -12,6 +12,8 @@ const {getCurrentDateInIST} = require('../../utils')
 
 
 
+
+
 const logger = winston.createLogger({
   level: "info",
   format: winston.format.combine(
@@ -750,12 +752,70 @@ const forgot_password = async (req, res) => {
           pass: "GWExAA8yGEnC",
         },
       });
+      const mailTemplate = `
+      <html xmlns="http://www.w3.org/1999/xhtml">
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>2FA OTP Email Template</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      </head>
+      <body style="margin: 0; padding: 0;">
+        <table align="center" border="0" cellpadding="0" cellspacing="0" width="90%"
+            style="border-collapse: collapse; border: 30px solid #e7e7e7;">
+          <tbody style="padding:0px 30px; display: block;">
+            <tr>
+              <td style="padding: 56px 0 24px 26px;">
+                <img src="..." alt="Logo">
+              </td>
+            </tr>
+            <tr>
+              <td height="42"
+                  style="padding: 10px 0 4px 24px; color: #000000; font-family: Arial, sans-serif; font-weight: 800; font-size: 26px;">
+                <b>Hi ${check_user.name || "User"}</b>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:1px 24px 22px; color:#606060; font-size:14px; font-family: Arial, sans-serif; line-height: 1.5;">
+                You have successfully registered your account in DoctorOne<br />
+                A One-Time Password (OTP) has been generated. This OTP is time-sensitive and valid for single-user access.<br>
+               
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:1px 24px 22px; color:#606060; font-size:14px; font-weight: 800; font-family: Arial, sans-serif; line-height: 1.5;">
+                Your One-Time Password (OTP) is:
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 24px; text-align: center; font-size: 20px; font-weight: bold; color: #000;">
+                ${randomOTP}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px 24px 50px; color:#606060; font-size:14px; font-family: Arial, sans-serif; line-height: 20px; text-align: left;">
+                Need help? Contact Customer Support.<br>
+                Toll-Free No. 9544688490 or<br>
+                Email us at <a href="mailto:mmusthafa270@gmail.com" style="color:#0889c4; text-decoration:none;">mmusthafa270@gmail.com</a>
+              </td>
+            </tr>
+          </tbody>
+          <tr>
+            <td style="padding:28px 0 0; color: #606060; font-family: Arial, sans-serif; font-size: 12px; background-color: #e7e7e7;">
+              &copy; Rent My Thing. All Rights Reserved<br><br>
+              The content of this message, together with any attachments, are intended only for the use of the
+              person(s) to which they are addressed and may contain confidential and/or privileged information.
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>`;
       const mailOptions = {
         from: "support@chaavie.com",
         to: email,
         subject: 'new password',
+        html:mailTemplate
         // template: "pharmacy_otp", // Name of the Handlebars template
-        text: `Dear user ,\nYour new password:\nPassword: ${randomOTP}\n\nThank you.`,
+        // text: `Dear user ,\nYour new password:\nPassword: ${randomOTP}\n\nThank you.`,
       }
       transpoter.sendMail(mailOptions, (error, info) => {
         if (error) {
