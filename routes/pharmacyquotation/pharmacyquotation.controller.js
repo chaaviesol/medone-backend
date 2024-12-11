@@ -367,7 +367,6 @@ const getorderdetailsss = async (request, response) => {
           },
         },
         medicine_timetable: true,
-       
       },
     });
 
@@ -377,39 +376,37 @@ const getorderdetailsss = async (request, response) => {
     }
     if (getdata.length > 0) {
       const salesInvoice = await Promise.all(
-        getdata.medicine_timetable.map(
-          async (item, index) => {
-            const detailedMedicines = await Promise.all(
-              (item.medicine || []).map(async (medicine, medIndex) => {
-                const medicinedetails = await prisma.sales_list.findFirst({
-                  where: { product_id: medicine.id, sales_id: sales_id },
-                  select: {
-                    order_qty: true,
-                    net_amount: true,
-                    batch_no: true,
-                    selling_price: true,
-                    generic_prodid: {
-                      select: {
-                        hsn: true,
-                        mrp: true,
-                      },
+        getdata.medicine_timetable.map(async (item, index) => {
+          const detailedMedicines = await Promise.all(
+            (item.medicine || []).map(async (medicine, medIndex) => {
+              const medicinedetails = await prisma.sales_list.findFirst({
+                where: { product_id: medicine.id, sales_id: sales_id },
+                select: {
+                  order_qty: true,
+                  net_amount: true,
+                  batch_no: true,
+                  selling_price: true,
+                  generic_prodid: {
+                    select: {
+                      hsn: true,
+                      mrp: true,
                     },
                   },
-                });
+                },
+              });
 
-                return {
-                  ...medicine,
-                  details: medicinedetails,
-                };
-              })
-            );
+              return {
+                ...medicine,
+                details: medicinedetails,
+              };
+            })
+          );
 
-            return {
-              ...item,
-              medicine: detailedMedicines,
-            };
-          }
-        )
+          return {
+            ...item,
+            medicine: detailedMedicines,
+          };
+        })
       );
 
       response.status(200).json({
@@ -491,20 +488,20 @@ const getorderdetails = async (request, response) => {
         // sales_invoice: {
         //   select: {
         //     created_date: true,
-            medicine_timetable: {
-              select: {
-                medicine: true,
-                medicine_type: true,
-                no_of_days: true,
-                afterFd_beforeFd: true,
-                totalQuantity: true,
-                timing: true,
-                timeInterval: true,
-                takingQuantity: true,
-                daysInterval: true,
-              },
-            },
-          // },
+        medicine_timetable: {
+          select: {
+            medicine: true,
+            medicine_type: true,
+            no_of_days: true,
+            afterFd_beforeFd: true,
+            totalQuantity: true,
+            timing: true,
+            timeInterval: true,
+            takingQuantity: true,
+            daysInterval: true,
+          },
+        },
+        // },
         // },
       },
     });
@@ -523,8 +520,7 @@ const getorderdetails = async (request, response) => {
     }
 
     // Combine sales_list and medicine_timetable
-    const medicineTimetables =
-      getdata.medicine_timetable || [];
+    const medicineTimetables = getdata.medicine_timetable || [];
     const combinedProducts = getdata.sales_list.map((product) => {
       const matchingMedicine = medicineTimetables.find((timetable) =>
         timetable.medicine.some((med) => med.id === product.generic_prodid.id)
@@ -616,8 +612,8 @@ const myorderstatus = async (request, response) => {
     }
 
     const { so_status, created_date, updated_date } = getdata;
-    let data = { 
-      placed: true, 
+    let data = {
+      placed: true,
       placedDate: created_date,
       confirmed: false,
       confirmedDate: null,
@@ -636,7 +632,11 @@ const myorderstatus = async (request, response) => {
         confirmed: true,
         confirmedDate: updated_date,
       };
-    } else if (so_status === "packed" || so_status === "shipped" || so_status === "delivered") {
+    } else if (
+      so_status === "packed" ||
+      so_status === "shipped" ||
+      so_status === "delivered"
+    ) {
       const packedData = await prisma.pharmacy_assign.findFirst({
         where: { sales_id: sales_id },
         select: { Stmodified_date: true },
@@ -710,14 +710,12 @@ const myorderstatus = async (request, response) => {
   }
 };
 
-
 /////////////////////delivery partner///////////////////////
 
 const viewDeliveryPartners = async (request, response) => {
   try {
     const { sales_id } = request.body;
 
-   
     if (!sales_id) {
       return response.status(400).json({
         error: true,
@@ -725,7 +723,26 @@ const viewDeliveryPartners = async (request, response) => {
       });
     }
 
+    const deliveryassign = await prisma.delivery_assign.findFirst({
+      where: {
+        sales_id: sales_id,
+      },
+      select: {
+        status: true,
+        delivery_partner: true,
+      },
+    });
    
+    if (deliveryassign) {
+      return response.status(200).json({
+        success: true,
+        data: {
+          ...deliveryassign.delivery_partner,
+          is_assigned: true,
+        },
+      });
+    }
+
     const assignedPharmacy = await prisma.pharmacy_assign.findFirst({
       where: {
         sales_id: sales_id,
@@ -744,11 +761,10 @@ const viewDeliveryPartners = async (request, response) => {
       });
     }
 
-   
     const deliveryPartner = await prisma.delivery_partner.findFirst({
       where: {
         pharmacy_ids: {
-          array_contains: assignedPharmacy.pharmacy_id, 
+          array_contains: assignedPharmacy.pharmacy_id,
         },
         is_active: true,
       },
@@ -762,11 +778,13 @@ const viewDeliveryPartners = async (request, response) => {
       });
     }
 
- 
     return response.status(200).json({
       success: true,
       error: false,
-      data: deliveryPartner,
+      data: {
+        ...deliveryPartner,
+        is_assigned: false,
+      },
     });
   } catch (error) {
     logger.error(
@@ -796,10 +814,9 @@ const assigndeliverypartner = async (request, response) => {
         sales_id: sales_id,
         deliverypartner_id: deliverypartner_id,
         assigned_date: datetime,
-        
       },
     });
-    
+
     if (add) {
       return response.status(200).json({
         success: true,
@@ -826,5 +843,5 @@ module.exports = {
   getorderdetailsss,
   myorderstatus,
   assigndeliverypartner,
-  viewDeliveryPartners
+  viewDeliveryPartners,
 };
