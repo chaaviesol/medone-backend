@@ -737,7 +737,7 @@ const viewDeliveryPartners = async (request, response) => {
     });
 
     if (!assignedPharmacy) {
-      return response.status(200).json({
+      return response.status(400).json({
         success: false,
         error: true,
         message: "No pharmacy assigned.",
