@@ -218,6 +218,7 @@ model pharmacy_details{
     pincode                  Int?
     created_by               Int? 
     token                    String?
+    temp_otp                 Int?
     pharmacy_assign          pharmacy_assign[]
     pharmacy_medicines       pharmacy_medicines[]
     sales_order              sales_order[]   

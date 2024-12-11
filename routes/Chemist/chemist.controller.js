@@ -8,7 +8,7 @@ const bcrypt = require("bcrypt");
 const { messaging } = require("firebase-admin");
 const nodemailer = require('nodemailer')
 const {getCurrentDateInIST} = require('../../utils')
-
+// const pharmacy_otp = require('../../views')
 
 
 
@@ -716,22 +716,32 @@ const forgot_password = async (req, res) => {
       // console.log("first")
       // const randomPassword = crypto.randomBytes(8).toString('hex');
       function generateOTP() {
-        // Generate a random 5-digit number
-        const otp = Math.floor(10000 + Math.random() * 90000);
+        // Generate a random 6-digit number
+        const otp = Math.floor(10000 + Math.random() * 900000);
         return otp.toString();
       }
 
       const randomOTP = generateOTP();
       console.log(randomOTP);
-      const hashedPassword = await bcrypt.hash(randomOTP, 10)
-      await prisma.pharmacy_details.updateMany({
-        where: {
-          email: email
+      const add_temOtp = await prisma.pharmacy_details.updateMany({
+        where:{
+          email:email
         },
-        data: {
-          password: hashedPassword
+        data:{
+          temp_otp:parseInt(randomOTP)
         }
       })
+      console.log({add_temOtp})
+      // const hashedPassword = await bcrypt.hash(randomOTP, 10)
+
+      // await prisma.pharmacy_details.updateMany({
+      //   where: {
+      //     email: email
+      //   },
+      //   data: {
+      //     password: hashedPassword
+      //   }
+      // })
       const transpoter = nodemailer.createTransport({
         host: "smtp.zoho.in",
         port: 465,
@@ -744,6 +754,7 @@ const forgot_password = async (req, res) => {
         from: "support@chaavie.com",
         to: email,
         subject: 'new password',
+        // template: "pharmacy_otp", // Name of the Handlebars template
         text: `Dear user ,\nYour new password:\nPassword: ${randomOTP}\n\nThank you.`,
       }
       transpoter.sendMail(mailOptions, (error, info) => {
@@ -760,7 +771,7 @@ const forgot_password = async (req, res) => {
             error: false,
             success: true,
             message: "new password send successfully",
-            data: check_user
+           
           })
         }
       })
@@ -769,7 +780,7 @@ const forgot_password = async (req, res) => {
       res.status(404).json({
         error: true,
         success: false,
-        message: "user with entered mail not found"
+        message: "user with entered mail not found......."
       })
     }
   } catch (error) {
@@ -783,6 +794,50 @@ const forgot_password = async (req, res) => {
   }
 }
 
+/////check otp////
+const verifyOtp = async(req,res)=>{
+  try{
+    const {pharmacyId,otp} = req.body
+    if(pharmacyId && otp){
+    const verify = await prisma.pharmacy_details.findUnique({
+      where:{
+        id:pharmacyId,
+        temp_otp:otp
+      }
+    })
+    console.log({verify})
+    if(!verify){
+      return res.status(200).json({
+        error:true,
+        success:false,
+        message:"check otp......",
+       
+      })
+    }
+    return res.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull..........",
+      data:verify
+    })
+  }else{
+    return res.status(404).json({
+      error:true,
+      success:false,
+      message:"pharmacy id and otp are required..........."
+    })
+  }
+
+  }catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in chemist-verifyOtp API`
+    );
+    console.error(error);
+    return response.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
 
 //get notification
 const get_notification = async(req,res)=>{
@@ -966,5 +1021,6 @@ module.exports = {
     forgot_password,
     get_notification,
     addSeenStatus,
-    orderSummery
+    orderSummery,
+    verifyOtp
 }
