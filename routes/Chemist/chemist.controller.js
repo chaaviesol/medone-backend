@@ -212,7 +212,7 @@ const getOrder = async (req, res) => {
         id:"asc"
       }
     });
-
+    console.log({getCompleteOrder})
     if (getCompleteOrder.length === 0) {
       return res.status(404).json({
         error: true,
@@ -249,21 +249,28 @@ const getOrder = async (req, res) => {
           productName: getProduct ? getProduct.name : null,
         });
       }
+
     ///get price of the order
-      const getPrice = await prisma.sales_order.findFirst({
+      const getPrice = await prisma.sales_order.findMany({
       where:{
         sales_id:salesId
       },
       select:{
-        total_amount:true
+        total_amount:true,
+        patient_name:true,
+        doctor_name:true
       }
      })
      console.log({getPrice})
-     const price = getPrice.total_amount
+     const price = getPrice[0].total_amount
      console.log({price})
+     const userName = getPrice[0].patient_name
+     const doctor = getPrice[0].doctor_name
       order.push({
         ...getCompleteOrder[i],
         product_amt:price,
+        user : userName,
+        doctorName:doctor,
         productlist, // Include the modified product list with product names
       });
     }
@@ -289,13 +296,15 @@ const getOrder = async (req, res) => {
 const orderResponse = async(req,res)=>{
   try{
     const {quotationId,status} = req.body
+    const date = getCurrentDateInIST()
    if(quotationId && status){
     const addResponse = await prisma.pharmacy_assign.update({
       where:{
         id:quotationId
       },
       data:{
-        status:status
+        status:status,
+        Stmodified_date:date
       }
     })
     console.log({addResponse})
@@ -510,8 +519,9 @@ const getproductspharmacy = async (request, response) => {
 //getting notification while assinging the order
 const assignpharmacy = async (request, response) => {
   try {
-    const { sales_id, pharmacy_id, status,fcmToken } = request.body;
+    const { sales_id, pharmacy_id, status } = request.body;
     const datetime = getCurrentDateInIST();
+    // console.log({first})
 
     // Validate the required fields
     if (!sales_id || !pharmacy_id) {
@@ -520,7 +530,20 @@ const assignpharmacy = async (request, response) => {
         message: "sales_id and pharmacy_id can't be null or empty.",
       });
     }
+    //////find pharmacy details/////
+    const findPharmacy = await prisma.pharmacy_details.findUnique({
+      where:{
+        id:pharmacy_id
+      },
+      select:{
+        token:true
+      }
+    })
+    console.log({findPharmacy})
+    const fcmToken = findPharmacy.token
+    console.log({fcmToken})
 
+    /////for assigning pharmacy//////
     const add = await prisma.pharmacy_assign.create({
       data: {
         status: status,
@@ -834,6 +857,101 @@ const addSeenStatus = async(req,res)=>{
   }
 }
 
+
+
+////get order summary(3 month)
+const orderSummery = async (req, res) => {
+  try {
+    const { chemistId } = req.body;
+
+    if (!chemistId) {
+      return res.status(400).json({ error: "Chemist ID is required" });
+    }
+
+    const getCurrentDateInIST = () => {
+      const now = new Date();
+      const offset = 330; // IST offset in minutes (UTC+5:30)
+      const localTime = new Date(now.getTime() + offset * 60 * 1000);
+      return localTime;
+    };
+
+    const listLastThreeMonths = (date) => {
+      const months = [];
+      for (let i = 0; i < 3; i++) {
+        const current = new Date(date);
+        current.setMonth(current.getMonth() - i); // Subtract i months
+        const year = current.getFullYear();
+        const month = current.getMonth() + 1; // Months are 0-indexed
+        const paddedMonth = month < 10 ? `0${month}` : month; // Format to two digits
+        months.push(`${year}-${paddedMonth}`);
+      }
+      return months;
+    };
+
+    const currentDate = getCurrentDateInIST();
+    const lastThreeMonths = listLastThreeMonths(currentDate);
+
+    console.log({ lastThreeMonths });
+
+    // Query the pharmacy_assign table
+    const orders = await prisma.pharmacy_assign.findMany({
+      where: {
+        pharmacy_id: chemistId,
+        status: "packed",
+        Stmodified_date: {
+          gte: new Date(`${lastThreeMonths[2]}-01`), // Start of the oldest month
+          lte: new Date(`${lastThreeMonths[0]}-31`), // End of the current month
+        },
+      },
+      orderBy: {
+        Stmodified_date: "asc",
+      },
+    });
+
+    console.log({ orders });
+
+    if (!orders.length) {
+      return res.status(404).json({ message: "No orders found for the last three months." });
+    }
+
+    const totalAmount = [];
+
+    for (let i = 0; i < orders.length; i++) {
+      const findPrice = await prisma.sales_order.findMany({
+        where: {
+          sales_id: orders[i].sales_id,
+        },
+        select: {
+          total_amount: true,
+        },
+      });
+
+      console.log({ findPrice });
+
+      if (findPrice.length > 0) {
+        const price = Number(findPrice[0].total_amount); // Ensure the amount is treated as a number
+        totalAmount.push(price);
+      }
+    }
+
+    // Calculate the grand total as a sum of totalAmounts
+    const grandTotal = totalAmount.reduce((acc, curr) => acc + curr, 0);
+
+    res.status(200).json({
+      success: true,
+      data: orders,
+      totalAmounts: totalAmount,
+      grandTotal: grandTotal,
+    });
+  } catch (error) {
+    console.error(`Internal server error: ${error.message} in chemist-orderSummery API`);
+    return res.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+
 module.exports = {
     chemist_login,
     addChemist,
@@ -847,5 +965,6 @@ module.exports = {
     changePassword,
     forgot_password,
     get_notification,
-    addSeenStatus
+    addSeenStatus,
+    orderSummery
 }

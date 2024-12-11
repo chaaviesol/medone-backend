@@ -169,8 +169,8 @@ const sendNotification = async (token, title, message) => {
    
 ///////for zoom////////
 
-// const CLIENT_ID = 'sBjEpNMUQO6iFNijmKM8hw';
-// const CLIENT_SECRET = 'TOo0N689dC2Y5zXw4QKtGdMWWRbf8tgl';
+// const CLIENT_ID = '';
+// const CLIENT_SECRET = '';
 
 
 
