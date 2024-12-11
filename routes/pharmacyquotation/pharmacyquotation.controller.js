@@ -366,12 +366,8 @@ const getorderdetailsss = async (request, response) => {
             },
           },
         },
-        sales_invoice: {
-          select: {
-            created_date: true,
-            medicine_timetable: true,
-          },
-        },
+        medicine_timetable: true,
+       
       },
     });
 
@@ -379,9 +375,9 @@ const getorderdetailsss = async (request, response) => {
     if (getdata?.users?.name) {
       user_name = decrypt(getdata.users.name, secretKey);
     }
-    if (getdata.sales_invoice.length > 0) {
+    if (getdata.length > 0) {
       const salesInvoice = await Promise.all(
-        getdata.sales_invoice[0]?.medicine_timetable.map(
+        getdata.medicine_timetable.map(
           async (item, index) => {
             const detailedMedicines = await Promise.all(
               (item.medicine || []).map(async (medicine, medIndex) => {
@@ -492,9 +488,9 @@ const getorderdetails = async (request, response) => {
             },
           },
         },
-        sales_invoice: {
-          select: {
-            created_date: true,
+        // sales_invoice: {
+        //   select: {
+        //     created_date: true,
             medicine_timetable: {
               select: {
                 medicine: true,
@@ -508,8 +504,8 @@ const getorderdetails = async (request, response) => {
                 daysInterval: true,
               },
             },
-          },
-        },
+          // },
+        // },
       },
     });
 
@@ -528,7 +524,7 @@ const getorderdetails = async (request, response) => {
 
     // Combine sales_list and medicine_timetable
     const medicineTimetables =
-      getdata.sales_invoice?.[0]?.medicine_timetable || [];
+      getdata.medicine_timetable || [];
     const combinedProducts = getdata.sales_list.map((product) => {
       const matchingMedicine = medicineTimetables.find((timetable) =>
         timetable.medicine.some((med) => med.id === product.generic_prodid.id)
@@ -662,7 +658,7 @@ const myorderstatus = async (request, response) => {
       };
 
       if (so_status === "shipped" || so_status === "delivered") {
-        const deliveryAgent = await prisma.deliveryassign.findFirst({
+        const deliveryAgent = await prisma.delivery_assign.findFirst({
           where: { sales_id: sales_id },
           select: {
             status: true,

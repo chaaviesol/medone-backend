@@ -1178,15 +1178,15 @@ const createinvoice = async (request, response) => {
           updated_date: istDate,
         },
       });
-      const create = await prisma.sales_invoice.create({
-        data: {
-          sales_id,
-          sold_by,
-          created_date: datetime,
-        },
-      });
+      // const create = await prisma.sales_invoice.create({
+      //   data: {
+      //     sales_id,
+      //     sold_by,
+      //     created_date: datetime,
+      //   },
+      // });
 
-      if (create) {
+      if (updatesales) {
         for (const medicinedet of medication_details) {
           const {
             id,
@@ -1230,6 +1230,7 @@ const createinvoice = async (request, response) => {
             await prisma.medicine_timetable.create({
               data: {
                 userId: userId,
+                sales_id:sales_id,
                 medicine: medicine,
                 afterFd_beforeFd,
                 no_of_days,
@@ -1237,8 +1238,8 @@ const createinvoice = async (request, response) => {
                 timing: newtiming,
                 takingQuantity,
                 app_flag: false,
-                created_date: datetime,
-                sales_invoiceid: create.id,
+                created_date: datetime
+                
               },
             });
           }
@@ -1265,6 +1266,7 @@ const createinvoice = async (request, response) => {
     logger.error(
       `Internal server error: ${error.message} in createinvoice API`
     );
+    console.log(error)
     response.status(500).json("An error occurred");
   } finally {
     await prisma.$disconnect();
@@ -1299,13 +1301,13 @@ const prescriptioninvoice = async (request, response) => {
           updated_date: istDate,
         },
       });
-      const saleinvoice = await prisma.sales_invoice.create({
-        data: {
-          sales_id,
-          sold_by,
-          created_date: datetime,
-        },
-      });
+      // const saleinvoice = await prisma.sales_invoice.create({
+      //   data: {
+      //     sales_id,
+      //     sold_by,
+      //     created_date: datetime,
+      //   },
+      // });
 
       await prisma.sales_order.update({
         where: {
@@ -1358,6 +1360,7 @@ const prescriptioninvoice = async (request, response) => {
           await prisma.medicine_timetable.create({
             data: {
               userId: userId,
+              sales_id:sales_id,
               medicine: medicine,
               afterFd_beforeFd,
               no_of_days,
@@ -1366,7 +1369,7 @@ const prescriptioninvoice = async (request, response) => {
               takingQuantity,
               app_flag: false,
               created_date: datetime,
-              sales_invoiceid: saleinvoice.id,
+             
             },
           });
         }
@@ -1412,7 +1415,7 @@ const prescriptioninvoice = async (request, response) => {
 const getainvoice = async (request, response) => {
   try {
     const { id } = request.body;
-    const getall = await prisma.sales_invoice.findFirst({
+    const getall = await prisma.medicine_timetable.findFirst({
       where: {
         id: id,
       },
@@ -1520,7 +1523,7 @@ console.log("userrrrrrrrr",request.user)
             confirmedDate: updated_date,
           };
         } else if (so_status === "packed" || so_status === "shipped" || so_status === "delivered") {
-          const packedData = await prisma.pharmacyquotation.findFirst({
+          const packedData = await prisma.pharmacy_assign.findFirst({
             where: { sales_id: sales_id },
             select: { Stmodified_date: true },
           });
@@ -1536,7 +1539,7 @@ console.log("userrrrrrrrr",request.user)
           }
 
           if (so_status === "shipped" || so_status === "delivered") {
-            const deliveryAgent = await prisma.deliveryassign.findFirst({
+            const deliveryAgent = await prisma.delivery_assign.findFirst({
               where: { sales_id: sales_id },
               select: {
                 status: true,
