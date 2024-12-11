@@ -1,6 +1,6 @@
 const express = require("express");
 const { assignpharmacy,getpackedorders,getpharmacies,getproductspharmacy,getorderdetails,
-    getorderdetailsss,myorderstatus,assigndeliverypartner
+    getorderdetailsss,myorderstatus, assigndeliverypartner,viewDeliveryPartners
  } = require("./pharmacyquotation.controller");
 
 const pharmacyquotationRouter = express.Router()
@@ -12,4 +12,5 @@ pharmacyquotationRouter.post("/getorderdetails",getorderdetails)//////////workin
 pharmacyquotationRouter.post("/gettest",getorderdetailsss)//////////first
 pharmacyquotationRouter.post("/myorderstatus",myorderstatus)
 pharmacyquotationRouter.post("/assigndeliverypartner",assigndeliverypartner)
+pharmacyquotationRouter.post("/viewdeliverypartners",viewDeliveryPartners)
 module.exports = pharmacyquotationRouter;

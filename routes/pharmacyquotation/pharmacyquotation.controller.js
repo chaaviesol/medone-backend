@@ -713,6 +713,70 @@ const myorderstatus = async (request, response) => {
 
 /////////////////////delivery partner///////////////////////
 
+const viewDeliveryPartners = async (request, response) => {
+  try {
+    const { sales_id } = request.body;
+
+   
+    if (!sales_id) {
+      return response.status(400).json({
+        error: true,
+        message: "sales_id can't be null or empty.",
+      });
+    }
+
+   
+    const assignedPharmacy = await prisma.pharmacy_assign.findFirst({
+      where: {
+        sales_id: sales_id,
+      },
+      select: {
+        status: true,
+        pharmacy_id: true,
+      },
+    });
+
+    if (!assignedPharmacy) {
+      return response.status(200).json({
+        success: false,
+        error: true,
+        message: "No pharmacy assigned.",
+      });
+    }
+
+   
+    const deliveryPartner = await prisma.delivery_partner.findFirst({
+      where: {
+        pharmacy_ids: {
+          array_contains: assignedPharmacy.pharmacy_id, 
+        },
+        is_active: true,
+      },
+    });
+
+    if (!deliveryPartner) {
+      return response.status(200).json({
+        success: false,
+        error: true,
+        message: "No active delivery partner found for the assigned pharmacy.",
+      });
+    }
+
+ 
+    return response.status(200).json({
+      success: true,
+      error: false,
+      data: deliveryPartner,
+    });
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in pharmacy_quotation-viewDeliveryPartners API`
+    );
+    return response.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
 const assigndeliverypartner = async (request, response) => {
   try {
     const { sales_id, deliverypartner_id, status } = request.body;
@@ -761,5 +825,6 @@ module.exports = {
   getorderdetails,
   getorderdetailsss,
   myorderstatus,
-  assigndeliverypartner
+  assigndeliverypartner,
+  viewDeliveryPartners
 };
