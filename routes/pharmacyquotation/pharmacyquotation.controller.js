@@ -712,6 +712,101 @@ const myorderstatus = async (request, response) => {
 
 /////////////////////delivery partner///////////////////////
 
+const adddeliverypartner = async (request, response) => {
+  try {
+    const {
+      name,
+      phone_no,
+      email,
+      password,
+      vehicle_id,
+      pharmacy_ids
+    } = request.body;
+    if (name && password && email ) {
+      const mobileNumber = phone_no;
+      if (validateMobileNumber(mobileNumber)) {
+        console.log("Valid mobile number");
+      } else {
+        console.log("Invalid mobile number");
+        const resptext = "Invalid mobile number";
+        return response.status(401).json({
+          error: true,
+          success: false,
+          message: resptext,
+        });
+      }
+      function validateMobileNumber(mobileNumber) {
+        
+        const mobileNumberRegex = /^[6-9]\d{9}$/;
+        return mobileNumberRegex.test(mobileNumber);
+      }
+
+      const email_id = email;
+      if (validateEmail(email_id)) {
+        console.log("Valid email address");
+      } else {
+        console.log("Invalid email address");
+        const resptext = "Invalid email address";
+        return response.status(401).json({
+          error: true,
+          success: false,
+          message: resptext,
+        });
+      }
+      function validateEmail(email_id) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        return emailRegex.test(email_id);
+      }
+      const emaillowercase = email.toLowerCase();
+    
+      const users = await prisma.delivery_partner.findFirst({
+        where:{
+          email:emaillowercase
+
+        }
+      });
+      if(users){
+        return response.status(401).json({
+          error: true,
+          success: false,
+          message: "Email id already exists",
+        });
+      }
+      
+      const datetime = getCurrentDateInIST();
+      const hashedPass = await bcrypt.hash(password, 5);
+     
+      await prisma.delivery_partner.create({
+        data: {
+          name: name, 
+          password: hashedPass,
+          email: emaillowercase,
+          created_date: datetime,
+          phone_no: phone_no,
+          is_active: true,
+          vehicle_id,
+          pharmacy_ids
+        },
+      });
+      const respText = "Registered successfully";
+      response.status(200).json({
+        success: true,
+        message: respText,
+      });
+    } else {
+      logger.error(`All fields are mandatory in pharmacyquotation-addpharmacy  api`);
+      response.status(500).json("All fields are mandatory");
+    }
+  } catch (error) {
+    console.log(error);
+    logger.error(`Internal server error: ${error.message} in pharmacyquotation-addpharmacy api`);
+    response.status(500).json("An error occurred");
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
 const viewDeliveryPartners = async (request, response) => {
   try {
     const { sales_id } = request.body;
@@ -844,4 +939,5 @@ module.exports = {
   myorderstatus,
   assigndeliverypartner,
   viewDeliveryPartners,
+  adddeliverypartner
 };
