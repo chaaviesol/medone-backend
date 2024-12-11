@@ -581,9 +581,11 @@ const assignpharmacy = async (request, response) => {
       const message = {
         notification:{
           title:"Pharmacy Assigned",
-          body:"New order assigned.....❗"
+          body:"New order assigned.....❗",
+          "sound": "msgsound"
         },
-        token:fcmToken
+        token:fcmToken,
+        
       }
     
     try{
