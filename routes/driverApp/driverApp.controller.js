@@ -303,7 +303,8 @@ const accepted_trips = async(req,res)=>{
         select:{
           pharmacy_id:true,
           customer_id:true,
-          delivery_address:true
+          delivery_address:true,
+          total_amount:true
         }
       })
       console.log({findpharmId})
@@ -338,13 +339,14 @@ const accepted_trips = async(req,res)=>{
       find_custPhone[0].phone_no = decryptedphone;
 
 
-
+      const total_amnt = findpharmId[0].total_amount
       const addressData = find_phAddress.address
       Address.push({
         ...findPickUpOrders[i],
         fromAddress:addressData,
         to_Address:customerAddress,
-        customer_phone:decryptedphone
+        customer_phone:decryptedphone,
+        total_amount:total_amnt
       })
     }
     return res.status(200).json({
@@ -461,6 +463,105 @@ const verifyTrips = async(req,res)=>{
       }
 }
 
+////////add deliverd status////
+const addDeliveryStatus = async(req,res)=>{
+  try{
+    const{orderAssignId} = req.body
+    const date = getCurrentDateInIST()
+    if(!orderAssignId){
+      return res.status(404).json({
+        error:true,
+        success:false,
+        message:"oder Assign id is required......",
+        
+      })
+    }
+    const addDelivery = await prisma.delivery_assign.update({
+      where:{
+        id:orderAssignId
+      },
+      data:{
+        status:"delivered",
+        delivered_date:date
+      }
+    })
+    console.log({addDelivery})
+    return res.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull......",
+      data:addDelivery
+    })
+
+  }catch (err) {
+        logger.error(
+          `Internal server error: ${err.message} in addDeliveryStatus api`,
+          console.log({err})
+        );
+        res.status(400).json({
+          error: true,
+          message: "internal server error",
+        });
+      }
+}
+
+///////get fulfilled order///
+const get_fulfilledOrders = async(req,res)=>{
+  try{
+    const{driverId} = req.body
+    const date = getCurrentDateInIST()
+    if(!driverId){
+      return res.status(404).json({
+        error:true,
+        success:false,
+        message:"oder Assign id is required......",
+        
+      })
+    }
+    const getFulfilledOrders = await prisma.delivery_assign.findMany({
+      where:{
+        deliverypartner_id:driverId,
+        status:"delivered",
+      },
+     
+    })
+    console.log({getFulfilledOrders})
+    const toAddress = []
+    for(let i=0;i<getFulfilledOrders.length; i++){
+      const get_toAddress = await prisma.sales_order.findMany({
+        where:{
+          sales_id:getFulfilledOrders[i].sales_id
+        },
+        select:{
+          delivery_address:true
+        }
+      })
+      console.log({get_toAddress})
+      toAddress.push({
+        ...getFulfilledOrders[i],
+        to_Address:get_toAddress[0].delivery_address
+      })
+    }
+    return res.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull......",
+      data:toAddress
+    })
+
+  }catch (err) {
+        logger.error(
+          `Internal server error: ${err.message} in get_fulfilledOrders api`,
+          console.log({err})
+        );
+        res.status(400).json({
+          error: true,
+          message: "internal server error",
+        });
+      }
+}
+
+/////wallet/////
 
 
 
@@ -481,5 +582,7 @@ const verifyTrips = async(req,res)=>{
     getorder,
     pickUp_status,
     accepted_trips,
-    verifyTrips
+    verifyTrips,
+    addDeliveryStatus,
+    get_fulfilledOrders
   }
