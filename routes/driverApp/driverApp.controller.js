@@ -193,14 +193,17 @@ const getorder = async(req,res)=>{
         },
         select:{
           id:true,
-          address:true
+          address:true,
+          name:true
         }
       })
       console.log({find_phAddress})
       const addressData = find_phAddress.address
+      const pharmName = find_phAddress.name
       pharmAddress.push({
         ...findOrders[i],
-        address:addressData
+        address:addressData,
+        pharmacyName:pharmName
       })
     }
     if(findOrders.length === 0){
@@ -363,6 +366,7 @@ const accepted_trips = async(req,res)=>{
         });
       }
 }
+
 
 
 
