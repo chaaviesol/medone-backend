@@ -3,6 +3,8 @@ const prisma = new PrismaClient();
 const logDirectory = "./logs";
 const winston = require("winston");
 const bcrypt = require('bcrypt')
+const {getCurrentDateInIST} = require('../../utils')
+const { encrypt, decrypt } = require("../../utils");
 
 
 
@@ -172,18 +174,185 @@ const getorder = async(req,res)=>{
       }
     })
     console.log({findOrders})
-    if(!findOrders){
-      
+    const pharmAddress = []
+    for(let i=0;i<findOrders.length;i++){
+      const findpharmId = await prisma.sales_order.findMany({
+        where:{
+          sales_id:findOrders[i].sales_id
+        },
+        select:{
+          pharmacy_id:true
+        }
+      })
+      console.log({findpharmId})
+
+      ////find pharmacy address
+      const find_phAddress = await prisma.pharmacy_details.findFirst({
+        where:{
+          id:findpharmId[0].pharmacy_id
+        },
+        select:{
+          id:true,
+          address:true
+        }
+      })
+      console.log({find_phAddress})
+      const addressData = find_phAddress.address
+      pharmAddress.push({
+        ...findOrders[i],
+        address:addressData
+      })
+    }
+    if(findOrders.length === 0){
+      return res.status(404).json({
+        error:true,
+        success:false,
+        message:"no order found.........."
+      })
     }
     return res.status(200).json({
       error:false,
       success:true,
       message:"Successfull......",
-      data:findOrders
+      data:pharmAddress
     })
 
 
   } catch (err) {
+        logger.error(
+          `Internal server error: ${err.message} in getorder api`,
+          console.log({err})
+        );
+        res.status(400).json({
+          error: true,
+          message: "internal server error",
+        });
+      }
+}
+
+
+///////add pickedUp status/////
+const pickUp_status = async(req,res)=>{
+  try{
+    const{orderassign_id} = req.body
+    const date = getCurrentDateInIST()
+    if(!orderassign_id){
+      return res.status(404).json({
+        error:true,
+        success:false,
+        message:"orderAssign id is required.........."
+      })
+    }
+    const addStatus = await prisma.delivery_assign.update({
+      where:{
+          id:orderassign_id
+      },
+      data:{
+        status:"picked up",
+        picked_update:date
+      }
+    })
+    console.log({addStatus})
+    return res.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull..........",
+      data:addStatus
+    })
+  }catch (err) {
+        logger.error(
+          `Internal server error: ${err.message} in getorder api`,
+          console.log({err})
+        );
+        res.status(400).json({
+          error: true,
+          message: "internal server error",
+        });
+      }
+}
+
+/////Accepted trips/////
+const accepted_trips = async(req,res)=>{
+  try{
+    const {driverId} = req.body
+    const secretKey = process.env.ENCRYPTION_KEY;
+    
+    const safeDecrypt = (text, key) => {
+      try {
+        return decrypt(text, key);
+      } catch (err) {
+        return text;
+      }
+    };
+    const findPickUpOrders = await prisma.delivery_assign.findMany({
+      where:{
+        deliverypartner_id:driverId,
+        status:"picked up"
+      }
+    })
+    console.log({findPickUpOrders})
+    const Address = []
+    for(let i=0;i<findPickUpOrders.length;i++){
+      const findpharmId = await prisma.sales_order.findMany({
+        where:{
+          sales_id:findPickUpOrders[i].sales_id
+        },
+        select:{
+          pharmacy_id:true,
+          customer_id:true,
+          delivery_address:true
+        }
+      })
+      console.log({findpharmId})
+      const customerAddress = findpharmId[0].delivery_address
+      console.log({customerAddress})
+
+      ////find pharmacy address
+      const find_phAddress = await prisma.pharmacy_details.findFirst({
+        where:{
+          id:findpharmId[0].pharmacy_id
+        },
+        select:{
+          id:true,
+          address:true,
+        }
+      })
+      console.log({find_phAddress})
+      const cutmId = findpharmId[0].customer_id
+      console.log({cutmId})
+      ///find customerphone///
+      const find_custPhone = await prisma.user_details.findMany({
+        where:{
+          id:cutmId
+        },
+        select:{
+          phone_no:true
+        }
+      })
+      console.log({find_custPhone})
+     
+      const decryptedphone = safeDecrypt(find_custPhone[0].phone_no, secretKey);
+      find_custPhone[0].phone_no = decryptedphone;
+
+
+
+      const addressData = find_phAddress.address
+      Address.push({
+        ...findPickUpOrders[i],
+        fromAddress:addressData,
+        to_Address:customerAddress,
+        customer_phone:decryptedphone
+      })
+    }
+    return res.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull......",
+      data:Address
+    })
+    
+
+  }catch (err) {
         logger.error(
           `Internal server error: ${err.message} in getorder api`,
           console.log({err})
@@ -208,9 +377,9 @@ const getorder = async(req,res)=>{
 
 
 
-
-
   module.exports = {driver_login,
     getDriver_profile,
-    getorder
+    getorder,
+    pickUp_status,
+    accepted_trips
   }
