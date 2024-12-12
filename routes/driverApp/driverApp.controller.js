@@ -368,6 +368,101 @@ const accepted_trips = async(req,res)=>{
 }
 
 
+//////verify trips////////////////
+const verifyTrips = async(req,res)=>{
+  try{
+    const {assignOrderId} = req.body
+    const secretKey = process.env.ENCRYPTION_KEY;
+    
+    const safeDecrypt = (text, key) => {
+      try {
+        return decrypt(text, key);
+      } catch (err) {
+        return text;
+      }
+    };
+    const findPickUpOrders = await prisma.delivery_assign.findMany({
+      where:{
+        id:assignOrderId,
+       
+      }
+    })
+    console.log({findPickUpOrders})
+    const Address = []
+    for(let i=0;i<findPickUpOrders.length;i++){
+      const findpharmId = await prisma.sales_order.findMany({
+        where:{
+          sales_id:findPickUpOrders[i].sales_id
+        },
+        select:{
+          pharmacy_id:true,
+          customer_id:true,
+          delivery_address:true
+        }
+      })
+      console.log({findpharmId})
+      const customerAddress = findpharmId[0].delivery_address
+      console.log({customerAddress})
+
+      ////find pharmacy address
+      const find_phAddress = await prisma.pharmacy_details.findFirst({
+        where:{
+          id:findpharmId[0].pharmacy_id
+        },
+        select:{
+          id:true,
+          address:true,
+        }
+      })
+      console.log({find_phAddress})
+      const cutmId = findpharmId[0].customer_id
+      console.log({cutmId})
+      ///find customerphone///
+      const find_custPhone = await prisma.user_details.findMany({
+        where:{
+          id:cutmId
+        },
+        select:{
+          phone_no:true
+        }
+      })
+      console.log({find_custPhone})
+     
+      const decryptedphone = safeDecrypt(find_custPhone[0].phone_no, secretKey);
+      find_custPhone[0].phone_no = decryptedphone;
+
+
+
+      const addressData = find_phAddress.address
+      Address.push({
+        ...findPickUpOrders[i],
+        fromAddress:addressData,
+        to_Address:customerAddress,
+        customer_phone:decryptedphone
+      })
+    }
+    return res.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull......",
+      data:Address
+    })
+    
+
+  }catch (err) {
+        logger.error(
+          `Internal server error: ${err.message} in getorder api`,
+          console.log({err})
+        );
+        res.status(400).json({
+          error: true,
+          message: "internal server error",
+        });
+      }
+}
+
+
+
 
 
 
@@ -385,5 +480,6 @@ const accepted_trips = async(req,res)=>{
     getDriver_profile,
     getorder,
     pickUp_status,
-    accepted_trips
+    accepted_trips,
+    verifyTrips
   }
