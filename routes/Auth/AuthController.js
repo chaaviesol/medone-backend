@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 //validate access token
 const accessToken = async (req, res) => {
   const user = req.user;
-  console.log("user_id", user);
+  
 
   res.status(200).json({
     success: true,

@@ -603,7 +603,7 @@ const salesorder = async (request, response) => {
           delivery_location,
           city,
           district,
-          contact_no: contact_no,
+          contact_no: contact_no.toString(),
           pincode: parseInt(pincode),
         },
       });
