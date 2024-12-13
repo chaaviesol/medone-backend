@@ -496,7 +496,7 @@ const addDeliveryStatus = async(req,res)=>{
         sales_id:addDelivery.sales_id
       },
       data:{
-        status:"delivered",
+        so_status:"delivered",
         delivered_date:date
       }
     })
