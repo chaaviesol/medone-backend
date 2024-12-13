@@ -486,6 +486,18 @@ const addDeliveryStatus = async(req,res)=>{
       }
     })
     console.log({addDelivery})
+
+    const salesorder = await prisma.sales_order.update({
+      where:{
+        sales_id:addDelivery.sales_id
+      },
+      data:{
+        status:"delivered",
+        delivered_date:date
+      }
+    })
+    console.log({salesorder})
+
     return res.status(200).json({
       error:false,
       success:true,
