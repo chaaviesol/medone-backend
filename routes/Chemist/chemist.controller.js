@@ -366,6 +366,17 @@ const getConfirmedOrder = async (req, res) => {
         },
       },
     });
+   const getPharm_name = await prisma.pharmacy_details.findFirst({
+    where:{
+      id:chemistId
+    },
+    select:{
+      name:true
+    }
+   })
+   console.log({getPharm_name})
+   const pharmacy = getPharm_name.name
+   console.log({pharmacy})
    
     if (getorder.length === 0) {
       return res.status(404).json({
@@ -419,7 +430,8 @@ const getConfirmedOrder = async (req, res) => {
       orders.push({
         ...getorder[i],
         price:price,
-        productlist, // Include the enhanced product list
+        productlist, // Include the enhanced product list,
+        pharmacyName:pharmacy
       });
     }
 
@@ -428,6 +440,7 @@ const getConfirmedOrder = async (req, res) => {
       success: true,
       message: "Successful",
       data: orders,
+     
     });
   } catch (err) {
     console.error(`Internal server error: ${err.message} in getConfirmedOrder API`);

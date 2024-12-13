@@ -562,7 +562,79 @@ const get_fulfilledOrders = async(req,res)=>{
 }
 
 /////wallet/////
+const wallet = async(req,res)=>{
+  try{
+    const{driverId} = req.body
+    if(!driverId){
+      return res.status(404).json({
+        error:true,
+        success:false,
+        message:"driverId is required.........."
+      })
+    }
+    const orderDetails = await prisma.delivery_assign.findMany({
+      where:{
+        deliverypartner_id:driverId,
+        status:"delivered"
+      },
+      select:{
+        id:true,
+        sales_id:true,
+        
+      }
+    })
+    console.log({orderDetails})
+    const wallet = []
+    for(let i=0; i<orderDetails.length;i++){
+      const findPharmacy = await prisma.sales_order.findFirst({
+        where:{
+          sales_id:orderDetails[i].sales_id
+        },
+        select:{
+          total_amount:true,
+          pharmacy_id:true
+        }
+      })
+      console.log({findPharmacy})
+      const amount = findPharmacy.total_amount
+      console.log({amount})
 
+      const findPharmacyName = await prisma.pharmacy_details.findMany({
+        where:{
+          id:findPharmacy.pharmacy_id
+        },
+        select:{
+          id:true,
+          name:true,
+
+        }
+      })
+      console.log({findPharmacyName})
+      const pharmacyName = findPharmacyName[0].name
+      console.log({pharmacyName})
+      wallet.push({
+        ...orderDetails[i],
+       pharmacy:pharmacyName,
+       amount:amount
+      })
+    }
+    return res.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull.........",
+      data:wallet
+    })
+  }catch (err) {
+        logger.error(
+          `Internal server error: ${err.message} in get_fulfilledOrders api`,
+          console.log({err})
+        );
+        res.status(400).json({
+          error: true,
+          message: "internal server error",
+        });
+      }
+}
 
 
 
@@ -584,5 +656,6 @@ const get_fulfilledOrders = async(req,res)=>{
     accepted_trips,
     verifyTrips,
     addDeliveryStatus,
-    get_fulfilledOrders
+    get_fulfilledOrders,
+    wallet
   }

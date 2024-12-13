@@ -6,7 +6,8 @@ const {driver_login,
     accepted_trips,
     verifyTrips,
     addDeliveryStatus,
-    get_fulfilledOrders
+    get_fulfilledOrders,
+    wallet
 } = require('./driverApp.controller')
 const driverRouter = express.Router()
 
@@ -20,7 +21,7 @@ driverRouter.post('/accepted_trips',accepted_trips)
 driverRouter.post('/verifyTrips',verifyTrips)
 driverRouter.post('/addDeliveryStatus',addDeliveryStatus)
 driverRouter.post('/get_fulfilledOrders',get_fulfilledOrders)
-
+driverRouter.post('/wallet',wallet)
 
 
 
