@@ -245,6 +245,7 @@ model sales_order {
   order_type             String?               
   remarks                String? 
   delivery_address       String?
+  delivery_location      Json?
   district               String?
   city                   String?                
   delivery_date          DateTime?                              

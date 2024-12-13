@@ -19,8 +19,35 @@ const getCurrentLocation = async (req, res) => {
 
     if (response.data.status === "OK") {
       const addressComponents = response.data.results[0].address_components;
-      // console.log({addressComponents})
+
       const formattedAddress = response.data.results[0].formatted_address;
+      const location = response.data.results[0].geometry.location;
+      const districts = [
+        "Alappuzha",
+        "Ernakulam",
+        "Idukki",
+        "Kannur",
+        "Kasaragod",
+        "Kollam",
+        "Kottayam",
+        "Kozhikode",
+        "Malappuram",
+        "Palakkad",
+        "Pathanamthitta",
+        "Thiruvananthapuram",
+        "Thrissur",
+        "Wayanad",
+      ];
+      let district = null;
+
+      for (let component of addressComponents) {
+        const { long_name } = component;
+        if (districts.includes(long_name)) {
+          district = long_name;
+          break;
+        }
+      }
+
       let country,
         state,
         city,
@@ -62,7 +89,12 @@ const getCurrentLocation = async (req, res) => {
         state,
         country,
         formattedAddress,
+        district,
+        location,
       });
+      // return res.status(200).json({
+      //   data: response.data.results,
+      // });
     } else {
       logger.error(`Geocoding failed in google map  API`);
       return res
