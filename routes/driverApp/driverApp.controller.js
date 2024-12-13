@@ -304,13 +304,16 @@ const accepted_trips = async(req,res)=>{
           pharmacy_id:true,
           customer_id:true,
           delivery_address:true,
-          total_amount:true
+          total_amount:true,
+          delivery_location:true
         }
       })
       console.log({findpharmId})
       const customerAddress = findpharmId[0].delivery_address
       console.log({customerAddress})
-
+      
+      const deliveryLocation = findpharmId[0].delivery_location
+      console.log({deliveryLocation})
       ////find pharmacy address
       const find_phAddress = await prisma.pharmacy_details.findFirst({
         where:{
@@ -346,7 +349,8 @@ const accepted_trips = async(req,res)=>{
         fromAddress:addressData,
         to_Address:customerAddress,
         customer_phone:decryptedphone,
-        total_amount:total_amnt
+        total_amount:total_amnt,
+        deliveryLocation:deliveryLocation
       })
     }
     return res.status(200).json({

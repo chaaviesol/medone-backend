@@ -3,7 +3,8 @@ const prisma = new PrismaClient();
 const logDirectory = "./logs";
 const winston = require("winston");
 // const crypto = require('crypto');
-const admin = require('../../firebase')
+// const admin = require('../../firebase')
+const secondApp = require('../../firebase')
 const bcrypt = require("bcrypt");
 const { messaging } = require("firebase-admin");
 const nodemailer = require('nodemailer')
@@ -545,6 +546,18 @@ const assignpharmacy = async (request, response) => {
         message: "sales_id and pharmacy_id can't be null or empty.",
       });
     }
+    const find = await prisma.pharmacy_assign.findFirst({
+      where: {
+        sales_id: sales_id,
+        pharmacy_id: pharmacy_id,
+      },
+    });
+    if (find) {
+      return response.status(400).json({
+        error: true,
+        message: "pharmacy already assigned",
+      });
+    }
     //////find pharmacy details/////
     const findPharmacy = await prisma.pharmacy_details.findUnique({
       where:{
@@ -593,16 +606,16 @@ const assignpharmacy = async (request, response) => {
 
       const message = {
         notification:{
-          title:"Pharmacy Assigned",
-          body:"New order assigned.....❗",
-          "sound": "msgsound"
+          title:"order received",
+          body:"New order received.....❗",
+          // sound: "msgsound"
         },
         token:fcmToken,
         
       }
     
     try{
-      await admin.messaging().send(message)
+      await secondApp.messaging().send(message)
       console.log("Notification send Successfully")
     }catch(err){
       console.error({err})
@@ -625,7 +638,7 @@ const assignpharmacy = async (request, response) => {
 };
 
 
-//add token for pharmacy
+//////add token for pharmacy/////
 const addTokenPh = async(req,res)=>{
   try{
     const {id,token} = req.body
