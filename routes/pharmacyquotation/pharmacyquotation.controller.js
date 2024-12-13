@@ -253,6 +253,18 @@ const assignpharmacy = async (request, response) => {
         message: "sales_id and pharmacy_id can't be null or empty.",
       });
     }
+    const find = await prisma.pharmacy_assign.findFirst({
+      where: {
+        sales_id: sales_id,
+        pharmacy_id: pharmacy_id,
+      },
+    });
+    if (find) {
+      return response.status(400).json({
+        error: true,
+        message: "pharmacy already assigned",
+      });
+    }
 
     const add = await prisma.pharmacy_assign.create({
       data: {
@@ -714,15 +726,9 @@ const myorderstatus = async (request, response) => {
 
 const adddeliverypartner = async (request, response) => {
   try {
-    const {
-      name,
-      phone_no,
-      email,
-      password,
-      vehicle_id,
-      pharmacy_ids
-    } = request.body;
-    if (name && password && email ) {
+    const { name, phone_no, email, password, vehicle_id, pharmacy_ids } =
+      request.body;
+    if (name && password && email) {
       const mobileNumber = phone_no;
       if (validateMobileNumber(mobileNumber)) {
         console.log("Valid mobile number");
@@ -736,7 +742,6 @@ const adddeliverypartner = async (request, response) => {
         });
       }
       function validateMobileNumber(mobileNumber) {
-        
         const mobileNumberRegex = /^[6-9]\d{9}$/;
         return mobileNumberRegex.test(mobileNumber);
       }
@@ -759,34 +764,33 @@ const adddeliverypartner = async (request, response) => {
         return emailRegex.test(email_id);
       }
       const emaillowercase = email.toLowerCase();
-    
-      const users = await prisma.delivery_partner.findFirst({
-        where:{
-          email:emaillowercase
 
-        }
+      const users = await prisma.delivery_partner.findFirst({
+        where: {
+          email: emaillowercase,
+        },
       });
-      if(users){
+      if (users) {
         return response.status(401).json({
           error: true,
           success: false,
           message: "Email id already exists",
         });
       }
-      
+
       const datetime = getCurrentDateInIST();
       const hashedPass = await bcrypt.hash(password, 5);
-     
+
       await prisma.delivery_partner.create({
         data: {
-          name: name, 
+          name: name,
           password: hashedPass,
           email: emaillowercase,
           created_date: datetime,
           phone_no: phone_no,
           is_active: true,
           vehicle_id,
-          pharmacy_ids
+          pharmacy_ids,
         },
       });
       const respText = "Registered successfully";
@@ -795,12 +799,16 @@ const adddeliverypartner = async (request, response) => {
         message: respText,
       });
     } else {
-      logger.error(`All fields are mandatory in pharmacyquotation-addpharmacy  api`);
+      logger.error(
+        `All fields are mandatory in pharmacyquotation-addpharmacy  api`
+      );
       response.status(500).json("All fields are mandatory");
     }
   } catch (error) {
     console.log(error);
-    logger.error(`Internal server error: ${error.message} in pharmacyquotation-addpharmacy api`);
+    logger.error(
+      `Internal server error: ${error.message} in pharmacyquotation-addpharmacy api`
+    );
     response.status(500).json("An error occurred");
   } finally {
     await prisma.$disconnect();
@@ -827,7 +835,7 @@ const viewDeliveryPartners = async (request, response) => {
         delivery_partner: true,
       },
     });
-   
+
     if (deliveryassign) {
       return response.status(200).json({
         success: true,
@@ -903,6 +911,19 @@ const assigndeliverypartner = async (request, response) => {
       });
     }
 
+    const finddelivery = await prisma.delivery_assign.findFirst({
+      where: {
+        sales_id: sales_id,
+      },
+    });
+    if(finddelivery){
+      return response.status(400).json({
+        error: true,
+        message: "delivery partner already assigned",
+      });
+
+    }
+
     const add = await prisma.delivery_assign.create({
       data: {
         status: status,
@@ -939,5 +960,5 @@ module.exports = {
   myorderstatus,
   assigndeliverypartner,
   viewDeliveryPartners,
-  adddeliverypartner
+  adddeliverypartner,
 };
