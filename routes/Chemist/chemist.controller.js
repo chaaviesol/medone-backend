@@ -533,7 +533,7 @@ const getproductspharmacy = async (request, response) => {
 
 
 //getting notification while assinging the order
-const assignpharmacy = async (request, response) => {
+const  assignpharmacy = async (request, response) => {
   try {
     const { sales_id, pharmacy_id, status } = request.body;
     const datetime = getCurrentDateInIST();

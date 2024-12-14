@@ -586,7 +586,7 @@ const addMedicineSchedule = async(request,response)=>{
         takingQuantity:takingQuantity,
         daysInterval:daysInterval,
         created_date:istDate, //change to dateTime
-        app_flag:"true",
+        app_flag:true,
         active_status:"true"
       }
     })
