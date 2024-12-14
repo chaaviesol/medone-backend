@@ -2690,7 +2690,52 @@ const getMedicineForSchedule = async(req,res)=>{
   }
 }
 
+//////get complete medicine
+const getCompleteMedicine = async(req,res)=>{
+try{
+  const {userId} = req.body
+  if(!userId){
+    return res.status(404).json({
+      error:true,
+      success:false,
+      message:"userId is required.........",
+      
+    })
+  }
+  const getCompleteList = await prisma.medicine_timetable.findMany({
+    where:{
+      userId:userId,
+      app_flag:false
+    },
+    select:{
+      id:true,
+      userId:true,
+      medicine:true
+    }
+  })
+  console.log({getCompleteList})
+  if(getCompleteList.length === 0 ){
+    return res.status(404).json({
+      error:true,
+      success:false,
+      message:"No medicine found..........",
+   
+    })
+  }
 
+  return res.status(200).json({
+    error:false,
+    success:true,
+    message:"Successfull..........",
+    data:getCompleteList
+  })
+}catch (error) {
+    console.error({ error });
+    res.status(500).json({ success: false, message: error.message });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
 
 module.exports = {addUserData,
   userLogin,
@@ -2721,5 +2766,6 @@ module.exports = {addUserData,
   selectPastOrderMedicine,
   addNewSchedule,
   // notificationData,
-  getMedicineForSchedule
+  getMedicineForSchedule,
+  getCompleteMedicine
 }
