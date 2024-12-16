@@ -675,7 +675,6 @@ const salesorder = async (request, response) => {
       }
     });
   } catch (error) {
-
     logger.error(`Internal server error: ${error.message} in salesorder API`);
     response.status(500).json({
       error: true,
@@ -1095,9 +1094,17 @@ const getinvsalesorder = async (request, response) => {
       },
     });
 
+    ///////////fixed discount 10%//////////////
+   
+
     const decryptedUsername = decrypt(getdata?.users.name, secretKey);
     const userId = getdata?.users.id;
-    const medication_details = (getdata.sales_list || getdata).map((item) => ({
+    const medication_details = (getdata.sales_list || getdata).map((item) => {
+      const mrp = item?.generic_prodid?.mrp;
+      const discount = mrp ? mrp * 0.1 : 0; // Calculate 10% discount
+      const final_price = mrp ? mrp - discount : 0; 
+     
+      return {
       id: item?.generic_prodid?.id || "",
       name: item?.generic_prodid?.name || "",
       category: item?.generic_prodid?.category || "",
@@ -1109,8 +1116,10 @@ const getinvsalesorder = async (request, response) => {
       totalQuantity: item?.order_qty || "",
       hsn: item?.generic_prodid?.hsn || "",
       mrp: item?.generic_prodid?.mrp || "",
-      selling_price: item?.net_amount || "",
-    }));
+      net_amount:item?.net_amount || "",
+      selling_price:final_price || "", 
+      }
+    })
     if (medication_details.length === 0) {
       medication_details.push({
         id: "",
@@ -1232,7 +1241,7 @@ const createinvoice = async (request, response) => {
             await prisma.medicine_timetable.create({
               data: {
                 userId: userId,
-                sales_id:sales_id,
+                sales_id: sales_id,
                 medicine: medicine,
                 afterFd_beforeFd,
                 no_of_days,
@@ -1240,8 +1249,7 @@ const createinvoice = async (request, response) => {
                 timing: newtiming,
                 takingQuantity,
                 app_flag: false,
-                created_date: datetime
-                
+                created_date: datetime,
               },
             });
           }
@@ -1268,7 +1276,7 @@ const createinvoice = async (request, response) => {
     logger.error(
       `Internal server error: ${error.message} in createinvoice API`
     );
-    console.log(error)
+    console.log(error);
     response.status(500).json("An error occurred");
   } finally {
     await prisma.$disconnect();
@@ -1362,7 +1370,7 @@ const prescriptioninvoice = async (request, response) => {
           await prisma.medicine_timetable.create({
             data: {
               userId: userId,
-              sales_id:sales_id,
+              sales_id: sales_id,
               medicine: medicine,
               afterFd_beforeFd,
               no_of_days,
@@ -1371,7 +1379,6 @@ const prescriptioninvoice = async (request, response) => {
               takingQuantity,
               app_flag: false,
               created_date: datetime,
-             
             },
           });
         }
@@ -1447,7 +1454,7 @@ const myorders = async (request, response) => {
   try {
     const user_id = request.user.userId;
     const usertype = request.user.userType;
-console.log("userrrrrrrrr",request.user)
+    console.log("userrrrrrrrr", request.user);
     if (!user_id) {
       return response.status(400).json({
         error: true,
@@ -1498,7 +1505,7 @@ console.log("userrrrrrrrr",request.user)
         },
       },
     });
-    console.log({salesordersdata})
+    console.log({ salesordersdata });
     if (salesordersdata.length > 0) {
       const salesorders = [];
 
@@ -1524,7 +1531,11 @@ console.log("userrrrrrrrr",request.user)
             confirmed: true,
             confirmedDate: updated_date,
           };
-        } else if (so_status === "packed" || so_status === "shipped" || so_status === "delivered") {
+        } else if (
+          so_status === "packed" ||
+          so_status === "shipped" ||
+          so_status === "delivered"
+        ) {
           const packedData = await prisma.pharmacy_assign.findFirst({
             where: { sales_id: sales_id },
             select: { Stmodified_date: true },
@@ -1571,7 +1582,7 @@ console.log("userrrrrrrrr",request.user)
         // Append enriched data to the order
         salesorders.push({ ...order, statusDetails: data });
       }
-  
+
       return response.status(200).json({
         success: true,
         error: false,
