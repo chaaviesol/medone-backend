@@ -531,7 +531,7 @@ const salesorder = async (request, response) => {
     pincode,
     contact_no,
   } = request.body;
-  console.log(JSON.parse(request.body.delivery_location));
+ 
   const userId = parseInt(request.user.userId);
   let sales_order;
 
