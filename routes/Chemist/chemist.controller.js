@@ -8,7 +8,7 @@ const secondApp = require('../../firebase')
 const bcrypt = require("bcrypt");
 const { messaging } = require("firebase-admin");
 const nodemailer = require('nodemailer')
-const {getCurrentDateInIST} = require('../../utils')
+const {getCurrentDateInIST,decrypt} = require('../../utils')
 // const pharmacy_otp = require('../../views')
 
 
@@ -196,7 +196,16 @@ const chemist_profile = async(req,res)=>{
 const getOrder = async (req, res) => {
   try {
     const { chemistId } = req.body;
-
+    const secretKey = process.env.ENCRYPTION_KEY;
+    
+    const safeDecrypt = (text, key) => {
+      try {
+        return decrypt(text, key);
+      } catch (err) {
+        return text;
+      }
+    };
+    
     if (!chemistId) {
       return res.status(200).json({
         error: true,
@@ -269,18 +278,31 @@ const getOrder = async (req, res) => {
       select:{
         total_amount:true,
         patient_name:true,
-        doctor_name:true
+        doctor_name:true,
+        customer_id:true
       }
      })
      console.log({getPrice})
      const price = getPrice[0].total_amount
      console.log({price})
-     const userName = getPrice[0].patient_name
+    //  const userName = getPrice[0].patient_name
      const doctor = getPrice[0].doctor_name
+     const customerName = getPrice[0].customer_id
+     console.log({customerName})
+     const getCustomerName = await prisma.user_details.findMany({
+      where:{
+        id:customerName
+      }
+     })
+     console.log({getCustomerName})
+     const decryptedname = safeDecrypt(getCustomerName[0].name, secretKey);
+     getCustomerName[0].name = decryptedname;
+      console.log({decryptedname})
+
       order.push({
         ...getCompleteOrder[i],
         product_amt:price,
-        user : userName,
+        user : decryptedname,
         doctorName:doctor,
         productlist, // Include the modified product list with product names
       });

@@ -152,7 +152,18 @@ const getDriver_profile = async(req,res)=>{
 ////get order///////
 const getorder = async(req,res)=>{
   try{
+    const secretKey = process.env.ENCRYPTION_KEY;
+    
+    const safeDecrypt = (text, key) => {
+      try {
+        return decrypt(text, key);
+      } catch (err) {
+        return text;
+      }
+    };
+    
     const {driverId} = req.body
+   
     if(!driverId){
       return res.status(404).json({
         error:true,
@@ -186,8 +197,22 @@ const getorder = async(req,res)=>{
         }
       })
       console.log({findpharmId})
-      const patientName = findpharmId[0].patient_name
-      console.log({patientName})
+      const customer = findpharmId[0].customer_id
+      console.log({customer})
+      
+      //find customer////
+
+      const findCustomer = await prisma.user_details.findFirst({
+        where:{
+          id:customer
+        }
+      })
+      console.log({findCustomer})
+
+      const decryptedname = safeDecrypt(findCustomer.name, secretKey);
+      findCustomer.name = decryptedname;
+      console.log({decryptedname})
+
       ////find pharmacy address
       const find_phAddress = await prisma.pharmacy_details.findFirst({
         where:{
@@ -206,7 +231,7 @@ const getorder = async(req,res)=>{
         ...findOrders[i],
         address:addressData,
         pharmacyName:pharmName,
-        patient:patientName
+        patient:decryptedname
       })
     }
     if(findOrders.length === 0){
