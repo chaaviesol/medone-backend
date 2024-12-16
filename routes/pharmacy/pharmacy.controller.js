@@ -1602,6 +1602,52 @@ const myorders = async (request, response) => {
   }
 };
 
+const getprods = async (request, response) => {
+  try {
+    const allproducts = await prisma.generic_product.findMany({
+      where: {
+        is_active: "Y",
+      },
+    });
+
+    if (allproducts.length > 0) {
+      const medication_details = allproducts.map((item) => {
+        const mrp = item?.mrp; 
+        // Calculate 10% discount
+        const discount = mrp ? mrp * 0.1 : 0; 
+        const selling_price = mrp ? mrp - discount : 0; 
+       
+        return {
+          ...item, 
+          selling_price,
+        };
+      });
+
+      return response.status(200).json({
+        data: medication_details,
+        success: true,
+      });
+    } else {
+      return response.status(404).json({
+        data: [],
+        success: false,
+        message: "No active products found",
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in pharmacy getprods API`
+    );
+    response.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+
 //////////chatbot/////////////////////////////////////////////
 const conversationHistory = []; // Initialize conversation history array
 
@@ -1691,4 +1737,5 @@ module.exports = {
   prescriptioninvoice,
   myorders,
   getinvsalesorder,
+  getprods
 };
