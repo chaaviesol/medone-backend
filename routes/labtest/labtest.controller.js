@@ -116,16 +116,23 @@ const getpackagetests = async (request, response) => {
   try {
     const getall = await prisma.lab_packages.findMany();
     if (getall.length > 0) {
-      for(const package of getall) {
-        const find=await prisma.labtest_details.findFirst({
-          where:{
-            
-          }
-        });
+      const allLabTestIds = getall.flatMap((pkg) => pkg.labtest_ids);
 
-      }
+      const labtestDetails = await prisma.labtest_details.findMany({
+        where: {
+          id: { in: allLabTestIds },
+        },
+      });
+
+      const packagesWithTests = getall.map((pkg) => ({
+        ...pkg,
+        tests: labtestDetails.filter((test) =>
+          pkg.labtest_ids.includes(test.id)
+        ),
+      }));
+
       return response.status(200).json({
-        data: getall,
+        data: packagesWithTests,
         success: true,
       });
     } else {
@@ -148,5 +155,5 @@ module.exports = {
   labtestadd,
   getlabtests,
   package_add,
-  getpackagetests
+  getpackagetests,
 };
