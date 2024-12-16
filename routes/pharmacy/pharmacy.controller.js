@@ -531,7 +531,7 @@ const salesorder = async (request, response) => {
     pincode,
     contact_no,
   } = request.body;
-
+  console.log(JSON.parse(request.body.delivery_location));
   const userId = parseInt(request.user.userId);
   let sales_order;
 
@@ -561,6 +561,12 @@ const salesorder = async (request, response) => {
         error: true,
         message: "Missing order_type field",
       });
+    }
+    let location;
+    if (order_type != "prescription") {
+      location = delivery_location;
+    } else {
+      location = JSON.parse(delivery_location);
     }
 
     await prisma.$transaction(async (prisma) => {
@@ -600,7 +606,7 @@ const salesorder = async (request, response) => {
           created_date: datetime,
           customer_id: userId,
           delivery_address: delivery_address,
-          delivery_location,
+          delivery_location: location,
           city,
           district,
           contact_no: contact_no.toString(),
@@ -1095,31 +1101,30 @@ const getinvsalesorder = async (request, response) => {
     });
 
     ///////////fixed discount 10%//////////////
-   
 
     const decryptedUsername = decrypt(getdata?.users.name, secretKey);
     const userId = getdata?.users.id;
     const medication_details = (getdata.sales_list || getdata).map((item) => {
       const mrp = item?.generic_prodid?.mrp;
       const discount = mrp ? mrp * 0.1 : 0; // Calculate 10% discount
-      const final_price = mrp ? mrp - discount : 0; 
-     
+      const final_price = mrp ? mrp - discount : 0;
+
       return {
-      id: item?.generic_prodid?.id || "",
-      name: item?.generic_prodid?.name || "",
-      category: item?.generic_prodid?.category || "",
-      batch_no: "",
-      timing: [],
-      afterFd_beforeFd: "",
-      no_of_days: "",
-      takingQuantity: "",
-      totalQuantity: item?.order_qty || "",
-      hsn: item?.generic_prodid?.hsn || "",
-      mrp: item?.generic_prodid?.mrp || "",
-      net_amount:item?.net_amount || "",
-      selling_price:final_price || "", 
-      }
-    })
+        id: item?.generic_prodid?.id || "",
+        name: item?.generic_prodid?.name || "",
+        category: item?.generic_prodid?.category || "",
+        batch_no: "",
+        timing: [],
+        afterFd_beforeFd: "",
+        no_of_days: "",
+        takingQuantity: "",
+        totalQuantity: item?.order_qty || "",
+        hsn: item?.generic_prodid?.hsn || "",
+        mrp: item?.generic_prodid?.mrp || "",
+        net_amount: item?.net_amount || "",
+        selling_price: final_price || "",
+      };
+    });
     if (medication_details.length === 0) {
       medication_details.push({
         id: "",
@@ -1612,13 +1617,13 @@ const getprods = async (request, response) => {
 
     if (allproducts.length > 0) {
       const medication_details = allproducts.map((item) => {
-        const mrp = item?.mrp; 
+        const mrp = item?.mrp;
         // Calculate 10% discount
-        const discount = mrp ? mrp * 0.1 : 0; 
-        const selling_price = mrp ? mrp - discount : 0; 
-       
+        const discount = mrp ? mrp * 0.1 : 0;
+        const selling_price = mrp ? mrp - discount : 0;
+
         return {
-          ...item, 
+          ...item,
           selling_price,
         };
       });
@@ -1646,7 +1651,6 @@ const getprods = async (request, response) => {
     await prisma.$disconnect();
   }
 };
-
 
 //////////chatbot/////////////////////////////////////////////
 const conversationHistory = []; // Initialize conversation history array
@@ -1737,5 +1741,5 @@ module.exports = {
   prescriptioninvoice,
   myorders,
   getinvsalesorder,
-  getprods
+  getprods,
 };
