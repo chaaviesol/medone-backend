@@ -406,6 +406,9 @@ const getConfirmedOrder = async (req, res) => {
           in: ["packed", "Accepted", "ready to ship"],
         },
       },
+      orderBy:{
+        Stmodified_date:"desc"
+      }
     });
    const getPharm_name = await prisma.pharmacy_details.findFirst({
     where:{
