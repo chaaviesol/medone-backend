@@ -234,7 +234,15 @@ const getOrder = async (req, res) => {
           sales_id: salesId,
         },
       });
-
+     ////get customerName////
+    //  const getCustomerName = await prisma.sales_order.findMany({
+    //   where:{
+    //     sales_id: salesId,
+    //   }
+    //  })
+    //  console.log({getCustomerName})
+    //  const getName = getCustomerName[0].patient_name
+    //  console.log({getName})
       const productlist = [];
       for (let j = 0; j < getSaleslist.length; j++) {
         const productId = getSaleslist[j].product_id;
@@ -1003,14 +1011,108 @@ const addSeenStatus = async(req,res)=>{
 
 
 ////get order summary(3 month)
+// const orderSummery = async (req, res) => {
+//   try {
+//     const { chemistId } = req.body;
+
+//     if (!chemistId) {
+//       return res.status(400).json({ error: "Chemist ID is required" });
+//     }
+
+//     const getCurrentDateInIST = () => {
+//       const now = new Date();
+//       const offset = 330; // IST offset in minutes (UTC+5:30)
+//       const localTime = new Date(now.getTime() + offset * 60 * 1000);
+//       return localTime;
+//     };
+
+//     const listLastThreeMonths = (date) => {
+//       const months = [];
+//       for (let i = 0; i < 3; i++) {
+//         const current = new Date(date);
+//         current.setMonth(current.getMonth() - i); // Subtract i months
+//         const year = current.getFullYear();
+//         const month = current.getMonth() + 1; // Months are 0-indexed
+//         const paddedMonth = month < 10 ? `0${month}` : month; // Format to two digits
+//         months.push(`${year}-${paddedMonth}`);
+//       }
+//       return months;
+//     };
+
+//     const currentDate = getCurrentDateInIST();
+//     const lastThreeMonths = listLastThreeMonths(currentDate);
+
+//     console.log({ lastThreeMonths });
+
+//     // Query the pharmacy_assign table
+//     const orders = await prisma.pharmacy_assign.findMany({
+//       where: {
+//         pharmacy_id: chemistId,
+//         status: "packed",
+//         Stmodified_date: {
+//           gte: new Date(`${lastThreeMonths[2]}-01`), // Start of the oldest month
+//           lte: new Date(`${lastThreeMonths[0]}-31`), // End of the current month
+//         },
+//       },
+//       orderBy: {
+//         Stmodified_date: "asc",
+//       },
+//     });
+
+//     console.log({ orders });
+
+//     if (!orders.length) {
+//       return res.status(404).json({ message: "No orders found for the last three months." });
+//     }
+
+//     const totalAmount = [];
+
+//     for (let i = 0; i < orders.length; i++) {
+//       const findPrice = await prisma.sales_order.findMany({
+//         where: {
+//           sales_id: orders[i].sales_id,
+//         },
+//         select: {
+//           total_amount: true,
+//         },
+//       });
+
+//       console.log({ findPrice });
+
+//       if (findPrice.length > 0) {
+//         const price = Number(findPrice[0].total_amount); // Ensure the amount is treated as a number
+//         totalAmount.push(price);
+//       }
+//     }
+
+//     // Calculate the grand total as a sum of totalAmounts
+//     const grandTotal = totalAmount.reduce((acc, curr) => acc + curr, 0);
+
+//     res.status(200).json({
+//       success: true,
+//       data: orders,
+//       totalAmounts: totalAmount,
+//       grandTotal: grandTotal,
+//     });
+//   } catch (error) {
+//     console.error(`Internal server error: ${error.message} in chemist-orderSummery API`);
+//     return res.status(500).json({ error: "Internal Server Error" });
+//   } finally {
+//     await prisma.$disconnect();
+//   }
+// };
+
+
+
 const orderSummery = async (req, res) => {
   try {
-    const { chemistId } = req.body;
+    const { chemistId, month } = req.body;
 
     if (!chemistId) {
       return res.status(400).json({ error: "Chemist ID is required" });
     }
 
+    // Helper function to get the current date in IST
     const getCurrentDateInIST = () => {
       const now = new Date();
       const offset = 330; // IST offset in minutes (UTC+5:30)
@@ -1018,6 +1120,7 @@ const orderSummery = async (req, res) => {
       return localTime;
     };
 
+    // Helper function to list the last three months
     const listLastThreeMonths = (date) => {
       const months = [];
       for (let i = 0; i < 3; i++) {
@@ -1031,10 +1134,26 @@ const orderSummery = async (req, res) => {
       return months;
     };
 
-    const currentDate = getCurrentDateInIST();
-    const lastThreeMonths = listLastThreeMonths(currentDate);
+    let startDate, endDate;
 
-    console.log({ lastThreeMonths });
+    if (month) {
+      // If `month` is provided, calculate start and end dates for the given month
+      const [inputMonth, inputYear] = month.split("/"); // e.g., "04/2024" -> ["04", "2024"]
+      startDate = new Date(`${inputYear}-${inputMonth}-01`); // Start of the month
+      endDate = new Date(startDate);
+      endDate.setMonth(startDate.getMonth() + 1); // Move to the next month
+      endDate.setDate(0); // Set to the last day of the current month
+    } else {
+      // If `month` is not provided, calculate for the last three months
+      const currentDate = getCurrentDateInIST();
+      const lastThreeMonths = listLastThreeMonths(currentDate);
+
+      // Set startDate as the start of the oldest month and endDate as the end of the current month
+      startDate = new Date(`${lastThreeMonths[2]}-01`); // Start of the oldest month
+      endDate = new Date(`${lastThreeMonths[0]}-31`); // End of the current month
+    }
+
+    console.log({ startDate, endDate });
 
     // Query the pharmacy_assign table
     const orders = await prisma.pharmacy_assign.findMany({
@@ -1042,8 +1161,8 @@ const orderSummery = async (req, res) => {
         pharmacy_id: chemistId,
         status: "packed",
         Stmodified_date: {
-          gte: new Date(`${lastThreeMonths[2]}-01`), // Start of the oldest month
-          lte: new Date(`${lastThreeMonths[0]}-31`), // End of the current month
+          gte: startDate, // Start date
+          lte: endDate, // End date
         },
       },
       orderBy: {
@@ -1054,7 +1173,10 @@ const orderSummery = async (req, res) => {
     console.log({ orders });
 
     if (!orders.length) {
-      return res.status(404).json({ message: "No orders found for the last three months." });
+      const message = month
+        ? `No orders found for the month ${month}.`
+        : "No orders found for the last three months.";
+      return res.status(404).json({ message });
     }
 
     const totalAmount = [];
@@ -1093,6 +1215,8 @@ const orderSummery = async (req, res) => {
     await prisma.$disconnect();
   }
 };
+
+
 
 
 module.exports = {

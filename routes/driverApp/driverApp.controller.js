@@ -181,11 +181,13 @@ const getorder = async(req,res)=>{
           sales_id:findOrders[i].sales_id
         },
         select:{
-          pharmacy_id:true
+          pharmacy_id:true,
+          patient_name:true
         }
       })
       console.log({findpharmId})
-
+      const patientName = findpharmId[0].patient_name
+      console.log({patientName})
       ////find pharmacy address
       const find_phAddress = await prisma.pharmacy_details.findFirst({
         where:{
@@ -203,7 +205,8 @@ const getorder = async(req,res)=>{
       pharmAddress.push({
         ...findOrders[i],
         address:addressData,
-        pharmacyName:pharmName
+        pharmacyName:pharmName,
+        patient:patientName
       })
     }
     if(findOrders.length === 0){
