@@ -21,7 +21,8 @@ const {
   getainvoice,
   prescriptioninvoice,
   myorders,
-  getinvsalesorder
+  getinvsalesorder,
+  getprods
 } = require("./pharmacy.controller");
 const PharmacyRouter = express.Router();
 const { upload } = require("../../middleware/Uploadimage");
@@ -53,5 +54,7 @@ PharmacyRouter.post("/createinvoice", createinvoice);
 PharmacyRouter.post("/prescriptioninvoice", prescriptioninvoice);
 PharmacyRouter.post("/getainvoice", getainvoice);
 PharmacyRouter.post("/getinvsalesorder",getinvsalesorder)//get a sales order`
+PharmacyRouter.get("/getprods",getprods)////////get products for inv sales order
+
 
 module.exports = PharmacyRouter;
