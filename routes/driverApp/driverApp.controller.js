@@ -431,13 +431,15 @@ const verifyTrips = async(req,res)=>{
         select:{
           pharmacy_id:true,
           customer_id:true,
-          delivery_address:true
+          delivery_address:true,
+          delivery_location:true
         }
       })
       console.log({findpharmId})
       const customerAddress = findpharmId[0].delivery_address
       console.log({customerAddress})
-
+      const location = findpharmId[0].delivery_location
+      console.log({location})
       ////find pharmacy address
       const find_phAddress = await prisma.pharmacy_details.findFirst({
         where:{
@@ -445,12 +447,15 @@ const verifyTrips = async(req,res)=>{
         },
         select:{
           id:true,
+          name:true,
           address:true,
         }
       })
       console.log({find_phAddress})
       const cutmId = findpharmId[0].customer_id
       console.log({cutmId})
+      const pharmName = find_phAddress.name
+      console.log({pharmName})
       ///find customerphone///
       const find_custPhone = await prisma.user_details.findMany({
         where:{
@@ -470,8 +475,10 @@ const verifyTrips = async(req,res)=>{
       const addressData = find_phAddress.address
       Address.push({
         ...findPickUpOrders[i],
+        pharmcy_Name:pharmName,
         fromAddress:addressData,
         to_Address:customerAddress,
+        deliveryLocation:location,
         customer_phone:decryptedphone
       })
     }
