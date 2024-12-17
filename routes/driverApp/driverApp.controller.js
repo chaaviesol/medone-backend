@@ -536,7 +536,21 @@ const addDeliveryStatus = async(req,res)=>{
       }
     })
     console.log({salesorder})
+    const deliveredDate = salesorder.delivery_date
+    console.log({deliveredDate})
+    const startdate = new Date(deliveredDate).toISOString().split('T')[0].replace(/-/g, '/');
+    // const startdate = deliveredDate.split('T')[0].replace(/-/g, '/');
+    console.log({startdate})
 
+    const addStartDate = await prisma.medicine_timetable.updateMany({
+      where:{
+        sales_id:addDelivery.sales_id
+      },
+      data:{
+        startDate:startdate
+      }
+    })
+    console.log({addStartDate})
     return res.status(200).json({
       error:false,
       success:true,

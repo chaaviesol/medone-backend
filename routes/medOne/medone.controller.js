@@ -2705,15 +2705,49 @@ try{
   const getCompleteList = await prisma.medicine_timetable.findMany({
     where:{
       userId:userId,
-      app_flag:false
+      app_flag:false,
+      startDate:{
+        not:null
+      }
     },
     select:{
       id:true,
       userId:true,
-      medicine:true
+      medicine:true,
+      startDate:true,
+      no_of_days:true
     }
   })
   console.log({getCompleteList})
+   const filteredList = []
+  for(let i=0;i<getCompleteList.length;i++){
+
+    const startDateObj = new Date(getCompleteList[i].startDate);
+    console.log({startDateObj})
+    const numberOfDays = parseInt(getCompleteList[i].no_of_days, 10);
+    console.log({numberOfDays})
+    const endDate = new Date(startDateObj);
+    endDate.setDate(endDate.getDate() + numberOfDays);
+    console.log({endDate})
+
+
+    
+    const currentDate = new Date();
+    if (currentDate >= startDateObj && currentDate <= endDate) {
+      console.log(`Including medicine ID: ${getCompleteList[i].id}`);
+      filteredList.push(getCompleteList[i]); // Add the valid medicine to the filtered list
+    } else {
+      console.log(
+        `Skipping medicine ID: ${getCompleteList[i].id} as it is out of the active range`
+      );
+    }
+  
+  }
+    
+  console.log({filteredList})
+
+
+
   if(getCompleteList.length === 0 ){
     return res.status(404).json({
       error:true,
@@ -2727,7 +2761,7 @@ try{
     error:false,
     success:true,
     message:"Successfull..........",
-    data:getCompleteList
+    data:filteredList
   })
 }catch (error) {
     console.error({ error });
