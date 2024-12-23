@@ -1023,6 +1023,7 @@ const convertTime = (timeString) => {
 
 
 const userProfile = async(request,response)=>{
+  console.log({request})
   try{
     const secretKey = process.env.ENCRYPTION_KEY;
     

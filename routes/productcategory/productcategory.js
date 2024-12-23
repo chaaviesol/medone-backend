@@ -281,4 +281,76 @@ const getcategorywise = async (request, response) => {
   }
 };
 
-module.exports = { addcategory, getcategory, deletecategory, getcategorywise };
+
+///getcategory for mobile app
+
+const getcategorywise_app = async (request, response) => {
+  const { userId } = request.body;
+  try {
+    const categories = await prisma.productcategory.findMany({
+      select: { id: true, category: true, image: true },
+    });
+
+    if (categories.length > 0) {
+      let resultObject = [];
+      const normalizeString = (str) =>
+        str.toLowerCase().trim().replace(/\s+/g, " ");
+
+      // Fetch all products in the user's cart with their quantities
+      const findProductsInCart = await prisma.customer_cart.findMany({
+        where: { user_id: userId },
+        select: { prod_id: true, quantity: true },
+      });
+
+      // Convert cart product data into a Map for quick lookup
+      const cartProductMap = new Map(
+        findProductsInCart.map((item) => [item.prod_id, item.quantity])
+      );
+
+      for (let i = 0; i < categories.length; i++) {
+        const normalizedCategory = normalizeString(categories[i].category);
+
+        // Fetch all generic products
+        const products = await prisma.generic_product.findMany();
+
+        // Match products by category and determine if they are in the cart
+        const matchingProducts = products
+          .filter((product) => {
+            return product.category.some(
+              (cat) => normalizeString(cat) === normalizedCategory
+            );
+          })
+          .map((product) => ({
+            ...product,
+            quantity: cartProductMap.get(product.id) || 0, // Set quantity from the cart or default to 0
+            inCart: cartProductMap.has(product.id), // Check if product is in the cart
+          }));
+
+        resultObject.push({
+          id: categories[i].id,
+          categoryName: categories[i].category,
+          categoryImage: categories[i].image,
+          products: matchingProducts,
+        });
+      }
+
+      response.status(200).json({
+        success: true,
+        data: resultObject,
+      });
+    } else {
+      response.status(200).json({ message: "No Data" });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in product-getcategory API`
+    );
+    console.error(error);
+    response.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+
+module.exports = { addcategory, getcategory, deletecategory, getcategorywise, getcategorywise_app};
