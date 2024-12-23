@@ -497,9 +497,6 @@ const getorderdetails = async (request, response) => {
             },
           },
         },
-        // sales_invoice: {
-        //   select: {
-        //     created_date: true,
         medicine_timetable: {
           select: {
             medicine: true,
@@ -513,8 +510,19 @@ const getorderdetails = async (request, response) => {
             daysInterval: true,
           },
         },
-        // },
-        // },
+        pharmacy_assign: {
+          select: {
+            created_date: true,
+            Stmodified_date: true,
+          },
+        },
+        delivery_assign: {
+          select: {
+            assigned_date: true,
+            picked_update: true,
+            delivered_date: true,
+          },
+        },
       },
     });
 
@@ -548,14 +556,6 @@ const getorderdetails = async (request, response) => {
           }
         : product;
     });
-    const packed = await prisma.pharmacy_assign.findFirst({
-      where: {
-        sales_id: sales_id,
-      },
-      select: {
-        Stmodified_date: true,
-      },
-    });
 
     response.status(200).json({
       success: true,
@@ -576,7 +576,10 @@ const getorderdetails = async (request, response) => {
         prescription_image: getdata.prescription_image,
         patient_name: getdata.patient_name,
         products: combinedProducts,
-        packedDate: packed?.Stmodified_date || "",
+        packedDate: getdata?.pharmacy_assign[0]?.Stmodified_date || "",
+        deliveryassigned_date: getdata?.delivery_assign[0]?.assigned_date || "",
+        shipping_date: getdata?.delivery_assign[0]?.picked_update || "",
+        delivered_date: getdata?.delivery_assign[0]?.delivered_date || "",
         user_name,
       },
     });
@@ -916,12 +919,11 @@ const assigndeliverypartner = async (request, response) => {
         sales_id: sales_id,
       },
     });
-    if(finddelivery){
+    if (finddelivery) {
       return response.status(400).json({
         error: true,
         message: "delivery partner already assigned",
       });
-
     }
 
     const add = await prisma.delivery_assign.create({

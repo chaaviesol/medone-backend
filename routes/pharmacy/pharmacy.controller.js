@@ -531,7 +531,7 @@ const salesorder = async (request, response) => {
     pincode,
     contact_no,
   } = request.body;
- 
+
   const userId = parseInt(request.user.userId);
   let sales_order;
 
@@ -603,6 +603,7 @@ const salesorder = async (request, response) => {
           so_status: "placed",
           remarks,
           order_type,
+          patient_name: name,
           created_date: datetime,
           customer_id: userId,
           delivery_address: delivery_address,
@@ -668,7 +669,6 @@ const salesorder = async (request, response) => {
             sales_id: sales_order.sales_id,
           },
           data: {
-            patient_name: name,
             prescription_image: imageprescription,
             created_date: datetime,
           },
@@ -800,15 +800,21 @@ const presciptionsaleorders = async (request, response) => {
       let requested = [];
       let others = [];
       let ofd = [];
+      let packed=[];
+      let delivered=[]
       all.forEach((order) => {
         if (order?.users?.name) {
           const decryptedUsername = decrypt(order.users.name, secretKey);
           order.users = decryptedUsername;
         }
-        if (order.so_status === "Placed") {
+        if (order.so_status === "Placed" || order.so_status === "placed" ) {
           requested.push(order);
+        }else if (order.so_status === "packed") {
+          packed.push(order);
         } else if (order.so_status === "Out for Delivery") {
           ofd.push(order);
+        } else if (order.so_status === "delivered") {
+          delivered.push(order);
         } else {
           others.push(order);
         }
@@ -818,7 +824,9 @@ const presciptionsaleorders = async (request, response) => {
         success: true,
         data: all,
         requestlength: requested.length,
+        packedlength:packed.length,
         outfordelivery: ofd.length,
+        deliveredlength:delivered.length,
         otherslength: others.length,
       });
     } else {
@@ -890,6 +898,8 @@ const allsalelistorders = async (request, response) => {
       let requested = [];
       let others = [];
       let ofd = [];
+      let packed=[];
+      let delivered=[]
       all.forEach((order) => {
         if (order?.users?.name) {
           const decryptedUsername = decrypt(order.users.name, secretKey);
@@ -899,6 +909,11 @@ const allsalelistorders = async (request, response) => {
           requested.push(order);
         } else if (order.so_status === "Out for delivery") {
           ofd.push(order);
+        }else if (order.so_status === "packed") {
+          packed.push(order);
+        }
+        else if (order.so_status === "delivered") {
+          delivered.push(order);
         } else {
           others.push(order);
         }
@@ -908,8 +923,10 @@ const allsalelistorders = async (request, response) => {
         success: true,
         data: all,
         requestlength: requested.length,
+        packedlength:packed.length,
         outfordelivery: ofd.length,
         otherslength: others.length,
+        deliveredlength:delivered.length
       });
     } else {
       return response.status(404).json({
