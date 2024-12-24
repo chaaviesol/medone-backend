@@ -845,6 +845,87 @@ const get_prescription = async(req,res)=>{
 }
 
 
+///add prescription status
+const prescriptionStatus = async(req,res)=>{
+  const { salesId,status,driverId} = req.body
+  try{
+    if(!salesId || !status ||  !driverId){
+      return res.status(404).json({
+        error:true,
+        success:false,
+        message:"something  is missing........"
+      })
+    }
+    const addStatus = await prisma.delivery_assign.updateMany({
+      where:{
+        sales_id:salesId,
+        deliverypartner_id:driverId
+      },
+      data:{
+        prescription_analysis:status
+      }
+    })
+    console.log({addStatus})
+
+    return res.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull..........",
+      data:addStatus
+    })
+  }catch (err) {
+    logger.error(
+      `Internal server error: ${err.message} in prescriptionStatus api`,
+      console.log({err})
+    );
+    res.status(400).json({
+      error: true,
+      message: "internal server error",
+    });
+  }
+
+}
+
+//add stamp status
+const add_stampStatus = async(req,res)=>{
+  const { salesId,status,driverId} = req.body
+  try{
+    if(!salesId || !status ||  !driverId){
+      return res.status(404).json({
+        error:true,
+        success:false,
+        message:"something  is missing........"
+      })
+    }
+    const stampStatus = await prisma.delivery_assign.updateMany({
+      where:{
+        sales_id:salesId,
+        deliverypartner_id:driverId
+      },
+      data:{
+        stamp_statusUpdate:status
+      }
+    })
+    console.log({stampStatus})
+
+    return res.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull..........",
+      data:stampStatus
+    })
+  }catch (err) {
+    logger.error(
+      `Internal server error: ${err.message} in add_stampStatus api`,
+      console.log({err})
+    );
+    res.status(400).json({
+      error: true,
+      message: "internal server error",
+    });
+  }
+
+}
 
 
 
@@ -863,5 +944,7 @@ const get_prescription = async(req,res)=>{
     addDeliveryStatus,
     get_fulfilledOrders,
     wallet,
-    get_prescription
+    get_prescription,
+    prescriptionStatus,
+    add_stampStatus
   }
