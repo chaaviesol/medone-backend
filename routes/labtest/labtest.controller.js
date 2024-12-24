@@ -144,16 +144,22 @@ const labtestadd = async (request, response) => {
     name,
     mrp,
     description,
-    status,
-    photo,
     type,
     category,
     home_collection,
     gender,
     age_group,
   } = request.body;
+
   const datetime = getCurrentDateInIST();
   try {
+    const lwrcase_name = name.toLowerCase();
+    const lwrcase_description = description.trim().toLowerCase();
+
+    const lwrcase_type = type?.trim().toLowerCase();
+    const lwrcase_category = category?.trim().toLowerCase();
+    const lwrcase_gender = gender?.trim().toLowerCase();
+    const lwrcase_age_group = age_group?.trim().toLowerCase();
     const lastTest = await prisma.labtest_details.findFirst({
       orderBy: {
         id: "desc",
@@ -167,17 +173,16 @@ const labtestadd = async (request, response) => {
     const testnumber = `T${String(lastNumber + 1).padStart(4, "0")}`;
     const adddata = await prisma.labtest_details.create({
       data: {
-        name,
+        name: lwrcase_name,
         mrp,
-        description,
-        status,
-        photo,
-        type,
-        category,
+        description: lwrcase_description,
+        is_active: true,
+        type: lwrcase_type,
+        category: lwrcase_category,
         home_collection,
-        gender,
-        age_group,
-        testnumber: testnumber,
+        gender: lwrcase_gender,
+        age_group: lwrcase_age_group,
+        test_number: testnumber,
         created_date: datetime,
       },
     });
@@ -191,6 +196,7 @@ const labtestadd = async (request, response) => {
     logger.error(
       `Internal server error: ${err.message} in labtest---labtestass api`
     );
+    console.log(err);
     response.status(400).json({
       error: true,
       message: "internal server error",
@@ -201,6 +207,7 @@ const labtestadd = async (request, response) => {
 const getlabtests = async (request, response) => {
   try {
     const getall = await prisma.labtest_details.findMany();
+    console.log({ getall });
     if (getall.length > 0) {
       return response.status(200).json({
         data: getall,
@@ -505,7 +512,9 @@ const removeTestFromCart = async (request, response) => {
   const { test_number } = request.body;
   const user_id = request.user.userId;
   if (!user_id || !test_number) {
-    logger.error("user_id or test_number is undefined in removeTestFromCart API");
+    logger.error(
+      "user_id or test_number is undefined in removeTestFromCart API"
+    );
     return response.status(400).json({
       error: true,
       message: "user_id and test_number are required",
@@ -516,7 +525,7 @@ const removeTestFromCart = async (request, response) => {
     const result = await prisma.labtest_cart.deleteMany({
       where: {
         user_id: user_id,
-        test_number
+        test_number,
       },
     });
 
@@ -544,7 +553,6 @@ const removeTestFromCart = async (request, response) => {
   }
 };
 
-
 module.exports = {
   labtestadd,
   getlabtests,
@@ -555,5 +563,5 @@ module.exports = {
   lab_profile,
   testToCart,
   gettestCart,
-  removeTestFromCart
+  removeTestFromCart,
 };

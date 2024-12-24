@@ -13,6 +13,7 @@ const {
   removeTestFromCart
 } = require("./labtest.controller");
 const LabtestRouter = express.Router();
+console.log("labtestt")
 const auth = require("../../middleware/Auth/auth");
 
 LabtestRouter.post("/labtestadd", labtestadd);
