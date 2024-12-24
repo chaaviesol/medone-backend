@@ -10,21 +10,25 @@ const {
   lab_profile,
   testToCart,
   gettestCart,
-  removeTestFromCart
+  removeTestFromCart,
+  labtestupdate,
+  package_update
 } = require("./labtest.controller");
 const LabtestRouter = express.Router();
-console.log("labtestt")
+console.log("labtestt");
 const auth = require("../../middleware/Auth/auth");
 
 LabtestRouter.post("/labtestadd", labtestadd);
 LabtestRouter.get("/getlabtests", getlabtests);
 LabtestRouter.post("/package_add", package_add);
 LabtestRouter.get("/getpackagetests", getpackagetests);
-LabtestRouter.post("/labadd",labadd)
-LabtestRouter.get("/getlabs",getlabs)
-LabtestRouter.post("/lab_profile",lab_profile)
-LabtestRouter.post("/testToCart",auth,testToCart)
-LabtestRouter.get("/gettestCart",auth,gettestCart)
-LabtestRouter.post("/removeTestFromCart",auth,removeTestFromCart)
+LabtestRouter.post("/labadd", labadd);
+LabtestRouter.get("/getlabs", getlabs);
+LabtestRouter.post("/lab_profile", lab_profile);
+LabtestRouter.post("/testToCart", auth, testToCart);
+LabtestRouter.get("/gettestCart", auth, gettestCart);
+LabtestRouter.post("/removeTestFromCart", auth, removeTestFromCart);
+LabtestRouter.post("/labtestupdate", labtestupdate);
+LabtestRouter.post("/package_update",package_update)
 
 module.exports = LabtestRouter;

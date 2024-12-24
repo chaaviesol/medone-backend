@@ -229,6 +229,70 @@ const getlabtests = async (request, response) => {
   }
 };
 
+const labtestupdate = async (request, response) => {
+  const {
+    id,
+    name,
+    mrp,
+    description,
+    type,
+    category,
+    home_collection,
+    gender,
+    age_group,
+  } = request.body;
+
+  try {
+    const labTest = await prisma.labtest_details.findUnique({
+      where: { id },
+    });
+
+    if (!labTest) {
+      return response.status(404).json({
+        error: true,
+        message: "Lab test not found",
+      });
+    }
+
+    const lwrcase_name = name?.toLowerCase();
+    const lwrcase_description = description?.trim().toLowerCase();
+    const lwrcase_type = type?.trim().toLowerCase();
+    const lwrcase_category = category?.trim().toLowerCase();
+    const lwrcase_gender = gender?.trim().toLowerCase();
+    const lwrcase_age_group = age_group?.trim().toLowerCase();
+
+    const updatedLabTest = await prisma.labtest_details.update({
+      where: { id },
+      data: {
+        name: lwrcase_name,
+        mrp,
+        description: lwrcase_description,
+        is_active: true,
+        type: lwrcase_type,
+        category: lwrcase_category,
+        home_collection,
+        gender: lwrcase_gender,
+        age_group: lwrcase_age_group,
+      },
+    });
+
+    response.status(200).json({
+      error: false,
+      success: true,
+      message: "Successfully updated",
+    });
+  } catch (err) {
+    logger.error(
+      `Internal server error: ${err.message} in labtest---labtestupdate API`
+    );
+    console.log(err);
+    response.status(400).json({
+      error: true,
+      message: "Internal server error",
+    });
+  }
+};
+
 const package_add = async (request, response) => {
   const { package_name, price, created_date, status, labtest_ids } =
     request.body;
@@ -269,6 +333,50 @@ const package_add = async (request, response) => {
     response.status(400).json({
       error: true,
       message: "internal server error",
+    });
+  }
+};
+
+const package_update = async (request, response) => {
+  const { id, package_name, price, status, labtest_ids } = request.body;
+
+  const datetime = getCurrentDateInIST();
+
+  try {
+    const labPackage = await prisma.lab_packages.findUnique({
+      where: { id },
+    });
+
+    if (!labPackage) {
+      return response.status(404).json({
+        error: true,
+        message: "Lab package not found",
+      });
+    }
+
+    const updatedLabPackage = await prisma.lab_packages.update({
+      where: { id },
+      data: {
+        package_name,
+        price,
+        status,
+        labtest_ids,
+      },
+    });
+
+    response.status(200).json({
+      error: false,
+      success: true,
+      message: "Successfully updated",
+    });
+  } catch (err) {
+    logger.error(
+      `Internal server error: ${err.message} in labtest---package_update API`
+    );
+    console.log(err);
+    response.status(400).json({
+      error: true,
+      message: "Internal server error",
     });
   }
 };
@@ -564,4 +672,6 @@ module.exports = {
   testToCart,
   gettestCart,
   removeTestFromCart,
+  labtestupdate,
+  package_update
 };
