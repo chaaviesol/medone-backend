@@ -796,6 +796,53 @@ const wallet = async(req,res)=>{
 // };
 
 
+////get prescription
+const get_prescription = async(req,res)=>{
+  try{
+    const{salesId} = req.body
+    if(!salesId){
+      return res.status(404).json({
+        error:true,
+        success:false,
+        message:"salesId is required........"
+      })
+    }
+    const prescription = await prisma.sales_order.findMany({
+      where:{
+        sales_id:salesId
+      },
+      select:{
+        sales_id:true,
+        prescription_image:true
+      }
+    })
+    console.log({prescription})
+    if(prescription[0].prescription_image === null){
+      return res.status(200).json({
+        error:true,
+        success:false,
+        message:"prescription not found..........",
+     
+      })
+    }
+    return res.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull..........",
+      data:prescription
+    })
+
+  }catch (err) {
+        logger.error(
+          `Internal server error: ${err.message} in get_prescription api`,
+          console.log({err})
+        );
+        res.status(400).json({
+          error: true,
+          message: "internal server error",
+        });
+      }
+}
 
 
 
@@ -815,5 +862,6 @@ const wallet = async(req,res)=>{
     verifyTrips,
     addDeliveryStatus,
     get_fulfilledOrders,
-    wallet
+    wallet,
+    get_prescription
   }
