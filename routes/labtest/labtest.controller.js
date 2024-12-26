@@ -306,7 +306,7 @@ const package_add = async (request, response) => {
   const lastNumber = lastTest?.test_number
     ? parseInt(lastTest.test_number.slice(1))
     : 0;
-
+    const is_active = status === "active";
   const testnumber = `T${String(lastNumber + 1).padStart(4, "0")}`;
   try {
     const add_data = await prisma.lab_packages.create({
@@ -314,11 +314,11 @@ const package_add = async (request, response) => {
         package_name,
         price,
         created_date,
-        status,
+        is_active,
         labtest_ids,
         about,
-        created_date: datetime,
-        testnumber: testnumber,
+        created_date: datetime,   
+        test_number: testnumber,
       },
     });
 
@@ -328,6 +328,7 @@ const package_add = async (request, response) => {
       message: "successfully created",
     });
   } catch (err) {
+    console.log({err})
     logger.error(
       `Internal server error: ${err.message} in labtest---labtestass api`
     );

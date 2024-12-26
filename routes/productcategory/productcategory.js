@@ -286,7 +286,8 @@ const getcategorywise = async (request, response) => {
 ///getcategory for mobile app
 
 const getcategorywise_app = async (request, response) => {
-  const { userId } = request.body;
+  // const { userId } = request.body;
+  const user_Id = request.user.userId;
   try {
     const categories = await prisma.productcategory.findMany({
       select: { id: true, category: true, image: true },
@@ -299,7 +300,7 @@ const getcategorywise_app = async (request, response) => {
 
       // Fetch all products in the user's cart with their quantities
       const findProductsInCart = await prisma.customer_cart.findMany({
-        where: { user_id: userId },
+        where: { user_id: user_Id },
         select: { prod_id: true, quantity: true },
       });
 
