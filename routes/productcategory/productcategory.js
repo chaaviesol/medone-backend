@@ -157,9 +157,10 @@ const getcategory = async (request, response) => {
     );
     console.error(error);
     response.status(500).json({ error: "Internal Server Error" });
-  } finally {
-    await prisma.$disconnect();
-  }
+  } 
+  // finally {
+  //   await prisma.$disconnect();
+  // }
 };
 
 const deletecategory = async (request, response) => {
