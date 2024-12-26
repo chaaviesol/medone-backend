@@ -353,6 +353,7 @@ model lab_packages {
   package_name             String?
   test_number              String?   @unique(map: "test_number2") 
   labtest_ids              Json?  
+  about                    String?
   price                    Int?
   created_date             DateTime?
   is_active                Boolean?

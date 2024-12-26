@@ -294,7 +294,7 @@ const labtestupdate = async (request, response) => {
 };
 
 const package_add = async (request, response) => {
-  const { package_name, price, created_date, status, labtest_ids } =
+  const { package_name, price, created_date, status, labtest_ids ,about} =
     request.body;
   const datetime = getCurrentDateInIST();
   const lastTest = await prisma.lab_packages.findFirst({
@@ -316,6 +316,7 @@ const package_add = async (request, response) => {
         created_date,
         status,
         labtest_ids,
+        about,
         created_date: datetime,
         testnumber: testnumber,
       },
