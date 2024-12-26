@@ -181,7 +181,7 @@ console.log({request})
         });
         logger.error(`Internal server error: ${error.message} in medone-addUserData api`);
       } finally {
-        await prisma.$disconnect();
+        //await prisma.$disconnect();
       }
 }
 
@@ -383,7 +383,7 @@ const userLogin = async (request, response) => {
       message: "Internal Server Error!",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -432,7 +432,7 @@ const addRoutine = async(request,response)=>{
     response.status(500).json(error.message);
     logger.error(`Internal server error: ${error.message} in medone-addRoutine api`);
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 
 }
@@ -459,7 +459,7 @@ const getUserRoutine = async(request,response)=>{
     response.status(500).json(error.message);
     logger.error(`Internal server error: ${error.message} in medone-getUserRoutine api`);
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 
@@ -492,7 +492,7 @@ const getMedicine = async(request,response)=>{
   response.status(500).json(error.message);
   logger.error(`Internal server error: ${error.message} in medone-getmedicine api`);
 } finally {
-  await prisma.$disconnect();
+  //await prisma.$disconnect();
 }
 }
 
@@ -545,7 +545,7 @@ const addNewMedicine = async (request, response) => {
       `Internal server error: ${error.message} in medone-addnewmedicine api`
     );
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -602,7 +602,7 @@ const addMedicineSchedule = async(request,response)=>{
     response.status(500).json(error.message);
     logger.error(`Internal server error: ${error.message} in medone-addMedicineSchedule api`);
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 
@@ -1076,7 +1076,7 @@ const userProfile = async(request,response)=>{
     response.status(500).json(error.message);
     logger.error(`Internal server error: ${error.message} in medone-userprofile api`);
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 
@@ -1114,7 +1114,7 @@ const editRoutine = async(request,response)=>{
     response.status(500).json(error.message);
     logger.error(`Internal server error: ${error.message} in medone-editroutine api`);
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 
@@ -1169,7 +1169,7 @@ const editMedicineSchedule = async(request,response)=>{
     response.status(500).json(error.message);
     logger.error(`Internal server error: ${error.message} in medone-editschedule api`);
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 
@@ -1207,7 +1207,7 @@ const getUserSchedule = async(request,response)=>{
     response.status(500).json(error.message);
     logger.error(`Internal server error: ${error.message} in medone-getuserschedule api`);
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 
@@ -1247,7 +1247,7 @@ const addStatus = async(request,response)=>{
     response.status(500).json(error.message);
     logger.error(`Internal server error: ${error.message} in medone-addStatus api`);
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 
@@ -1311,7 +1311,7 @@ const getMedicationHistory = async(request,response)=>{
     response.status(500).json(error.message);
     logger.error(`Internal server error: ${error.message} in medone-medicationhistory api`);
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 
@@ -1383,7 +1383,7 @@ const refillNotification = async(request,response)=>{
     response.status(500).json(error.message);
     logger.error(`Internal server error: ${error.message} in medone-refillnotification api`);
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 
@@ -1538,7 +1538,7 @@ const refillNotification = async(request,response)=>{
 //     response.status(500).json({ message: error.message });
 //     logger.error(`Internal server error: ${error.message} in realTimeNotification API`);
 //   } finally {
-//     await prisma.$disconnect();
+//     //await prisma.$disconnect();
 //   }
 // };
 
@@ -1728,7 +1728,7 @@ const realTimeNotification = async (request, response) => {
     response.status(500).json({ message: error.message });
     logger.error(`Internal server error: ${error.message} in realTimeNotification API`);
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -1786,7 +1786,7 @@ const getNotification = async(request,response)=>{
     response.status(500).json({ message: error.message });
     logger.error(`Internal server error: ${error.message} in getnotification API`);
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 
@@ -1816,7 +1816,7 @@ const addSeenStatus = async(request,response)=>{
     response.status(500).json({ message: error.message });
     logger.error(`Internal server error: ${error.message} in addSeenStatus API`);
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 
@@ -1949,7 +1949,7 @@ const addSeenStatus = async(request,response)=>{
 //     console.log({ error });
 //     response.status(500).json({ message: error.message });
 //   } finally {
-//     await prisma.$disconnect();
+//     //await prisma.$disconnect();
 //   }
 // };
 
@@ -2021,7 +2021,7 @@ const editUserProfile = async(request,response)=>{
     response.status(500).json(error.message);
     logger.error(`Internal server error: ${error.message} in medone-edituserprofile api`);
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 
@@ -2065,7 +2065,7 @@ const addToken = async(request,response)=>{
     response.status(500).json(error.message);
     logger.error(`Internal server error: ${error.message} in medone-addToken api`);
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 
@@ -2187,7 +2187,7 @@ const updatedchat = async (request, response) => {
 //     response.status(500).json(error.message);
 //     logger.error(`Internal server error: ${error.message} in medone-notificationData api`);
 //   } finally {
-//     await prisma.$disconnect();
+//     //await prisma.$disconnect();
 //   }
 // }
 
@@ -2230,7 +2230,7 @@ const getMedicineAddedByUser = async(req,res)=>{
     response.status(500).json(error.message);
     logger.error(`Internal server error: ${error.message} in medone-getMedicineAddedByUser api`);
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 
@@ -2266,7 +2266,7 @@ const addFeedback = async(req,res)=>{
     response.status(500).json(error.message);
     logger.error(`Internal server error: ${error.message} in medone-addFeedback api`);
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 
@@ -2312,7 +2312,7 @@ const getAddedFeedback = async(req,res)=>{
     response.status(500).json(error.message);
     logger.error(`Internal server error: ${error.message} in medone-getAddedFeedback api`);
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 
@@ -2422,7 +2422,7 @@ const addQuotes = async()=>{
 //     response.status(500).json(error.message);
 //     logger.error(`Internal server error: ${error.message} in medone-selectPastOrderMedicine  api`);
 //   } finally {
-//     await prisma.$disconnect();
+//     //await prisma.$disconnect();
 //   }
 // }
 
@@ -2481,7 +2481,7 @@ const selectPastOrderMedicine = async (req, res) => {
     console.error({ error });
     res.status(500).json({ success: false, message: error.message });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -2687,7 +2687,7 @@ const getMedicineForSchedule = async(req,res)=>{
     console.error({ error });
     res.status(500).json({ success: false, message: error.message });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 
@@ -2768,7 +2768,7 @@ try{
     console.error({ error });
     res.status(500).json({ success: false, message: error.message });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 

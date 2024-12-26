@@ -126,7 +126,7 @@ const addcategory = async (request, response) => {
     console.error(error);
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -159,7 +159,7 @@ const getcategory = async (request, response) => {
     response.status(500).json({ error: "Internal Server Error" });
   } 
   // finally {
-  //   await prisma.$disconnect();
+  //   //await prisma.$disconnect();
   // }
 };
 
@@ -226,7 +226,7 @@ const deletecategory = async (request, response) => {
     console.error(error);
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -278,7 +278,7 @@ const getcategorywise = async (request, response) => {
     console.error(error);
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -349,7 +349,7 @@ const getcategorywise_app = async (request, response) => {
     console.error(error);
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 

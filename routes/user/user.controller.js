@@ -52,7 +52,7 @@ const csvupload = async (req, res) => {
       message: "Internal Server Error",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 /////////doc case//////
@@ -136,7 +136,7 @@ const csvupload = async (req, res) => {
 //       message: "Internal Server Error",
 //     });
 //   } finally {
-//     await prisma.$disconnect();
+//     //await prisma.$disconnect();
 //   }
 // };
 
@@ -417,7 +417,7 @@ const addUsers = async (request, response) => {
     logger.error(`Internal server error: ${error.message} in addUsers api`);
     response.status(500).json("An error occurred");
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -474,7 +474,7 @@ const completeRegistration = async (request, response) => {
     );
     response.status(500).json("An error occurred");
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -627,7 +627,7 @@ const userLogin = async (request, response) => {
       message: "Internal Server Error!",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -702,7 +702,7 @@ const getusers = async (request, response) => {
       message: "Internal Server Error!",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -783,7 +783,7 @@ const edituser = async (request, response) => {
       message: "Internal Server Error!",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -854,7 +854,7 @@ const getprofile = async (request, response) => {
       message: "Internal Server Error!",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -887,7 +887,7 @@ const deleteuser = async (request, response) => {
       message: "Internal Server Error!",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -1009,7 +1009,7 @@ const UserforgotPwd = async (request, response) => {
       .status(500)
       .json({ error: true, message: "Internal server error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -1117,7 +1117,7 @@ const forgotPwd = async (request, response) => {
       .status(500)
       .json({ error: true, message: "Internal server error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -1271,7 +1271,7 @@ const userdisable = async (request, response) => {
       message: "Internal server error",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -1314,7 +1314,7 @@ const profilecompleted = async (request, response) => {
     console.error(error);
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 

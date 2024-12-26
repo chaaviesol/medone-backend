@@ -69,7 +69,7 @@ const getproductspharmacy = async (request, response) => {
     );
     return response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -236,7 +236,7 @@ const getpharmacies = async (request, response) => {
     );
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -297,7 +297,7 @@ const assignpharmacy = async (request, response) => {
     );
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -323,7 +323,7 @@ const getpackedorders = async (request, response) => {
       message: "Internal server error",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -448,7 +448,7 @@ const getorderdetailsss = async (request, response) => {
       message: "Internal server error",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -592,7 +592,7 @@ const getorderdetails = async (request, response) => {
       message: "Internal server error",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -721,7 +721,7 @@ const myorderstatus = async (request, response) => {
       message: "Internal server error",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -814,7 +814,7 @@ const adddeliverypartner = async (request, response) => {
     );
     response.status(500).json("An error occurred");
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -898,7 +898,7 @@ const viewDeliveryPartners = async (request, response) => {
     );
     return response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 const assigndeliverypartner = async (request, response) => {
@@ -948,7 +948,7 @@ const assigndeliverypartner = async (request, response) => {
     );
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 

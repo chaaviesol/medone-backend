@@ -81,7 +81,7 @@ const labadd = async (request, response) => {
     logger.error(`Internal server error: ${error.message} in labadd API`);
     response.status(500).json({ message: "An error occurred", error: true });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -105,7 +105,7 @@ const getlabs = async (request, response) => {
     );
     response.status(500).json({ message: "An error occurred", error: true });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -225,7 +225,7 @@ const getlabtests = async (request, response) => {
     );
     response.status(500).json({ message: "An error occurred", error: true });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -416,7 +416,7 @@ const getpackagetests = async (request, response) => {
     );
     response.status(500).json({ message: "An error occurred", error: true });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -467,7 +467,7 @@ const assignlab = async (request, response) => {
     );
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -523,7 +523,7 @@ const testToCart = async (request, response) => {
       message: "Internal server error",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -612,7 +612,7 @@ const gettestCart = async (request, response) => {
       message: "Internal server error",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -657,7 +657,7 @@ const removeTestFromCart = async (request, response) => {
       message: "Internal server error",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 

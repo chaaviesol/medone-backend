@@ -585,7 +585,7 @@ const getproductspharmacy = async (request, response) => {
     console.error(error);
     return response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -691,7 +691,7 @@ const  assignpharmacy = async (request, response) => {
     console.log({error})
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -728,7 +728,7 @@ const addTokenPh = async(req,res)=>{
     
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 
@@ -784,7 +784,7 @@ const changePassword = async(req,res)=>{
     console.error(error);
     return response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 
@@ -936,7 +936,7 @@ const forgot_password = async (req, res) => {
     console.error(error);
     return response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 
@@ -981,7 +981,7 @@ const verifyOtp = async(req,res)=>{
     console.error(error);
     return response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 
@@ -1015,7 +1015,7 @@ const get_notification = async(req,res)=>{
     console.error(error);
     return response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 
@@ -1054,7 +1054,7 @@ const addSeenStatus = async(req,res)=>{
     console.error(error);
     return response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 }
 
@@ -1148,7 +1148,7 @@ const addSeenStatus = async(req,res)=>{
 //     console.error(`Internal server error: ${error.message} in chemist-orderSummery API`);
 //     return res.status(500).json({ error: "Internal Server Error" });
 //   } finally {
-//     await prisma.$disconnect();
+//     //await prisma.$disconnect();
 //   }
 // };
 
@@ -1262,7 +1262,7 @@ const addSeenStatus = async(req,res)=>{
 //     console.error(`Internal server error: ${error.message} in chemist-orderSummery API`);
 //     return res.status(500).json({ error: "Internal Server Error" });
 //   } finally {
-//     await prisma.$disconnect();
+//     //await prisma.$disconnect();
 //   }
 // };
 
@@ -1373,7 +1373,7 @@ const orderSummery = async (req, res) => {
     console.error(`Internal server error: ${error.message} in chemist-orderSummery API`);
     return res.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 

@@ -538,7 +538,7 @@ const completeedit = async (req, res) => {
       message: "Internal Server Error",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -996,7 +996,7 @@ const getHospitalAddress = async (req, res) => {
       message: "Internal server error",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -1117,7 +1117,7 @@ const get_hospitalBypin = async (req, res) => {
       message: "internal server error",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -1218,7 +1218,7 @@ const doctor_consultationList = async (req, res) => {
       message: "Internal server error",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -1253,7 +1253,7 @@ const edit_consultation = async (req, res) => {
       success: false,
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -1283,7 +1283,7 @@ const delete_availability = async (req, res) => {
       message: "internal server error",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -1331,7 +1331,7 @@ const getDoctorList = async (req, res) => {
       message: "Internal server error",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -1412,7 +1412,7 @@ const get_hospitalDetails = async (req, res) => {
       message: "Internal server error",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -1463,7 +1463,7 @@ const hospital_feedback = async (req, res) => {
       message: "Internal server error",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -1505,7 +1505,7 @@ const hospital_searchdata = async (req, res) => {
       message: "Internal server error",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -1530,7 +1530,7 @@ const get_feedback = async (req, res) => {
       message: "Internal server error",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -1557,7 +1557,7 @@ const get_searchdata = async (req, res) => {
       message: "Internal server error",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -1602,7 +1602,7 @@ const hospital_doctordetails = async (req, res) => {
       message: "Internal server error",
     });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -1682,7 +1682,7 @@ const getahospitalfeedback = async (req, res) => {
 
     res.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -1709,7 +1709,7 @@ const feedbackapproval = async (req, res) => {
 
     res.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -1775,7 +1775,7 @@ const hospital_disable = async (request, response) => {
 
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -1807,7 +1807,7 @@ const getunapprovehsptl = async (request, response) => {
 
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -1849,7 +1849,7 @@ const approvehospital = async (request, response) => {
 
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
@@ -1901,7 +1901,7 @@ const hospital_doctors = async (request, response) => {
 
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    //await prisma.$disconnect();
   }
 };
 
