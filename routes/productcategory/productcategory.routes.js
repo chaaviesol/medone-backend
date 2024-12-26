@@ -15,6 +15,6 @@ productRouter.post("/addcategory", upload.single("image"), addcategory);
 productRouter.get("/getcategory", getcategory);
 productRouter.post("/deletecategory", deletecategory);
 productRouter.get('/products',getcategorywise)
-productRouter.post('/productsApp', auth ,getcategorywise_app)
+productRouter.get('/productsApp', auth ,getcategorywise_app)
 
 module.exports = productRouter;

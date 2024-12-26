@@ -19,7 +19,7 @@ const refreshToken = (req, res) => {
   console.log("refresh api triggered",user)
 
   const accessTokenPayload = {
-    id: user.id,
+    userId: user.id,
     userType: user.userType,
   };
   const accessTokenOptions = {
