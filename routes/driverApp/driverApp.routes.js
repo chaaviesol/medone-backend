@@ -10,7 +10,9 @@ const {driver_login,
     wallet,
     get_prescription,
     prescriptionStatus,
-    add_stampStatus
+    add_stampStatus,
+    changePassword,
+    forgot_password
 } = require('./driverApp.controller')
 const driverRouter = express.Router()
 
@@ -28,8 +30,8 @@ driverRouter.post('/wallet',wallet)
 driverRouter.post('/get_prescription',get_prescription)
 driverRouter.post('/prescriptionStatus',prescriptionStatus)  /// if status is reject notification is required
 driverRouter.post('/add_stampStatus',add_stampStatus)
-
-
+driverRouter.post('/changePassword',changePassword)
+driverRouter.post('/forgot_password',forgot_password)
 
 
 

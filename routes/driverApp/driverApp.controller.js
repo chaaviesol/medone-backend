@@ -928,7 +928,213 @@ const add_stampStatus = async(req,res)=>{
 }
 
 
+////change password/////
+const changePassword = async(req,res)=>{
+  try{
+    const {driverId,password} = req.body
+    if(driverId && password){
+      const findUser = await prisma.delivery_partner.findFirst({
+        where:{
+          id:driverId
+        }
+      })
+      console.log({findUser})
+      if(findUser){
+        const hashedpassword = await bcrypt.hash(password, 10);
+        const change_password = await prisma.delivery_partner.updateMany({
+          where:{
+            id:driverId
+          },
+          data:{
+            password:hashedpassword
+          }
+        })
+        console.log({change_password})
+      
+      return res.status(200).json({
+        error:false,
+        succes:true,
+        message:"Successfully changed the password............",
+        data:change_password
+      })
+    }else{
+      return res.status(404).json({
+        error:true,
+        succes:false,
+        message:"user not found............",
+      })
+    }
+     }else{
+      return res.status(200).json({
+        error:false,
+        succes:true,
+        message:"driver id and password are required..............",
+      
+      })
+     }
 
+  }catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in driver-changePassword API`
+    );
+    console.error(error);
+    return response.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    //await prisma.$disconnect();
+  }
+}
+
+////fprgot password////
+const forgot_password = async (req, res) => {
+  const { email } = req.body
+  try {
+
+    const check_user = await prisma.delivery_partner.findFirst({
+      where: {
+        email: email
+      }
+
+    })
+    // console.log("check_user----",check_user)
+    if (check_user) {
+      // console.log("first")
+      // const randomPassword = crypto.randomBytes(8).toString('hex');
+      function generateOTP() {
+        // Generate a random 6-digit number
+        const otp = Math.floor(10000 + Math.random() * 900000);
+        return otp.toString();
+      }
+
+      const randomOTP = generateOTP();
+      console.log(randomOTP);
+      const add_temOtp = await prisma.delivery_partner.updateMany({
+        where:{
+          email:email
+        },
+        data:{
+          temp_otp:parseInt(randomOTP)
+        }
+      })
+      console.log({add_temOtp})
+      // const hashedPassword = await bcrypt.hash(randomOTP, 10)
+
+      // await prisma.pharmacy_details.updateMany({
+      //   where: {
+      //     email: email
+      //   },
+      //   data: {
+      //     password: hashedPassword
+      //   }
+      // })
+      const transpoter = nodemailer.createTransport({
+        host: "smtp.zoho.in",
+        port: 465,
+        auth: {
+          user: "support@chaavie.com",
+          pass: "GWExAA8yGEnC",
+        },
+      });
+      const mailTemplate = `
+      <html xmlns="http://www.w3.org/1999/xhtml">
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>2FA OTP Email Template</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      </head>
+      <body style="margin: 0; padding: 0;">
+        <table align="center" border="0" cellpadding="0" cellspacing="0" width="90%"
+            style="border-collapse: collapse; border: 30px solid #e7e7e7;">
+          <tbody style="padding:0px 30px; display: block;">
+            <tr>
+              <td style="padding: 56px 0 24px 26px;">
+                <img src="..." alt="Logo">
+              </td>
+            </tr>
+            <tr>
+              <td height="42"
+                  style="padding: 10px 0 4px 24px; color: #000000; font-family: Arial, sans-serif; font-weight: 800; font-size: 26px;">
+                <b>Hi ${check_user.name || "User"}</b>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:1px 24px 22px; color:#606060; font-size:14px; font-family: Arial, sans-serif; line-height: 1.5;">
+                You have successfully registered your account in DoctorOne<br />
+                A One-Time Password (OTP) has been generated. This OTP is time-sensitive and valid for single-user access.<br>
+               
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:1px 24px 22px; color:#606060; font-size:14px; font-weight: 800; font-family: Arial, sans-serif; line-height: 1.5;">
+                Your One-Time Password (OTP) is:
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 24px; text-align: center; font-size: 20px; font-weight: bold; color: #000;">
+                ${randomOTP}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px 24px 50px; color:#606060; font-size:14px; font-family: Arial, sans-serif; line-height: 20px; text-align: left;">
+                Need help? Contact Customer Support.<br>
+                Toll-Free No. 9544688490 or<br>
+                Email us at <a href="mailto:mmusthafa270@gmail.com" style="color:#0889c4; text-decoration:none;">mmusthafa270@gmail.com</a>
+              </td>
+            </tr>
+          </tbody>
+          <tr>
+            <td style="padding:28px 0 0; color: #606060; font-family: Arial, sans-serif; font-size: 12px; background-color: #e7e7e7;">
+              &copy; Rent My Thing. All Rights Reserved<br><br>
+              The content of this message, together with any attachments, are intended only for the use of the
+              person(s) to which they are addressed and may contain confidential and/or privileged information.
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>`;
+      const mailOptions = {
+        from: "support@chaavie.com",
+        to: email,
+        subject: 'new password',
+        html:mailTemplate
+        // template: "pharmacy_otp", // Name of the Handlebars template
+        // text: `Dear user ,\nYour new password:\nPassword: ${randomOTP}\n\nThank you.`,
+      }
+      transpoter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.error("error sending in mail:-----", error);
+          res.status(400).json({
+            error: true,
+            success: false,
+            meassage: "Error happend in sending the mail"
+          })
+
+        } else {
+          res.status(200).json({
+            error: false,
+            success: true,
+            message: "new password send successfully",
+           
+          })
+        }
+      })
+    } else {
+      console.log("user not found")
+      res.status(404).json({
+        error: true,
+        success: false,
+        message: "user with entered mail not found......."
+      })
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in driver-forgot_password API`
+    );
+    console.error(error);
+    return response.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    //await prisma.$disconnect();
+  }
+}
 
 
 
@@ -946,5 +1152,7 @@ const add_stampStatus = async(req,res)=>{
     wallet,
     get_prescription,
     prescriptionStatus,
-    add_stampStatus
+    add_stampStatus,
+    changePassword,
+    forgot_password
   }
