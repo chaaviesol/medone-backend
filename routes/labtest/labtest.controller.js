@@ -207,7 +207,37 @@ const labtestadd = async (request, response) => {
 const getlabtests = async (request, response) => {
   try {
     const getall = await prisma.labtest_details.findMany();
-    console.log({ getall });
+
+    if (getall.length > 0) {
+      return response.status(200).json({
+        data: getall,
+        success: true,
+      });
+    } else {
+      return response.status(400).json({
+        message: "No Data",
+        error: true,
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in labtest-getlabtests API`
+    );
+    response.status(500).json({ message: "An error occurred", error: true });
+  } finally {
+    //await prisma.$disconnect();
+  }
+};
+
+const getalltests = async (request, response) => {
+  try {
+    const { first } = request.body;
+    const getall = await prisma.labtest_details.findMany({
+      take: first ? 5 : undefined,
+      orderBy: {
+        name: "asc",
+      },
+    });
     if (getall.length > 0) {
       return response.status(200).json({
         data: getall,
@@ -294,7 +324,7 @@ const labtestupdate = async (request, response) => {
 };
 
 const package_add = async (request, response) => {
-  const { package_name, price, created_date, status, labtest_ids ,about} =
+  const { package_name, price, created_date, status, labtest_ids, about } =
     request.body;
   const datetime = getCurrentDateInIST();
   const lastTest = await prisma.lab_packages.findFirst({
@@ -306,8 +336,8 @@ const package_add = async (request, response) => {
   const lastNumber = lastTest?.test_number
     ? parseInt(lastTest.test_number.slice(1))
     : 0;
-    const is_active = status === "active";
-  const testnumber = `T${String(lastNumber + 1).padStart(4, "0")}`;
+  const is_active = status === "active";
+  const testnumber = `P${String(lastNumber + 1).padStart(4, "0")}`;
   try {
     const add_data = await prisma.lab_packages.create({
       data: {
@@ -317,7 +347,7 @@ const package_add = async (request, response) => {
         is_active,
         labtest_ids,
         about,
-        created_date: datetime,   
+        created_date: datetime,
         test_number: testnumber,
       },
     });
@@ -328,9 +358,9 @@ const package_add = async (request, response) => {
       message: "successfully created",
     });
   } catch (err) {
-    console.log({err})
+    console.log({ err });
     logger.error(
-      `Internal server error: ${err.message} in labtest---labtestass api`
+      `Internal server error: ${err.message} in labtest---labtestpckage api`
     );
     response.status(400).json({
       error: true,
@@ -416,6 +446,48 @@ const getpackagetests = async (request, response) => {
     logger.error(
       `Internal server error: ${error.message} in labtest-getpackagetests API`
     );
+    response.status(500).json({ message: "An error occurred", error: true });
+  } finally {
+    //await prisma.$disconnect();
+  }
+};
+
+const getallpackages = async (request, response) => {
+  try {
+    const { first } = request.body;
+    const getall = await prisma.lab_packages.findMany({
+      take: first ? 5 : undefined,
+      orderBy: {
+        package_name: "desc",
+      },
+      where: {
+        is_active: true,
+      },
+    });
+
+    if (getall.length > 0) {
+      const packagesWithTests = getall.map((pkg) => ({
+        ...pkg,
+        testslength: Array.isArray(pkg.labtest_ids)
+          ? pkg.labtest_ids.length
+          : 0,
+      }));
+
+      return response.status(200).json({
+        data: packagesWithTests,
+        success: true,
+      });
+    } else {
+      return response.status(400).json({
+        message: "No Data",
+        error: true,
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in labtest-getpackagetests API`
+    );
+    console.log(error);
     response.status(500).json({ message: "An error occurred", error: true });
   } finally {
     //await prisma.$disconnect();
@@ -675,5 +747,7 @@ module.exports = {
   gettestCart,
   removeTestFromCart,
   labtestupdate,
-  package_update
+  package_update,
+  getalltests,
+  getallpackages,
 };

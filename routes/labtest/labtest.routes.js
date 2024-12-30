@@ -12,7 +12,9 @@ const {
   gettestCart,
   removeTestFromCart,
   labtestupdate,
-  package_update
+  package_update,
+  getalltests,
+  getallpackages
 } = require("./labtest.controller");
 const LabtestRouter = express.Router();
 console.log("labtestt");
@@ -30,5 +32,6 @@ LabtestRouter.get("/gettestCart", auth, gettestCart);
 LabtestRouter.post("/removeTestFromCart", auth, removeTestFromCart);
 LabtestRouter.post("/labtestupdate", labtestupdate);
 LabtestRouter.post("/package_update",package_update)
-
+LabtestRouter.post("/getalltests",getalltests)
+LabtestRouter.post("/getallpackages",getallpackages)//get all packages with test length
 module.exports = LabtestRouter;
