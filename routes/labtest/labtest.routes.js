@@ -14,10 +14,11 @@ const {
   labtestupdate,
   package_update,
   getalltests,
-  getallpackages
+  getallpackages,
+  packagedetail,
+  testdetail
 } = require("./labtest.controller");
 const LabtestRouter = express.Router();
-console.log("labtestt");
 const auth = require("../../middleware/Auth/auth");
 
 LabtestRouter.post("/labtestadd", labtestadd);
@@ -34,4 +35,6 @@ LabtestRouter.post("/labtestupdate", labtestupdate);
 LabtestRouter.post("/package_update",package_update)
 LabtestRouter.post("/getalltests",getalltests)
 LabtestRouter.post("/getallpackages",getallpackages)//get all packages with test length
+LabtestRouter.post("/packagedetail",packagedetail)//get a package with their test details
+LabtestRouter.post("/testdetail",testdetail)//details of a lab test
 module.exports = LabtestRouter;
