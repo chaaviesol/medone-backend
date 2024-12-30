@@ -135,7 +135,41 @@ const searchLocation = async (req, res) => {
   }
 };
 
+
+
+const fetchPlaceDetails = async (req, res) => {
+  const placeId = req.body.placeId;
+  console.log(placeId);
+  if (!placeId) {
+    return res.status(400).json({
+      error: true,
+      message: "placeId  required",
+    });
+  }
+  try {
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+    const response = await axios.get(
+      `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${apiKey}`
+    );
+    console.log(response);
+    const placeDetails = response.data.result;
+
+    const lat = placeDetails.geometry.location.lat;
+    const lng = placeDetails.geometry.location.lng;
+    res.status(200).json({
+      lat,
+      lng,
+    });
+  } catch (error) {
+    logger.error("Error fetching place details:", error);
+    res.status(500).json({ error: "Failed to fetch place details" });
+  }
+};
+
+
+
 module.exports = {
   getCurrentLocation,
   searchLocation,
+  fetchPlaceDetails
 };

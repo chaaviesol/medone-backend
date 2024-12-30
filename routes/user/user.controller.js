@@ -589,7 +589,7 @@ const userLogin = async (request, response) => {
       };
 
       const accessTokenOptions = {
-        expiresIn: "100m",
+        expiresIn: "60m",
       };
 
       const refreshToken = jwt.sign(
