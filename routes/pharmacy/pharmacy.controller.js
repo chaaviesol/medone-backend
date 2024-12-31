@@ -200,6 +200,9 @@ const productadd = async (request, response) => {
       brand,
       images,
       hsn,
+      prescription_required,
+      composition,
+      product_type
     } = JSON.parse(request.body.data);
     if (!name || !description || !mrp || !brand) {
       return response.status(400).json({ error: "All fields are required" });
@@ -239,6 +242,9 @@ const productadd = async (request, response) => {
           created_date: datetime,
           is_active: "Y",
           hsn: hsn,
+          product_type,
+          prescription_required,
+          composition
         },
       });
       if (create) {
@@ -269,6 +275,9 @@ const productadd = async (request, response) => {
           created_date: datetime,
           is_active: "Y",
           hsn: hsn,
+          product_type,
+          prescription_required,
+          composition
         },
       });
       if (create) {
