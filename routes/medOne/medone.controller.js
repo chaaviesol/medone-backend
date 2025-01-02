@@ -840,7 +840,11 @@ const notifyMedicineSchedule = async (request, response) => {
 
     // Fetch medicine schedule
     const medicineSchedule = await prisma.medicine_timetable.findMany({
-      where: { userId: userid },
+      where: { 
+        userId: userid,
+        active_status:"true" ///newly added for test
+
+       },
       select: {
         id: true,
         medicine: true,
@@ -877,17 +881,31 @@ const notifyMedicineSchedule = async (request, response) => {
 
     let notifications = [];
     for (const medicine of medicineSchedule) {
-      const { timing, afterFd_beforeFd, id } = medicine;
+      const { timing, afterFd_beforeFd, id} = medicine;
       const times = Object.values(timing[0]);
-
+      console.log("startDate-----",medicine.startDate)
       const startDateObj = new Date(medicine.startDate);
-      const numberOfDays = parseInt(medicine.no_of_days, 10);
-      const endDate = new Date(startDateObj);
-      endDate.setDate(endDate.getDate() + numberOfDays);
+      
 
+      console.log({startDateObj})
+      const numberOfDays = parseInt(medicine.no_of_days, 10);
+      console.log({numberOfDays})
+      const endDate = new Date(startDateObj);
+      
+      endDate.setDate(endDate.getDate() + numberOfDays);
+      console.log({endDate})
       const currentDate = new Date();
       if (currentDate < startDateObj || currentDate > endDate) {
         console.log(`Skipping medicine ID: ${id} as it is out of the active range`);
+        const updateInactiveStatus = await prisma.medicine_timetable.updateMany({
+          where:{
+            id:id
+          },
+          data:{
+            active_status:"inactive"
+          }
+        })
+        console.log({updateInactiveStatus})
         continue;
       }
 
@@ -927,6 +945,19 @@ const notifyMedicineSchedule = async (request, response) => {
             ? new Date(mealTimes.dinner.getTime() - 45 * 60000)
             : mealTimes.dinner;
         }
+        ///////newly adding code////////
+        console.log("timetableid-------",id)
+        const findMedicineCount = await prisma.medication_records.count({
+          where:{
+           userId:userid,
+           timetable_id:id
+          }
+        })
+        console.log({findMedicineCount})
+
+
+
+      
 
         if (notificationTime) {
           const validUntil = new Date(notificationTime.getTime() + 2 * 60 * 60 * 1000);
@@ -966,6 +997,8 @@ const notifyMedicineSchedule = async (request, response) => {
         message: "No notifications scheduled",
       });
     }
+
+  
 
     return response.status(200).json({
       error: false,
