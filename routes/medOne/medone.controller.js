@@ -818,10 +818,29 @@ const notifyMedicineSchedule = async (request, response) => {
     });
 
     if (!findRoutine) {
+      const addDailyRoutine = await prisma.dailyRoutine.create({
+        data:{
+          userId:userid,
+          routine:{
+            set:[
+              {
+                lunch: "01:00 PM",
+                sleep: "10:00 PM",
+                dinner: "07:30 PM",
+                wakeUp: "06:00 AM",
+                exercise: "07:30 AM",
+                breakfast: "08:00 AM"
+              }
+            ]
+          }
+        }
+      })
+     console.log({addDailyRoutine})
       return response.status(404).json({
         error: true,
         success: false,
         message: "User routine not found",
+        data:addDailyRoutine
       });
     }
 
@@ -947,13 +966,13 @@ const notifyMedicineSchedule = async (request, response) => {
         }
         ///////newly adding code////////
         console.log("timetableid-------",id)
-        const findMedicineCount = await prisma.medication_records.count({
-          where:{
-           userId:userid,
-           timetable_id:id
-          }
-        })
-        console.log({findMedicineCount})
+        // const findMedicineCount = await prisma.medication_records.count({
+        //   where:{
+        //    userId:userid,
+        //    timetable_id:id
+        //   }
+        // })
+        // console.log({findMedicineCount})
 
 
 
@@ -961,8 +980,25 @@ const notifyMedicineSchedule = async (request, response) => {
 
         if (notificationTime) {
           const validUntil = new Date(notificationTime.getTime() + 2 * 60 * 60 * 1000);
+          
+          if (now > validUntil) {
+            await prisma.medication_records.create({
+              data: {
+                userId: userid,
+                timetable_id: id,
+                taken_time: notifyTimeOfDay,
+                status: "Skipped",
+                taken_status:"No",
+                created_date: new Date(),
+              },
+            });
+            console.log(`Medicine ID: ${id} skipped for ${notifyTimeOfDay} as valid time has passed`);
+            continue;
+          }
 
-          if (now <= validUntil) {
+
+
+
             notifications.push({
               medicine_timetableID: id,
               medicine: medicine.medicine[0].name,
@@ -981,7 +1017,7 @@ const notifyMedicineSchedule = async (request, response) => {
             });
           }
         }
-      }
+      // }
     }
     // Sort notifications by time of day
     notifications.sort((a, b) => {
@@ -1575,7 +1611,7 @@ const refillNotification = async(request,response)=>{
 //   }
 // };
 
-
+ //////only used in backend
 const realTimeNotification = async (request, response) => {
   console.log({ request });
   try {
@@ -1606,7 +1642,11 @@ const realTimeNotification = async (request, response) => {
 
       // Retrieve the user's daily routine
       const getRoutine = await prisma.dailyRoutine.findFirst({
-        where: { userId: userId },
+        where: 
+        { 
+          userId: userId 
+        
+        },
       });
        console.log({getRoutine})
       if (!getRoutine || !getRoutine.routine[0]) {
@@ -1619,7 +1659,11 @@ const realTimeNotification = async (request, response) => {
 
       // Retrieve the user's medicine timetable
       const getMedicineTT = await prisma.medicine_timetable.findMany({
-        where: { userId: userId },
+        where:
+         {
+           userId: userId,
+           active_status:"true"
+           },
       });
       console.log({ getMedicineTT });
       // const numberOfDays = getMedicineTT[0].no_of_days
@@ -1636,6 +1680,7 @@ const realTimeNotification = async (request, response) => {
       // Determine the current meal based on time
       const currentTimeUTC = new Date();
       const currentHours = new Date(currentTimeUTC.getTime()).getHours();
+      console.log({currentHours})
 
       let currentMeal = null;
       if (currentHours >= 7 && currentHours < 11) {
@@ -1683,19 +1728,23 @@ const realTimeNotification = async (request, response) => {
       for (const med of getMedicineTT) {
         // Calculate the endDate based on startDate and no_of_days
         const startDateObj = new Date(med.startDate);
+        console.log({startDateObj})
         const numberOfDays = parseInt(med.no_of_days, 10); // Ensure no_of_days is an integer
+
+        console.log({numberOfDays})
         const endDate = new Date(startDateObj);
         endDate.setDate(endDate.getDate() + numberOfDays); // Calculate the end date
-      
+       console.log({endDate})
         // Check if the current date is within the range of startDate and endDate
         const currentDate = new Date();
+        console.log({currentDate})
         if (currentDate < startDateObj || currentDate > endDate) {
           console.log(`Skipping medicine ID: ${med.id} as it is out of the active range`);
           continue; // Skip this medicine if the current date is outside the range
         }
       
         const timings = Object.values(med.timing[0]);
-      
+        console.log({timings})
         // Check if the current meal matches the medicine timing
         if (timings.includes(currentMeal)) {
           let medicineTime;
@@ -2697,7 +2746,7 @@ const addNewSchedule = async (request, response) => {
   }
 };
 
-//////get medicine for schedule
+//////get medicine for schedule /////not in use
 const getMedicineForSchedule = async(req,res)=>{
   try{
     const {userId} = req.body
@@ -2740,6 +2789,7 @@ try{
     where:{
       userId:userId,
       app_flag:false,
+      active_status:"true",
       startDate:{
         not:null
       }
