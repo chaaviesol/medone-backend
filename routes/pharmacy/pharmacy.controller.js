@@ -1119,6 +1119,7 @@ const getinvsalesorder = async (request, response) => {
                 mrp: true,
                 description: true,
                 hsn: true,
+                product_type:true
               },
             },
           },
@@ -1139,6 +1140,7 @@ const getinvsalesorder = async (request, response) => {
         id: item?.generic_prodid?.id || "",
         name: item?.generic_prodid?.name || "",
         category: item?.generic_prodid?.category || "",
+        product_type:item?.generic_prodid?.product_type || "",
         batch_no: "",
         timing: [],
         afterFd_beforeFd: "",

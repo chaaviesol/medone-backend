@@ -402,6 +402,7 @@ const getorderdetailsss = async (request, response) => {
                     select: {
                       hsn: true,
                       mrp: true,
+                      product_type:true
                     },
                   },
                 },
@@ -493,7 +494,13 @@ const getorderdetails = async (request, response) => {
             selling_price: true,
             batch_no: true,
             generic_prodid: {
-              select: { id: true, name: true, hsn: true, mrp: true },
+              select: {
+                id: true,
+                name: true,
+                hsn: true,
+                mrp: true,
+                product_type: true,
+              },
             },
           },
         },
