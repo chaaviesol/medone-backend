@@ -82,7 +82,7 @@ const getpharmacies = async (request, response) => {
     if (!sales_id) {
       return response.status(400).json({
         error: true,
-        message: "pincode and product_ids can't be null or empty.",
+        message: "sales_id can't be null or empty.",
       });
     }
     const finddata = await prisma.sales_order.findUnique({

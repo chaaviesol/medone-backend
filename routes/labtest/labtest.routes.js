@@ -16,7 +16,9 @@ const {
   getalltests,
   getallpackages,
   packagedetail,
-  testdetail
+  testdetail,
+  getnearestlabs,
+  assignlab
 } = require("./labtest.controller");
 const LabtestRouter = express.Router();
 const auth = require("../../middleware/Auth/auth");
@@ -37,4 +39,6 @@ LabtestRouter.post("/getalltests",getalltests)
 LabtestRouter.post("/getallpackages",getallpackages)//get all packages with test length
 LabtestRouter.post("/packagedetail",packagedetail)//get a package with their test details
 LabtestRouter.post("/testdetail",testdetail)//details of a lab test
+LabtestRouter.post("/getnearestlabs",getnearestlabs)/////get nearest labs
+LabtestRouter.post("/assignlab",assignlab)
 module.exports = LabtestRouter;

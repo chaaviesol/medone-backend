@@ -1220,13 +1220,7 @@ const createinvoice = async (request, response) => {
           updated_date: istDate,
         },
       });
-      // const create = await prisma.sales_invoice.create({
-      //   data: {
-      //     sales_id,
-      //     sold_by,
-      //     created_date: datetime,
-      //   },
-      // });
+     
 
       if (updatesales) {
         for (const medicinedet of medication_details) {

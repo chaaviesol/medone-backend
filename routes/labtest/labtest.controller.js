@@ -109,7 +109,7 @@ const getlabs = async (request, response) => {
   }
 };
 
-const lab_profile = async (request, res) => {
+const lab_profile = async (request, response) => {
   try {
     const { id } = request.body;
     if (!id) {
@@ -136,6 +136,52 @@ const lab_profile = async (request, res) => {
       error: true,
       message: "internal server error",
     });
+  }
+};
+
+const getnearestlabs = async (request, response) => {
+  try {
+    let { pincode } = request.body;
+
+    if (!pincode) {
+      return response.status(400).json({
+        error: true,
+        message: "pincode can't be null or empty.",
+      });
+    }
+
+    if (isNaN(pincode)) {
+      return response.status(400).json({
+        error: true,
+        message: "Invalid pincode provided.",
+      });
+    }
+
+    let labs = await prisma.lab_details.findMany({});
+    const givenPincode = pincode;
+    function findNearestPinCodes(labs, givenPincode, count = 3) {
+      labs.sort(
+        (a, b) =>
+          Math.abs(a.pincode - givenPincode) -
+          Math.abs(b.pincode - givenPincode)
+      );
+
+      return labs.slice(0, count);
+    }
+
+    const nearestlabs = findNearestPinCodes(labs, givenPincode);
+    return response.status(200).json({
+      data: nearestlabs,
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in labtest-nearestlabs API`
+    );
+    response.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    await prisma.$disconnect();
   }
 };
 
@@ -240,6 +286,12 @@ const getalltests = async (request, response) => {
       where: {
         is_active: true,
       },
+      select:{
+        id:true,
+        name:true,
+        test_number:true,
+        mrp:true
+      }
     });
     if (getall.length > 0) {
       return response.status(200).json({
@@ -284,7 +336,7 @@ const testdetail = async (request, response) => {
     }
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in labtest-pacakagedetail API`
+      `Internal server error: ${error.message} in labtest-testdetail API`
     );
     console.log(error);
     response.status(500).json({ message: "An error occurred", error: true });
@@ -577,35 +629,34 @@ const packagedetail = async (request, response) => {
 
 const assignlab = async (request, response) => {
   try {
-    const { cart_id, lab_id, status } = request.body;
+    const { order_id, lab_id, status } = request.body;
     const datetime = getCurrentDateInIST();
 
     // Validate the required fields
-    if (!cart_id || !lab_id) {
+    if (!order_id || !lab_id) {
       return response.status(400).json({
         error: true,
-        message: "sales_id and pharmacy_id can't be null or empty.",
+        message: "cart_id and lab_id can't be null or empty.",
       });
     }
-    const find = await prisma.lab_assign.findFirst({
+    const find = await prisma.labtest_order.findFirst({
       where: {
-        cart_id,
-        lab_id,
+        order_id,
       },
     });
-    if (find) {
+    if (find.lab_id !=null) {
       return response.status(400).json({
         error: true,
-        message: "pharmacy already assigned",
+        message: "lab already assigned",
       });
     }
 
-    const add = await prisma.pharmacy_assign.create({
+    const add = await prisma.labtest_order.update({
+      where: {
+        order_id: order_id,
+      },
       data: {
-        status: status,
-        cart_id,
         lab_id,
-        created_date: datetime,
       },
     });
 
@@ -833,4 +884,6 @@ module.exports = {
   getallpackages,
   packagedetail,
   testdetail,
+  getnearestlabs,
+  assignlab
 };
