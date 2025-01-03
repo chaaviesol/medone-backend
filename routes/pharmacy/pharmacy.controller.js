@@ -202,7 +202,7 @@ const productadd = async (request, response) => {
       hsn,
       prescription_required,
       composition,
-      product_type
+      product_type,
     } = JSON.parse(request.body.data);
     if (!name || !description || !mrp || !brand) {
       return response.status(400).json({ error: "All fields are required" });
@@ -244,7 +244,7 @@ const productadd = async (request, response) => {
           hsn: hsn,
           product_type,
           prescription_required,
-          composition
+          composition,
         },
       });
       if (create) {
@@ -277,7 +277,7 @@ const productadd = async (request, response) => {
           hsn: hsn,
           product_type,
           prescription_required,
-          composition
+          composition,
         },
       });
       if (create) {
@@ -809,16 +809,16 @@ const presciptionsaleorders = async (request, response) => {
       let requested = [];
       let others = [];
       let ofd = [];
-      let packed=[];
-      let delivered=[]
+      let packed = [];
+      let delivered = [];
       all.forEach((order) => {
         if (order?.users?.name) {
           const decryptedUsername = decrypt(order.users.name, secretKey);
           order.users = decryptedUsername;
         }
-        if (order.so_status === "Placed" || order.so_status === "placed" ) {
+        if (order.so_status === "Placed" || order.so_status === "placed") {
           requested.push(order);
-        }else if (order.so_status === "packed") {
+        } else if (order.so_status === "packed") {
           packed.push(order);
         } else if (order.so_status === "Out for Delivery") {
           ofd.push(order);
@@ -833,9 +833,9 @@ const presciptionsaleorders = async (request, response) => {
         success: true,
         data: all,
         requestlength: requested.length,
-        packedlength:packed.length,
+        packedlength: packed.length,
         outfordelivery: ofd.length,
-        deliveredlength:delivered.length,
+        deliveredlength: delivered.length,
         otherslength: others.length,
       });
     } else {
@@ -907,8 +907,8 @@ const allsalelistorders = async (request, response) => {
       let requested = [];
       let others = [];
       let ofd = [];
-      let packed=[];
-      let delivered=[]
+      let packed = [];
+      let delivered = [];
       all.forEach((order) => {
         if (order?.users?.name) {
           const decryptedUsername = decrypt(order.users.name, secretKey);
@@ -918,10 +918,9 @@ const allsalelistorders = async (request, response) => {
           requested.push(order);
         } else if (order.so_status === "Out for delivery") {
           ofd.push(order);
-        }else if (order.so_status === "packed") {
+        } else if (order.so_status === "packed") {
           packed.push(order);
-        }
-        else if (order.so_status === "delivered") {
+        } else if (order.so_status === "delivered") {
           delivered.push(order);
         } else {
           others.push(order);
@@ -932,10 +931,10 @@ const allsalelistorders = async (request, response) => {
         success: true,
         data: all,
         requestlength: requested.length,
-        packedlength:packed.length,
+        packedlength: packed.length,
         outfordelivery: ofd.length,
         otherslength: others.length,
-        deliveredlength:delivered.length
+        deliveredlength: delivered.length,
       });
     } else {
       return response.status(404).json({
@@ -1119,7 +1118,7 @@ const getinvsalesorder = async (request, response) => {
                 mrp: true,
                 description: true,
                 hsn: true,
-                product_type:true
+                product_type: true,
               },
             },
           },
@@ -1140,7 +1139,7 @@ const getinvsalesorder = async (request, response) => {
         id: item?.generic_prodid?.id || "",
         name: item?.generic_prodid?.name || "",
         category: item?.generic_prodid?.category || "",
-        product_type:item?.generic_prodid?.product_type || "",
+        product_type: item?.generic_prodid?.product_type || "",
         batch_no: "",
         timing: [],
         afterFd_beforeFd: "",
@@ -1222,7 +1221,6 @@ const createinvoice = async (request, response) => {
           updated_date: istDate,
         },
       });
-     
 
       if (updatesales) {
         for (const medicinedet of medication_details) {
@@ -1237,6 +1235,8 @@ const createinvoice = async (request, response) => {
             selling_price,
             no_of_days,
             category,
+            interval,
+            every,
           } = medicinedet;
 
           // Check if the category array includes "MEDICINES"
@@ -1244,6 +1244,8 @@ const createinvoice = async (request, response) => {
           if (category.some((item) => item.toLowerCase() === "medicines")) {
             const medicine = [{ id: id, name: name }];
             let newtiming = [];
+            let timeInterval;
+            let daysInterval;
 
             if (Array.isArray(timing)) {
               const timeMapping = {
@@ -1264,6 +1266,11 @@ const createinvoice = async (request, response) => {
                 newtiming.push(timingObject);
               }
             }
+            if (every === "hours") {
+              timeInterval = interval.toString();
+            } else if (every === "days" || every === "weeks") {
+              daysInterval = interval.toString();
+            }
 
             await prisma.medicine_timetable.create({
               data: {
@@ -1274,6 +1281,8 @@ const createinvoice = async (request, response) => {
                 no_of_days,
                 totalQuantity: totalQuantity.toString(),
                 timing: newtiming,
+                timeInterval: timeInterval,
+                daysInterval: daysInterval,
                 takingQuantity,
                 app_flag: false,
                 created_date: datetime,
@@ -1368,11 +1377,15 @@ const prescriptioninvoice = async (request, response) => {
           selling_price,
           quantity,
           mrp,
+          interval,
+          every,
           category,
         } = medicinedet;
         if (category.some((item) => item.toLowerCase() === "medicines")) {
           const medicine = [{ id: id, name: name }];
           let newtiming = [];
+          let timeInterval;
+          let daysInterval;
 
           if (Array.isArray(timing)) {
             const timeMapping = {
@@ -1393,6 +1406,11 @@ const prescriptioninvoice = async (request, response) => {
               newtiming.push(timingObject);
             }
           }
+          if (every === "hours") {
+            timeInterval = interval.toString();
+          } else if (every === "days" || every === "weeks") {
+            daysInterval = interval.toString();
+          }
 
           await prisma.medicine_timetable.create({
             data: {
@@ -1405,6 +1423,8 @@ const prescriptioninvoice = async (request, response) => {
               timing: newtiming,
               takingQuantity,
               app_flag: false,
+              timeInterval: timeInterval,
+              daysInterval: daysInterval,
               created_date: datetime,
             },
           });
