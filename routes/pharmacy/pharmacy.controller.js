@@ -1237,6 +1237,7 @@ const createinvoice = async (request, response) => {
             category,
             interval,
             every,
+            product_type
           } = medicinedet;
 
           // Check if the category array includes "MEDICINES"
@@ -1285,6 +1286,7 @@ const createinvoice = async (request, response) => {
                 daysInterval: daysInterval,
                 takingQuantity,
                 app_flag: false,
+                medicine_type:product_type,
                 created_date: datetime,
               },
             });
@@ -1380,6 +1382,7 @@ const prescriptioninvoice = async (request, response) => {
           interval,
           every,
           category,
+          product_type
         } = medicinedet;
         if (category.some((item) => item.toLowerCase() === "medicines")) {
           const medicine = [{ id: id, name: name }];
@@ -1426,6 +1429,7 @@ const prescriptioninvoice = async (request, response) => {
               timeInterval: timeInterval,
               daysInterval: daysInterval,
               created_date: datetime,
+              medicine_type:product_type
             },
           });
         }
