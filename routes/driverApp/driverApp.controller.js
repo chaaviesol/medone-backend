@@ -193,7 +193,8 @@ const getorder = async(req,res)=>{
         },
         select:{
           pharmacy_id:true,
-          patient_name:true
+          patient_name:true,
+          customer_id:true
         }
       })
       console.log({findpharmId})
@@ -207,7 +208,7 @@ const getorder = async(req,res)=>{
           id:customer
         }
       })
-      console.log({findCustomer})
+      // console.log({findCustomer})
 
       const decryptedname = safeDecrypt(findCustomer.name, secretKey);
       findCustomer.name = decryptedname;
