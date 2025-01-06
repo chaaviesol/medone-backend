@@ -322,6 +322,14 @@ const testdetail = async (request, response) => {
       where: {
         id: id,
       },
+      select:{
+        id:true,
+        test_number:true,
+        name:true,
+        mrp:true,
+        description:true,
+        home_collection:true
+      }
     });
     if (labtestDetails) {
       return response.status(200).json({
@@ -426,6 +434,25 @@ const package_add = async (request, response) => {
     : 0;
   const is_active = status === "active";
   const testnumber = `P${String(lastNumber + 1).padStart(4, "0")}`;
+  const isHomeCollection = async (labtest_ids) => {
+    const labtest = await prisma.labtest_details.findFirst({
+      where: {
+        id: { in: labtest_ids },
+        home_collection: false,
+      },
+      select: {
+        id: true, 
+      },
+    });
+  
+    return labtest ? false : true;
+  };
+
+
+  const is_home_collection = await isHomeCollection(labtest_ids);
+ console.log({is_home_collection})
+
+  
   try {
     const add_data = await prisma.lab_packages.create({
       data: {
@@ -435,6 +462,7 @@ const package_add = async (request, response) => {
         is_active,
         labtest_ids,
         about,
+        home_collection:is_home_collection,
         created_date: datetime,
         test_number: testnumber,
       },
@@ -448,7 +476,7 @@ const package_add = async (request, response) => {
   } catch (err) {
     console.log({ err });
     logger.error(
-      `Internal server error: ${err.message} in labtest---labtestpckage api`
+      `Internal server error: ${err.message} in labtest---labtestpckage add api`
     );
     response.status(400).json({
       error: true,
@@ -599,6 +627,13 @@ const packagedetail = async (request, response) => {
         where: {
           id: { in: labTestIds },
         },
+        select:{
+          id:true,
+          test_number:true,
+          name:true,
+          mrp:true,
+          description:true
+        }
       });
 
       const packageWithTests = {
@@ -858,6 +893,62 @@ const removeTestFromCart = async (request, response) => {
     logger.error(
       `Internal server error: ${error.message} in removeTestFromCart API`
     );
+    response.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+const checkout = async (request, response) => {
+  const { test_number ,patient_details,total_amount,delivery_details,} = request.body;
+  const user_id = request.user.userId;
+  const datetime = getCurrentDateInIST();
+  try {
+    if (!user_id || !test_number) {
+      logger.error("user_id, test_number is undefined in testToCart API");
+      return response.status(400).json({
+        error: true,
+        message: "user_id and test_number are required fields",
+      });
+    }
+
+    const existingCartItem = await prisma.labtest_cart.findFirst({
+      where: {
+        user_id: user_id,
+        test_number,
+      },
+    });
+
+    if (existingCartItem) {
+      return response.status(400).json({
+        error: true,
+        message: "Already added in your cart",
+      });
+    }
+
+    // Add product to cart
+    const data = await prisma.labtest_cart.create({
+      data: {
+        user_id: user_id,
+        test_number,
+        created_date: datetime,
+      },
+    });
+
+    if (data) {
+      response.status(201).json({
+        success: true,
+        message: "Successfully added to cart",
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in labtest--> labtocart API`
+    );
+
     response.status(500).json({
       error: true,
       message: "Internal server error",
