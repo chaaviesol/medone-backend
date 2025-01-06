@@ -2789,7 +2789,7 @@ try{
     where:{
       userId:userId,
       app_flag:false,
-      active_status:"true",
+      // active_status:"true",
       startDate:{
         not:null
       }
