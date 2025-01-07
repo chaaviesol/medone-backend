@@ -343,6 +343,7 @@ model lab_packages {
   labtest_ids              Json?  
   about                    String?
   price                    Int?
+  home_collection          Boolean?
   health_concern           String?
   created_date             DateTime?
   is_active                Boolean?
@@ -364,16 +365,14 @@ model labtest_order {
   status                 String? 
   order_type             String?               
   remarks                String? 
-  delivery_address       String?
-  delivery_location      Json?
-  district               String?
-  city                   String?                                             
+  delivery_details       Json?
+  delivery_location      Json?                                             
   created_date           DateTime?                               
   updated_date           DateTime?
   contact_no             String?              
   customer_id            Int?   
   pincode                Int?
-  patient_name           String?
+  patient_details        Json?
   doctor_name            String?
   lab_id                 Int?          
   labtest_list           labtest_list[]
