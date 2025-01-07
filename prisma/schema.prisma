@@ -369,7 +369,8 @@ model labtest_order {
   delivery_location      Json?                                             
   created_date           DateTime?                               
   updated_date           DateTime?
-  contact_no             String?              
+  contact_no             String?
+  prescription_image     Json?              
   customer_id            Int?   
   pincode                Int?
   patient_details        Json?
@@ -386,6 +387,6 @@ model labtest_list {
   test_number     String?
   order_qty       Int?
   net_amount      Int?        
-  created_date    DateTime?                     
+  created_date    DateTime?                      
   labtest_order   labtest_order?  @relation(fields: [order_id], references: [order_id])  
 }

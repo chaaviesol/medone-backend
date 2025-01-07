@@ -286,12 +286,12 @@ const getalltests = async (request, response) => {
       where: {
         is_active: true,
       },
-      select:{
-        id:true,
-        name:true,
-        test_number:true,
-        mrp:true
-      }
+      select: {
+        id: true,
+        name: true,
+        test_number: true,
+        mrp: true,
+      },
     });
     if (getall.length > 0) {
       return response.status(200).json({
@@ -322,14 +322,14 @@ const testdetail = async (request, response) => {
       where: {
         id: id,
       },
-      select:{
-        id:true,
-        test_number:true,
-        name:true,
-        mrp:true,
-        description:true,
-        home_collection:true
-      }
+      select: {
+        id: true,
+        test_number: true,
+        name: true,
+        mrp: true,
+        description: true,
+        home_collection: true,
+      },
     });
     if (labtestDetails) {
       return response.status(200).json({
@@ -441,18 +441,16 @@ const package_add = async (request, response) => {
         home_collection: false,
       },
       select: {
-        id: true, 
+        id: true,
       },
     });
-  
+
     return labtest ? false : true;
   };
 
-
   const is_home_collection = await isHomeCollection(labtest_ids);
- console.log({is_home_collection})
+  console.log({ is_home_collection });
 
-  
   try {
     const add_data = await prisma.lab_packages.create({
       data: {
@@ -462,7 +460,7 @@ const package_add = async (request, response) => {
         is_active,
         labtest_ids,
         about,
-        home_collection:is_home_collection,
+        home_collection: is_home_collection,
         created_date: datetime,
         test_number: testnumber,
       },
@@ -627,13 +625,13 @@ const packagedetail = async (request, response) => {
         where: {
           id: { in: labTestIds },
         },
-        select:{
-          id:true,
-          test_number:true,
-          name:true,
-          mrp:true,
-          description:true
-        }
+        select: {
+          id: true,
+          test_number: true,
+          name: true,
+          mrp: true,
+          description: true,
+        },
       });
 
       const packageWithTests = {
@@ -679,7 +677,7 @@ const assignlab = async (request, response) => {
         order_id,
       },
     });
-    if (find.lab_id !=null) {
+    if (find.lab_id != null) {
       return response.status(400).json({
         error: true,
         message: "lab already assigned",
@@ -903,56 +901,219 @@ const removeTestFromCart = async (request, response) => {
 };
 
 const checkout = async (request, response) => {
-  const { test_number ,patient_details,total_amount,delivery_details,} = request.body;
-  const user_id = request.user.userId;
-  const datetime = getCurrentDateInIST();
+  const usertype = request.user.userType;
+  const {
+    total_amount,
+    status,
+    remarks,
+    order_type,
+    tests,
+    delivery_location,
+    pincode,
+    contact_no,
+    doctor_name,
+    patient_details,
+    delivery_details,
+  } = request.body;
+
+  const userId = parseInt(request.user.userId);
+  let test_order;
+
   try {
-    if (!user_id || !test_number) {
-      logger.error("user_id, test_number is undefined in testToCart API");
+    if (!userId) {
+      logger.error("user_id is undefined in labtest-checkout API");
       return response.status(400).json({
         error: true,
-        message: "user_id and test_number are required fields",
+        message: "user_id is required",
       });
     }
-
-    const existingCartItem = await prisma.labtest_cart.findFirst({
-      where: {
-        user_id: user_id,
-        test_number,
-      },
-    });
-
-    if (existingCartItem) {
+    if (usertype != "customer") {
       return response.status(400).json({
         error: true,
-        message: "Already added in your cart",
+        message: "Please login as a customer",
+      });
+    }
+    if (!delivery_details || !contact_no) {
+      return response.status(400).json({
+        error: true,
+        message: "Missing delivery details",
       });
     }
 
-    // Add product to cart
-    const data = await prisma.labtest_cart.create({
-      data: {
-        user_id: user_id,
-        test_number,
-        created_date: datetime,
-      },
+    if (!order_type) {
+      return response.status(400).json({
+        error: true,
+        message: "Missing order_type field",
+      });
+    }
+    let location;
+    if (order_type != "prescription") {
+      location = delivery_location;
+    } else {
+      location = JSON.parse(delivery_location);
+    }
+
+    await prisma.$transaction(async (prisma) => {
+      const currentDate = new Date();
+      const year = currentDate.getFullYear();
+
+      const lastTwoDigits = year.toString().slice(-2);
+      const to_num = "TO";
+      const startOfYear = new Date(new Date().getFullYear(), 0, 1);
+      const endOfYear = new Date(new Date().getFullYear() + 1, 0, 1);
+      const existingtestOrders = await prisma.labtest_order.findMany({
+        where: {
+          created_date: {
+            gte: startOfYear,
+            lt: endOfYear,
+          },
+        },
+      });
+      const newid = existingtestOrders.length + 1;
+      const formattedNewId = ("0000" + newid).slice(-4);
+      const order_number = to_num + lastTwoDigits + formattedNewId;
+      let total_amount_fixed;
+
+      if (total_amount) {
+        total_amount_fixed = parseFloat(total_amount).toFixed(2);
+      }
+
+      const datetime = getCurrentDateInIST();
+
+      test_order = await prisma.labtest_order.create({
+        data: {
+          order_number: order_number,
+          total_amount: total_amount_fixed,
+          status: "placed",
+          remarks,
+          order_type,
+          patient_details: patient_details,
+          created_date: datetime,
+          customer_id: userId,
+          delivery_details: delivery_details,
+          delivery_location: location,
+          contact_no: contact_no.toString(),
+          pincode: parseInt(pincode),
+        },
+      });
+
+      if (order_type != "prescription") {
+        for (let test of tests) {
+          const net_amount = parseInt(test.quantity) * parseInt(test.mrp);
+
+          await prisma.labtest_list.create({
+            data: {
+              labtest_order: {
+                connect: {
+                  order_id: test_order.order_id,
+                },
+              },
+              test_number: test.test_number,
+              order_qty: parseInt(test.quantity),
+              net_amount: net_amount,
+              created_date: datetime,
+            },
+          });
+        }
+
+        await prisma.labtest_cart.deleteMany({
+          where: {
+            user_id: userId,
+          },
+        });
+
+        return response.status(200).json({
+          success: true,
+          message: "Successfully placed your order",
+        });
+      } else if (order_type === "prescription") {
+        const prescription_image = request.files;
+        let imageprescription = {};
+
+        if (!prescription_image || prescription_image.length === 0) {
+          return response.status(400).json({
+            message: "Please attach at least one report",
+            error: true,
+          });
+        }
+
+        for (i = 0; i < prescription_image?.length; i++) {
+          let keyName = `image${i + 1}`;
+          imageprescription[keyName] = prescription_image[i].location;
+        }
+
+        await prisma.labtest_order.update({
+          where: {
+            order_id: test_order.order_id,
+          },
+          data: {
+            prescription_image: imageprescription,
+            created_date: datetime,
+          },
+        });
+
+        response.status(200).json({
+          success: true,
+          message: "Prescription submitted.",
+        });
+      }
     });
-
-    if (data) {
-      response.status(201).json({
-        success: true,
-        message: "Successfully added to cart",
-      });
-    }
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in labtest--> labtocart API`
+      `Internal server error: ${error.message} in labtest-checkout API`
     );
-
     response.status(500).json({
       error: true,
       message: "Internal server error",
     });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+const myorders = async (request, response) => {
+  try {
+    const user_id = request.user.userId;
+    const usertype = request.user.userType;
+
+    if (!user_id) {
+      return response.status(400).json({
+        error: true,
+        message: "user_id is required",
+      });
+    }
+    if (!usertype || usertype != "customer") {
+      return response.status(400).json({
+        error: true,
+        message: "Please login as a customer",
+      });
+    }
+    const labtestsordersdata = await prisma.labtest_order.findMany({
+      where: {
+        customer_id: user_id,
+      },
+      orderBy: {
+        created_date: "desc",
+      },
+    });
+
+    if (labtestsordersdata.length > 0) {
+      return response.status(200).json({
+        success: true,
+        error: false,
+        data: labtestsordersdata,
+      });
+    } else {
+      return response.status(400).json({
+        error: true,
+        message: "No Data",
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in labtest-myorders API`
+    );
+    response.status(500).json("An error occurred");
   } finally {
     await prisma.$disconnect();
   }
@@ -976,5 +1137,7 @@ module.exports = {
   packagedetail,
   testdetail,
   getnearestlabs,
-  assignlab
+  assignlab,
+  myorders,
+  checkout,
 };
