@@ -1250,7 +1250,7 @@ const createinvoice = async (request, response) => {
 
             if (Array.isArray(timing)) {
               const timeMapping = {
-                morning: "time1",
+                Morning: "time1",   ///changed Morning-morning
                 lunch: "time2",
                 dinner: "time3",
               };
@@ -1392,7 +1392,7 @@ const prescriptioninvoice = async (request, response) => {
 
           if (Array.isArray(timing)) {
             const timeMapping = {
-              morning: "time1",
+              Morning: "time1",  //changed morning-Morning
               lunch: "time2",
               dinner: "time3",
             };
