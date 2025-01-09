@@ -1701,6 +1701,35 @@ const refillNotification = async(request,response)=>{
   }
 }
 
+// Function to call realTimeNotification for multiple users
+const runRefillNotication = async () => {
+  try {
+    console.log("Scheduled notification triggered at:", new Date());
+
+    console.log("Running scheduled notification check...");
+
+    // Retrieve all user IDs to process notifications
+    const allUsers = await prisma.user_details.findMany({ select: { id: true } });
+
+    for (const user of allUsers) {
+      const request = { body: { userId: user.id } };
+      const response = {
+        status: (statusCode) => ({
+          json: (data) => console.log("Scheduled notification response:", data),
+        }),
+      };
+      await refillNotification(request, response);
+    }
+  } catch (error) {
+    console.error("Error running scheduled notification:", error);
+  }
+};
+
+
+schedule.scheduleJob('00 13 * * *', runRefillNotication); // 10:00 AM
+
+
+
 // const realTimeNotification = async (request, response) => {
 //   console.log({request})
 //   try {
