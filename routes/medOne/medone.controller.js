@@ -1148,12 +1148,14 @@ const notifyMedicineSchedule = async (request, response) => {
     };
      /////// new line of code////////
     let notifications = [];
+    let lastNotificationTime = null; // Tracks the last notification time
+
     for (const medicine of medicineSchedule) {
       const { timing, afterFd_beforeFd, id, startDate, daysInterval, timeInterval } = medicine;
+    
       const startDateObj = new Date(startDate);
       const currentDate = new Date();
     
-      // Check if the medicine should have notifications on the current day
       if (daysInterval) {
         const timeDifference = Math.abs(currentDate - startDateObj);
         const daysSinceStart = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
@@ -1165,7 +1167,6 @@ const notifyMedicineSchedule = async (request, response) => {
         }
       }
     
-      // Check if medicine is within the active range
       const numberOfDays = parseInt(medicine.no_of_days, 10);
       const endDate = new Date(startDateObj);
       endDate.setDate(endDate.getDate() + numberOfDays);
@@ -1179,75 +1180,9 @@ const notifyMedicineSchedule = async (request, response) => {
         continue;
       }
     
-      // Handle time-based notifications
-      if (timeInterval) {
-        const breakfastTime = routineData[0]?.breakfast || null;
-    
-        if (breakfastTime) {
-          // Parse breakfast time and add 30 minutes
-          const breakfastTimeObj = new Date(`1970-01-01T${breakfastTime}:00`);
-          console.log({breakfastTimeObj})
-          const firstNotificationTime = new Date(breakfastTimeObj.getTime() + 30 * 60000);
-           console.log({firstNotificationTime})
-          console.log(`First notification time for medicine ID: ${id}:`, firstNotificationTime);
-    
-          // Schedule notifications based on timeInterval
-          let nextNotificationTime = new Date(firstNotificationTime);
-          console.log({nextNotificationTime})
-          while (nextNotificationTime < new Date('1970-01-02T00:00:00')) {
-            // Check if the medicine has already been taken
-            const notifyTimeOfDay = "custom"; // Replace with actual label if required
-            const existingTakenRecord = await prisma.medication_records.findFirst({
-              where: {
-                userId: userid,
-                timetable_id: id,
-                taken_time: notifyTimeOfDay,
-                created_date: {
-                  gte: new Date(currentDate.toISOString().split("T")[0] + "T00:00:00.000Z"),
-                  lt: new Date(currentDate.toISOString().split("T")[0] + "T23:59:59.999Z"),
-                },
-                status: "Taken",
-              },
-            });
-    
-            if (existingTakenRecord) {
-              console.log(`Skipping notification for medicine ID: ${id} as it is already taken for ${notifyTimeOfDay}`);
-              break;
-            }
-    
-            // Add notification to the list
-            notifications.push({
-              medicine_timetableID: id,
-              medicine: medicine.medicine[0].name,
-              notificationTime: nextNotificationTime.toLocaleTimeString("en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: true,
-              }),
-              medicine_type: medicine.medicine_type,
-              validUntil: new Date(nextNotificationTime.getTime() + 2 * 60 * 60 * 1000).toLocaleTimeString("en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: true,
-              }),
-              timeOfDay: notifyTimeOfDay,
-            });
-    
-            console.log(`Notification scheduled for:`, nextNotificationTime);
-    
-            // Increment time by the timeInterval
-            nextNotificationTime = new Date(nextNotificationTime.getTime() + timeInterval * 60000);
-          }
-        } else {
-          console.log(`No breakfast time found in routine for user.`);
-        }
-      }
-    
-      // Process predefined timings (Morning, Lunch, Dinner) if available in timing
       for (const notifyTime of Object.values(timing[0])) {
         const notifyTimeOfDay = notifyTime.toLowerCase();
     
-        // Check if the medicine has already been taken
         const existingTakenRecord = await prisma.medication_records.findFirst({
           where: {
             userId: userid,
@@ -1267,24 +1202,30 @@ const notifyMedicineSchedule = async (request, response) => {
         }
     
         let notificationTime;
-        if (notifyTimeOfDay === "morning") {
-          notificationTime = afterFd_beforeFd === "before food"
-            ? new Date(mealTimes.Morning.getTime() - 45 * 60000)
-            : mealTimes.Morning;
-        } else if (notifyTimeOfDay === "lunch") {
-          notificationTime = afterFd_beforeFd === "before food"
-            ? new Date(mealTimes.lunch.getTime() - 45 * 60000)
-            : mealTimes.lunch;
-        } else if (notifyTimeOfDay === "dinner") {
-          notificationTime = afterFd_beforeFd === "before food"
-            ? new Date(mealTimes.dinner.getTime() - 45 * 60000)
-            : mealTimes.dinner;
+        if (!lastNotificationTime) {
+          // First notification based on meal times
+          if (notifyTimeOfDay === "morning") {
+            notificationTime = afterFd_beforeFd === "before food"
+              ? new Date(mealTimes.Morning.getTime() - 45 * 60000)
+              : mealTimes.Morning;
+          } else if (notifyTimeOfDay === "lunch") {
+            notificationTime = afterFd_beforeFd === "before food"
+              ? new Date(mealTimes.lunch.getTime() - 45 * 60000)
+              : mealTimes.lunch;
+          } else if (notifyTimeOfDay === "dinner") {
+            notificationTime = afterFd_beforeFd === "before food"
+              ? new Date(mealTimes.dinner.getTime() - 45 * 60000)
+              : mealTimes.dinner;
+          }
+        } else {
+          // Calculate notification time using the timeInterval
+          notificationTime = new Date(lastNotificationTime.getTime() + timeInterval * 60 * 60 * 1000);
         }
     
         if (notificationTime) {
           const validUntil = new Date(notificationTime.getTime() + 2 * 60 * 60 * 1000);
     
-          if (currentDate > validUntil) {
+          if (now > validUntil) {
             await prisma.medication_records.create({
               data: {
                 userId: userid,
@@ -1315,6 +1256,9 @@ const notifyMedicineSchedule = async (request, response) => {
             }),
             timeOfDay: notifyTimeOfDay,
           });
+    
+          // Update the lastNotificationTime for the next iteration
+          lastNotificationTime = notificationTime;
         }
       }
     }

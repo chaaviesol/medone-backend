@@ -1377,7 +1377,18 @@ const orderSummery = async (req, res) => {
   }
 };
 
+/////track order
+const trackOrder = async(req,res)=>{
+  try{
+    const{order} = req.body
 
+  }catch (error) {
+    console.error(`Internal server error: ${error.message} in chemist-orderSummery API`);
+    return res.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    //await prisma.$disconnect();
+  }
+}
 
 module.exports = {
     chemist_login,
@@ -1394,5 +1405,6 @@ module.exports = {
     get_notification,
     addSeenStatus,
     orderSummery,
-    verifyOtp
+    verifyOtp,
+    trackOrder
 }
