@@ -390,3 +390,35 @@ model labtest_list {
   created_date    DateTime?                      
   labtest_order   labtest_order?  @relation(fields: [order_id], references: [order_id])  
 }
+
+model doctor_details{
+  id                         Int    @id @default(autoincrement())
+  name                       String?
+  second_name                String?
+  phone_no                   String?
+  phone_office               String?
+  email                      String?
+  password                   String?
+  image                      Json?
+  education_qualification    String?
+  additional_qualification   String?
+  specialization             String?
+  additional_speciality      String?
+  type                       String?
+  gender                     String?
+  address                    Json?
+  experience                 Int?
+  about                      String?
+  rating                     String?
+  datetime                   DateTime
+  updatedDate                DateTime?
+  registration_no            String?
+  featured_partner           Boolean?
+  sector                     String?
+  pincode                    Int?
+  status                     String?
+  query                      Boolean?
+  expert_opinion             Boolean?
+  video_consultaion          Boolean?
+  last_active                DateTime?  
+}
