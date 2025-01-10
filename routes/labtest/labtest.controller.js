@@ -581,6 +581,15 @@ const getallpackages = async (request, response) => {
       where: {
         is_active: true,
       },
+      select: {
+        id: true,
+        package_name: true,
+        test_number: true,
+        about: true,
+        price: true,
+        home_collection: true,
+        labtest_ids: true,
+      },
     });
 
     if (getall.length > 0) {
@@ -617,6 +626,15 @@ const packagedetail = async (request, response) => {
     const { id } = request.body;
     const labPackage = await prisma.lab_packages.findFirst({
       where: { id },
+      select: {
+        id:true,
+        test_number:true,
+        package_name:true,
+        price:true,
+        labtest_ids:true,
+        home_collection:true,
+        about:true
+      },
     });
     if (labPackage) {
       const labTestIds = labPackage.labtest_ids || [];
@@ -627,10 +645,8 @@ const packagedetail = async (request, response) => {
         },
         select: {
           id: true,
-          test_number: true,
           name: true,
           mrp: true,
-          description: true,
         },
       });
 
@@ -1205,7 +1221,61 @@ const alltestlistorders = async (request, response) => {
   }
 };
 
+//get labs for assigning
+const getlaboratories = async (request, response) => {
+  try {
+    const { order_id } = request.body;
+    const getdetails = await prisma.labtest_order.findFirst({
+      where: {
+        order_id: order_id,
+      },
+      select: {
+        order_number: true,
+        labtest_list: true,
+      },
+    });
+    let pincode = getdetails?.pincode;
+    if (!pincode) {
+      return response.status(400).json({
+        error: true,
+        message: "pincode can't be null or empty.",
+      });
+    }
 
+    if (isNaN(pincode)) {
+      return response.status(400).json({
+        error: true,
+        message: "Invalid pincode provided.",
+      });
+    }
+
+    let labs = await prisma.lab_details.findMany({});
+    const givenPincode = pincode;
+    function findNearestPinCodes(labs, givenPincode, count = 3) {
+      labs.sort(
+        (a, b) =>
+          Math.abs(a.pincode - givenPincode) -
+          Math.abs(b.pincode - givenPincode)
+      );
+
+      return labs.slice(0, count);
+    }
+
+    const nearestlabs = findNearestPinCodes(labs, givenPincode);
+    return response.status(200).json({
+      data: nearestlabs,
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in labtest-nearestlabs API`
+    );
+    response.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
 
 module.exports = {
   labtestadd,
@@ -1228,5 +1298,6 @@ module.exports = {
   assignlab,
   myorders,
   checkout,
-  alltestlistorders
+  alltestlistorders,
+  getlaboratories,
 };

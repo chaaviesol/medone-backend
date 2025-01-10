@@ -22,6 +22,7 @@ const {
   myorders,
   checkout,
   alltestlistorders,
+  getlaboratories
 } = require("./labtest.controller");
 const LabtestRouter = express.Router();
 const auth = require("../../middleware/Auth/auth");
@@ -47,4 +48,5 @@ LabtestRouter.post("/assignlab", assignlab);
 LabtestRouter.get("/myorders", auth, myorders);
 LabtestRouter.post("/checkout", checkout);
 LabtestRouter.get("/alltestlistorders", alltestlistorders);
+LabtestRouter.post("/getlaboratories",getlaboratories)//get labs for assigning (based on tests and user pincode)
 module.exports = LabtestRouter;

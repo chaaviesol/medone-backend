@@ -402,7 +402,7 @@ const getorderdetailsss = async (request, response) => {
                     select: {
                       hsn: true,
                       mrp: true,
-                      product_type:true
+                      product_type: true,
                     },
                   },
                 },
