@@ -375,6 +375,7 @@ model labtest_order {
   pincode                Int?
   patient_details        Json?
   doctor_name            String?
+  test_collection        String?
   lab_id                 Int?          
   labtest_list           labtest_list[]
   users                  user_details? @relation(fields: [customer_id],references: [id])

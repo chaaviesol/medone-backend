@@ -313,6 +313,63 @@ const getalltests = async (request, response) => {
     await prisma.$disconnect();
   }
 };
+///////////////getlabtest with auth///////////////
+const gettestswithauth = async (request, response) => {
+  try {
+    const user_id = request.user.userId;
+    const { first } = request.body;
+
+    const getall = await prisma.labtest_details.findMany({
+      take: first ? 5 : undefined,
+      orderBy: {
+        name: "asc",
+      },
+      where: {
+        is_active: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        test_number: true,
+        mrp: true,
+      },
+    });
+
+    if (getall.length > 0) {
+      const getcart = await prisma.labtest_cart.findMany({
+        where: {
+          user_id: user_id,
+        },
+        select: {
+          test_number: true,
+        },
+      });
+
+      const cartTestNumbers = getcart.map((item) => item.test_number);
+      const dataWithCartStatus = getall.map((test) => ({
+        ...test,
+        incart: cartTestNumbers.includes(test.test_number),
+      }));
+
+      return response.status(200).json({
+        data: dataWithCartStatus,
+        success: true,
+      });
+    } else {
+      return response.status(400).json({
+        message: "No Data",
+        error: true,
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in labtest-gettestswithauth API`
+    );
+    response.status(500).json({ message: "An error occurred", error: true });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
 
 const testdetail = async (request, response) => {
   try {
@@ -345,6 +402,58 @@ const testdetail = async (request, response) => {
   } catch (error) {
     logger.error(
       `Internal server error: ${error.message} in labtest-testdetail API`
+    );
+    console.log(error);
+    response.status(500).json({ message: "An error occurred", error: true });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+//////////get test detail with auth//////////////////
+const testdetailwithauth = async (request, response) => {
+  try {
+    const { id } = request.body;
+    const user_id = request.user.userId;
+    const labtestDetails = await prisma.labtest_details.findMany({
+      where: {
+        id: id,
+      },
+      select: {
+        id: true,
+        test_number: true,
+        name: true,
+        mrp: true,
+        description: true,
+        home_collection: true,
+      },
+    });
+    if (labtestDetails) {
+      const getcart = await prisma.labtest_cart.findFirst({
+        where: {
+          user_id: user_id,
+          test_number: labtestDetails.test_number,
+        },
+        select: {
+          id: true,
+        },
+      });
+      const details = {
+        ...labtestDetails,
+        incart: !!getcart,
+      };
+      return response.status(200).json({
+        data: details,
+        success: true,
+      });
+    } else {
+      return response.status(400).json({
+        message: "No Data",
+        error: true,
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in labtest-testdetailwithauth API`
     );
     console.log(error);
     response.status(500).json({ message: "An error occurred", error: true });
@@ -620,6 +729,68 @@ const getallpackages = async (request, response) => {
     await prisma.$disconnect();
   }
 };
+///////////get packages with auth//////////
+const getpackageswithauth = async (request, response) => {
+  try {
+    const user_id = request.user.userId;
+    const { first } = request.body;
+    const getall = await prisma.lab_packages.findMany({
+      take: first ? 5 : undefined,
+      orderBy: {
+        package_name: "desc",
+      },
+      where: {
+        is_active: true,
+      },
+      select: {
+        id: true,
+        package_name: true,
+        test_number: true,
+        about: true,
+        price: true,
+        home_collection: true,
+        labtest_ids: true,
+      },
+    });
+
+    if (getall.length > 0) {
+      const getcart = await prisma.labtest_cart.findMany({
+        where: {
+          user_id: user_id,
+        },
+        select: {
+          test_number: true,
+        },
+      });
+      const cartTestNumbers = getcart.map((item) => item.test_number);
+      const packagesWithTests = getall.map((pkg) => ({
+        ...pkg,
+        testslength: Array.isArray(pkg.labtest_ids)
+          ? pkg.labtest_ids.length
+          : 0,
+        incart: cartTestNumbers.includes(pkg.test_number),
+      }));
+
+      return response.status(200).json({
+        data: packagesWithTests,
+        success: true,
+      });
+    } else {
+      return response.status(400).json({
+        message: "No Data",
+        error: true,
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in labtest-getpackageswithauth API`
+    );
+    console.log(error);
+    response.status(500).json({ message: "An error occurred", error: true });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
 
 const packagedetail = async (request, response) => {
   try {
@@ -627,13 +798,13 @@ const packagedetail = async (request, response) => {
     const labPackage = await prisma.lab_packages.findFirst({
       where: { id },
       select: {
-        id:true,
-        test_number:true,
-        package_name:true,
-        price:true,
-        labtest_ids:true,
-        home_collection:true,
-        about:true
+        id: true,
+        test_number: true,
+        package_name: true,
+        price: true,
+        labtest_ids: true,
+        home_collection: true,
+        about: true,
       },
     });
     if (labPackage) {
@@ -668,6 +839,73 @@ const packagedetail = async (request, response) => {
   } catch (error) {
     logger.error(
       `Internal server error: ${error.message} in labtest-pacakagedetail API`
+    );
+    console.log(error);
+    response.status(500).json({ message: "An error occurred", error: true });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+/////////get packagedetail with auth///////////
+const packagedetailwithauth = async (request, response) => {
+  try {
+    const user_id = request.user.userId;
+    const { id } = request.body;
+    const labPackage = await prisma.lab_packages.findFirst({
+      where: { id },
+      select: {
+        id: true,
+        test_number: true,
+        package_name: true,
+        price: true,
+        labtest_ids: true,
+        home_collection: true,
+        about: true,
+      },
+    });
+    if (labPackage) {
+      const getcart = await prisma.labtest_cart.findFirst({
+        where: {
+          user_id: user_id,
+          test_number: labPackage.test_number,
+        },
+        select: {
+          id: true,
+        },
+      });
+      const labTestIds = labPackage.labtest_ids || [];
+
+      const labtestDetails = await prisma.labtest_details.findMany({
+        where: {
+          id: { in: labTestIds },
+        },
+        select: {
+          id: true,
+          name: true,
+          mrp: true,
+        },
+      });
+
+      const packageWithTests = {
+        ...labPackage,
+        tests: labtestDetails,
+        incart: !!getcart,
+      };
+
+      return response.status(200).json({
+        data: packageWithTests,
+        success: true,
+      });
+    } else {
+      return response.status(400).json({
+        message: "No Data",
+        error: true,
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in labtest-packagedetailwithauth API`
     );
     console.log(error);
     response.status(500).json({ message: "An error occurred", error: true });
@@ -1008,15 +1246,40 @@ const checkout = async (request, response) => {
           customer_id: userId,
           delivery_details: delivery_details,
           delivery_location: location,
+          doctor_name: doctor_name,
           contact_no: contact_no.toString(),
           pincode: parseInt(pincode),
         },
       });
 
       if (order_type != "prescription") {
+        let findcollection = "home";
         for (let test of tests) {
           const net_amount = parseInt(test.quantity) * parseInt(test.mrp);
+          let find;
 
+          if (test.test_number.includes("T")) {
+            find = await prisma.labtest_details.findFirst({
+              where: {
+                test_number: test.test_number,
+              },
+              select: {
+                home_collection: true,
+              },
+            });
+          } else {
+            find = await prisma.lab_packages.findFirst({
+              where: {
+                test_number: test.test_number,
+              },
+              select: {
+                home_collection: true,
+              },
+            });
+          }
+          if (find && !find.home_collection) {
+            findcollection = "center";
+          }
           await prisma.labtest_list.create({
             data: {
               labtest_order: {
@@ -1035,6 +1298,14 @@ const checkout = async (request, response) => {
         await prisma.labtest_cart.deleteMany({
           where: {
             user_id: userId,
+          },
+        });
+        await prisma.labtest_order.update({
+          where: {
+            order_id: test_order.order_id,
+          },
+          data: {
+            test_collection: findcollection,
           },
         });
 
@@ -1269,6 +1540,76 @@ const getlaboratories = async (request, response) => {
     });
   } catch (error) {
     logger.error(
+      `Internal server error: ${error.message} in labtest-getlaboratories API`
+    );
+    response.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+/////////////get order detailss//////////
+const getorderdetails = async (request, response) => {
+  try {
+    const { order_id } = request.body;
+    const getdetails = await prisma.labtest_order.findFirst({
+      where: {
+        order_id: order_id,
+      },
+      select: {
+        order_id: true,
+        total_amount: true,
+        order_number: true,
+        labtest_list: true,
+        status: true,
+        order_type: true,
+        remarks: true,
+        delivery_details: true,
+        delivery_location: true,
+        created_date: true,
+        updated_date: true,
+        contact_no: true,
+        customer_id: true,
+        patient_details: true,
+        pincode: true,
+        test_collection: true,
+      },
+    });
+    let pincode = getdetails?.pincode;
+    if (!pincode) {
+      return response.status(400).json({
+        error: true,
+        message: "pincode can't be null or empty.",
+      });
+    }
+
+    if (isNaN(pincode)) {
+      return response.status(400).json({
+        error: true,
+        message: "Invalid pincode provided.",
+      });
+    }
+
+    let labs = await prisma.lab_details.findMany({});
+    const givenPincode = pincode;
+    function findNearestPinCodes(labs, givenPincode, count = 3) {
+      labs.sort(
+        (a, b) =>
+          Math.abs(a.pincode - givenPincode) -
+          Math.abs(b.pincode - givenPincode)
+      );
+
+      return labs.slice(0, count);
+    }
+
+    const nearestlabs = findNearestPinCodes(labs, givenPincode);
+    return response.status(200).json({
+      data: nearestlabs,
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    logger.error(
       `Internal server error: ${error.message} in labtest-nearestlabs API`
     );
     response.status(500).json({ error: "Internal Server Error" });
@@ -1300,4 +1641,8 @@ module.exports = {
   checkout,
   alltestlistorders,
   getlaboratories,
+  gettestswithauth,
+  getpackageswithauth,
+  packagedetailwithauth,
+  testdetailwithauth,
 };
