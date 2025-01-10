@@ -1119,6 +1119,94 @@ const myorders = async (request, response) => {
   }
 };
 
+const alltestlistorders = async (request, response) => {
+  const secretKey = process.env.ENCRYPTION_KEY;
+  try {
+    const all = await prisma.labtest_order.findMany({
+      select: {
+        order_number: true,
+        total_amount: true,
+        status: true,
+        remarks: true,
+        delivery_details: true,
+        delivery_location: true,
+        patient_details: true,
+        pincode: true,
+        doctor_name: true,
+
+        users: {
+          select: {
+            name: true,
+          },
+        },
+        labtest_list: {
+          select: {
+            order_id: true,
+            net_amount: true,
+            order_qty: true,
+            test_number: true,
+          },
+        },
+      },
+      orderBy: {
+        created_date: "desc",
+      },
+    });
+
+    if (all.length > 0) {
+      let requested = [];
+      let others = [];
+      let ofd = [];
+      let packed = [];
+      let delivered = [];
+      all.forEach((order) => {
+        if (order?.users?.name) {
+          const decryptedUsername = decrypt(order.users.name, secretKey);
+          order.users = decryptedUsername;
+        }
+        if (order.status === "Placed" || order.status === "placed") {
+          requested.push(order);
+        } else if (order.status === "Out for delivery") {
+          ofd.push(order);
+        } else if (order.status === "packed") {
+          packed.push(order);
+        } else if (order.status === "delivered") {
+          delivered.push(order);
+        } else {
+          others.push(order);
+        }
+      });
+
+      return response.status(200).json({
+        success: true,
+        data: all,
+        requestlength: requested.length,
+        packedlength: packed.length,
+        outfordelivery: ofd.length,
+        otherslength: others.length,
+        deliveredlength: delivered.length,
+      });
+    } else {
+      return response.status(404).json({
+        success: false,
+        message: "No test orders found.",
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in alltestlistorders API`
+    );
+    response.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+
+
 module.exports = {
   labtestadd,
   getlabtests,
@@ -1140,4 +1228,5 @@ module.exports = {
   assignlab,
   myorders,
   checkout,
+  alltestlistorders
 };
