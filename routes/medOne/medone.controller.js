@@ -1183,6 +1183,12 @@ const notifyMedicineSchedule = async (request, response) => {
       for (const notifyTime of Object.values(timing[0])) {
         const notifyTimeOfDay = notifyTime.toLowerCase();
     
+        // Skip notifications if time has passed
+        const now = new Date();
+        const mealTime = mealTimes[notifyTimeOfDay];
+        if (notifyTimeOfDay === "morning" && now > mealTimes.lunch) continue;
+        if (notifyTimeOfDay === "lunch" && now > mealTimes.dinner) continue;
+    
         const existingTakenRecord = await prisma.medication_records.findFirst({
           where: {
             userId: userid,
@@ -1201,67 +1207,55 @@ const notifyMedicineSchedule = async (request, response) => {
           continue;
         }
     
-        let notificationTime;
-        if (!lastNotificationTime) {
-          // First notification based on meal times
-          if (notifyTimeOfDay === "morning") {
-            notificationTime = afterFd_beforeFd === "before food"
-              ? new Date(mealTimes.Morning.getTime() - 45 * 60000)
-              : mealTimes.Morning;
-          } else if (notifyTimeOfDay === "lunch") {
-            notificationTime = afterFd_beforeFd === "before food"
-              ? new Date(mealTimes.lunch.getTime() - 45 * 60000)
-              : mealTimes.lunch;
-          } else if (notifyTimeOfDay === "dinner") {
-            notificationTime = afterFd_beforeFd === "before food"
-              ? new Date(mealTimes.dinner.getTime() - 45 * 60000)
-              : mealTimes.dinner;
-          }
-        } else {
-          // Calculate notification time using the timeInterval
-          notificationTime = new Date(lastNotificationTime.getTime() + timeInterval * 60 * 60 * 1000);
+        let notificationTime = null;
+        if (notifyTimeOfDay === "morning") {
+          notificationTime = afterFd_beforeFd === "before food"
+            ? new Date(mealTimes.Morning.getTime() - 45 * 60000)
+            : mealTimes.Morning;
+        } else if (notifyTimeOfDay === "lunch") {
+          notificationTime = afterFd_beforeFd === "before food"
+            ? new Date(mealTimes.lunch.getTime() - 45 * 60000)
+            : mealTimes.lunch;
+        } else if (notifyTimeOfDay === "dinner") {
+          notificationTime = afterFd_beforeFd === "before food"
+            ? new Date(mealTimes.dinner.getTime() - 45 * 60000)
+            : mealTimes.dinner;
         }
     
-        if (notificationTime) {
-          const validUntil = new Date(notificationTime.getTime() + 2 * 60 * 60 * 1000);
-    
-          if (now > validUntil) {
-            await prisma.medication_records.create({
-              data: {
-                userId: userid,
-                timetable_id: id,
-                taken_time: notifyTimeOfDay,
-                status: "Skipped",
-                taken_status: "No",
-                created_date: new Date(),
-              },
-            });
-            console.log(`Medicine ID: ${id} skipped for ${notifyTimeOfDay} as valid time has passed`);
-            continue;
-          }
-    
-          notifications.push({
-            medicine_timetableID: id,
-            medicine: medicine.medicine[0].name,
-            notificationTime: notificationTime.toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: true,
-            }),
-            medicine_type: medicine.medicine_type,
-            validUntil: validUntil.toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: true,
-            }),
-            timeOfDay: notifyTimeOfDay,
+        if (now > new Date(notificationTime.getTime() + 2 * 60 * 60 * 1000)) {
+          await prisma.medication_records.create({
+            data: {
+              userId: userid,
+              timetable_id: id,
+              taken_time: notifyTimeOfDay,
+              status: "Skipped",
+              taken_status: "No",
+              created_date: new Date(),
+            },
           });
-    
-          // Update the lastNotificationTime for the next iteration
-          lastNotificationTime = notificationTime;
+          console.log(`Medicine ID: ${id} skipped for ${notifyTimeOfDay} as valid time has passed`);
+          continue;
         }
+    
+        notifications.push({
+          medicine_timetableID: id,
+          medicine: medicine.medicine[0].name,
+          notificationTime: notificationTime.toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+          }),
+          medicine_type: medicine.medicine_type,
+          validUntil: new Date(notificationTime.getTime() + 2 * 60 * 60 * 1000).toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+          }),
+          timeOfDay: notifyTimeOfDay,
+        });
       }
     }
+    
     
     
 
@@ -1633,7 +1627,7 @@ const getMedicationHistory = async(request,response)=>{
 const refillNotification = async(request,response)=>{
   try{
     const {userId} = request.body
-    
+    const twentyFourHoursAgo = new Date(new Date().getTime() - 24 * 60 * 60 * 1000);
     const findMedicines = await prisma.medicine_timetable.findMany({
       where:{
         userId:userId
@@ -1673,7 +1667,7 @@ const refillNotification = async(request,response)=>{
             user_id:userId,
             message:message,
             status:"Not seen",
-            // data:clg
+            view_status:"false"
   
           }
         })
@@ -1683,6 +1677,15 @@ const refillNotification = async(request,response)=>{
       medicineCount.push(medicationData)
      
     }
+    const deleteNotification = await prisma.notification.deleteMany({
+      where: {
+        created_date: { lt: twentyFourHoursAgo },
+      },
+    });
+    console.log({ deleteNotification });
+
+
+
     return response.status(200).json({
       error:false,
       success:true,
@@ -1691,6 +1694,9 @@ const refillNotification = async(request,response)=>{
       // medicineCount: medicineCount,
       notifications: notifications,
     })
+
+  
+
     
   }catch (error) {
     console.log({ error });
