@@ -1021,7 +1021,7 @@ const testToCart = async (request, response) => {
 };
 
 const gettestCart = async (request, response) => {
-  const user_id = request.user?.userId;
+  const user_id = request.user.userId
   try {
     if (!user_id) {
       logger.error("user_id is undefined in labtest-getCart API");
@@ -1052,7 +1052,7 @@ const gettestCart = async (request, response) => {
     }
 
     const extractedResponse = [];
-    let hasCenter = false;
+
     for (const item of cartItems) {
       const { test_number } = item;
 
@@ -1062,9 +1062,6 @@ const gettestCart = async (request, response) => {
         });
 
         if (labtestDetail) {
-          if (labtestDetail.home_collection === "center") {
-            hasCenter = true;
-          }
           extractedResponse.push({
             name: labtestDetail.name,
             id: labtestDetail.id,
@@ -1085,9 +1082,6 @@ const gettestCart = async (request, response) => {
         });
 
         if (labPackageDetail) {
-          if (labPackageDetail.home_collection === "center") {
-            hasCenter = true;
-          }
           extractedResponse.push({
             name: labPackageDetail.package_name,
             id: labPackageDetail.id,
@@ -1099,6 +1093,9 @@ const gettestCart = async (request, response) => {
         }
       }
     }
+    const hasCenter = extractedResponse.some(
+      (item) => item.home_collection === false
+    );
 
     response.status(200).json({
       success: true,
