@@ -71,7 +71,7 @@ const pharmacyadd = async (request, response) => {
     logger.error(`Internal server error: ${error.message} in pharmacyadd API`);
     response.status(500).json({ message: "An error occurred", error: true });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -93,7 +93,7 @@ const getpharmacy = async (request, response) => {
     logger.error(`Internal server error: ${error.message} in getpharmacy API`);
     response.status(500).json({ message: "An error occurred", error: true });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -181,7 +181,7 @@ const filterpharmacy = async (request, response) => {
     );
     response.status(500).json({ message: "An error occurred", error: true });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -226,7 +226,7 @@ const productadd = async (request, response) => {
           productImage[keyName] = images[i];
         }
       }
-
+      const sellingPrice = parseInt(mrp) * 0.1;
       const create = await prisma.generic_product.update({
         where: {
           id: id,
@@ -245,6 +245,7 @@ const productadd = async (request, response) => {
           product_type,
           prescription_required,
           composition,
+          selling_price: sellingPrice,
         },
       });
       if (create) {
@@ -291,7 +292,7 @@ const productadd = async (request, response) => {
     logger.error(`Internal server error: ${error.message} in productadd API`);
     response.status(500).json("An error occurred");
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -324,7 +325,7 @@ const disableproduct = async (request, response) => {
       message: "Internal server error",
     });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -350,7 +351,7 @@ const getproducts = async (request, response) => {
       message: "Internal server error",
     });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -419,7 +420,7 @@ const addToCart = async (request, response) => {
       message: "Internal server error",
     });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -476,7 +477,7 @@ const getCart = async (request, response) => {
       message: "Internal server error",
     });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -519,7 +520,7 @@ const removeFromCart = async (request, response) => {
       message: "Internal server error",
     });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 ////////////sales_order////////////
@@ -696,7 +697,7 @@ const salesorder = async (request, response) => {
       message: "Internal server error",
     });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -766,7 +767,7 @@ const getasalesorder = async (request, response) => {
       message: "Internal server error",
     });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -853,7 +854,7 @@ const presciptionsaleorders = async (request, response) => {
       message: "Internal server error",
     });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -951,7 +952,7 @@ const allsalelistorders = async (request, response) => {
       message: "Internal server error",
     });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -986,7 +987,7 @@ const checkaddress = async (request, response) => {
     );
     response.status(500).json({ message: "An error occurred", error: true });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -1024,7 +1025,7 @@ const updatesalesorder = async (request, response) => {
       message: "Internal server error",
     });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -1063,7 +1064,7 @@ const medicineadd = async (request, response) => {
     logger.error(`Internal server error: ${error.message} in medicineadd API`);
     response.status(500).json("An error occurred");
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -1195,7 +1196,7 @@ const getinvsalesorder = async (request, response) => {
       message: "Internal server error",
     });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 //////for normal type salesorder////////////////////////
@@ -1237,7 +1238,7 @@ const createinvoice = async (request, response) => {
             category,
             interval,
             every,
-            product_type
+            product_type,
           } = medicinedet;
 
           // Check if the category array includes "MEDICINES"
@@ -1250,7 +1251,7 @@ const createinvoice = async (request, response) => {
 
             if (Array.isArray(timing)) {
               const timeMapping = {
-                Morning: "time1",   ///changed Morning-morning
+                Morning: "time1", ///changed Morning-morning
                 lunch: "time2",
                 dinner: "time3",
               };
@@ -1286,7 +1287,7 @@ const createinvoice = async (request, response) => {
                 daysInterval: daysInterval,
                 takingQuantity,
                 app_flag: false,
-                medicine_type:product_type,
+                medicine_type: product_type,
                 created_date: datetime,
               },
             });
@@ -1317,7 +1318,7 @@ const createinvoice = async (request, response) => {
     console.log(error);
     response.status(500).json("An error occurred");
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -1382,7 +1383,7 @@ const prescriptioninvoice = async (request, response) => {
           interval,
           every,
           category,
-          product_type
+          product_type,
         } = medicinedet;
         if (category.some((item) => item.toLowerCase() === "medicines")) {
           const medicine = [{ id: id, name: name }];
@@ -1392,7 +1393,7 @@ const prescriptioninvoice = async (request, response) => {
 
           if (Array.isArray(timing)) {
             const timeMapping = {
-              Morning: "time1",  //changed morning-Morning
+              Morning: "time1", //changed morning-Morning
               lunch: "time2",
               dinner: "time3",
             };
@@ -1429,7 +1430,7 @@ const prescriptioninvoice = async (request, response) => {
               timeInterval: timeInterval,
               daysInterval: daysInterval,
               created_date: datetime,
-              medicine_type:product_type
+              medicine_type: product_type,
             },
           });
         }
@@ -1468,7 +1469,7 @@ const prescriptioninvoice = async (request, response) => {
     );
     response.status(500).json("An error occurred");
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -1497,7 +1498,7 @@ const getainvoice = async (request, response) => {
     );
     response.status(500).json({ message: "An error occurred", error: true });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -1649,7 +1650,7 @@ const myorders = async (request, response) => {
     logger.error(`Internal server error: ${error.message} in myorders API`);
     response.status(500).json("An error occurred");
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -1694,7 +1695,7 @@ const getprods = async (request, response) => {
       message: "Internal server error",
     });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -1760,7 +1761,7 @@ const updatedchat = async (request, response) => {
     logger.error(`Internal server error: ${error.message} in updatedchat API`);
     response.status(500).json("An error occurred");
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 

@@ -27,6 +27,7 @@ const {
   getpackageswithauth,
   packagedetailwithauth,
   testdetailwithauth,
+  getorderdetails
 } = require("./labtest.controller");
 const LabtestRouter = express.Router();
 const auth = require("../../middleware/Auth/auth");
@@ -57,4 +58,5 @@ LabtestRouter.post("/gettestswithauth", auth, gettestswithauth);
 LabtestRouter.post("/getpackageswithauth", auth, getpackageswithauth);
 LabtestRouter.post("/packagedetailwithauth", auth, packagedetailwithauth);
 LabtestRouter.post("/testdetailwithauth", auth, testdetailwithauth);
+LabtestRouter.post("/getorderdetails",getorderdetails)
 module.exports = LabtestRouter;
