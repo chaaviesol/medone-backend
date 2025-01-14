@@ -1022,8 +1022,6 @@ const testToCart = async (request, response) => {
 
 const gettestCart = async (request, response) => {
   const user_id = request.user?.userId;
-  
-
   try {
     if (!user_id) {
       logger.error("user_id is undefined in labtest-getCart API");
@@ -1104,8 +1102,10 @@ const gettestCart = async (request, response) => {
 
     response.status(200).json({
       success: true,
-      data: extractedResponse,
-      testLocation: hasCenter ? "center" : "home",
+      data: {
+        tests: extractedResponse,
+        testLocation: hasCenter ? "center" : "home",
+      },
     });
   } catch (error) {
     logger.error(
