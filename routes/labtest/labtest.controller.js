@@ -1105,7 +1105,7 @@ const gettestCart = async (request, response) => {
     response.status(200).json({
       success: true,
       data: extractedResponse,
-      location: hasCenter ? "center" : "home",
+      testLocation: hasCenter ? "center" : "home",
     });
   } catch (error) {
     logger.error(
