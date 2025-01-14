@@ -413,8 +413,8 @@ const testdetail = async (request, response) => {
 const testdetailwithauth = async (request, response) => {
   try {
     const { id } = request.body;
-    const user_id = request.user.userId;
-    const labtestDetails = await prisma.labtest_details.findMany({
+    const user_id = request.user.userId
+    const labtestDetails = await prisma.labtest_details.findFirst({
       where: {
         id: id,
       },
@@ -427,7 +427,13 @@ const testdetailwithauth = async (request, response) => {
         home_collection: true,
       },
     });
-    if (labtestDetails) {
+    
+    if (!labtestDetails) {
+      return response.status(400).json({
+        message: "No Test",
+        error: true,
+      });
+    }
       const getcart = await prisma.labtest_cart.findFirst({
         where: {
           user_id: user_id,
@@ -437,20 +443,16 @@ const testdetailwithauth = async (request, response) => {
           id: true,
         },
       });
+      console.log({getcart})
       const details = {
         ...labtestDetails,
-        incart: !!getcart,
+        incart: !!getcart
       };
       return response.status(200).json({
         data: details,
         success: true,
       });
-    } else {
-      return response.status(400).json({
-        message: "No Data",
-        error: true,
-      });
-    }
+   
   } catch (error) {
     logger.error(
       `Internal server error: ${error.message} in labtest-testdetailwithauth API`
