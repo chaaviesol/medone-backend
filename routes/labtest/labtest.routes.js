@@ -53,7 +53,7 @@ LabtestRouter.post("/assignlab", assignlab);
 LabtestRouter.get("/myorders", auth, myorders);
 LabtestRouter.post("/checkout", checkout);
 LabtestRouter.get("/alltestlistorders", alltestlistorders);
-LabtestRouter.post("/getlaboratories", getlaboratories); //get labs for assigning (based on tests and user pincode)
+LabtestRouter.post("/getlaboratories", getlaboratories); ////get labs for assigning (based on tests and user pincode)
 LabtestRouter.post("/gettestswithauth", auth, gettestswithauth);
 LabtestRouter.post("/getpackageswithauth", auth, getpackageswithauth);
 LabtestRouter.post("/packagedetailwithauth", auth, packagedetailwithauth);
