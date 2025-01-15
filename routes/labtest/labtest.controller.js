@@ -375,7 +375,7 @@ const testdetail = async (request, response) => {
   try {
     const { id } = request.body;
 
-    const labtestDetails = await prisma.labtest_details.findMany({
+    const labtestDetails = await prisma.labtest_details.findFirst({
       where: {
         id: id,
       },
@@ -430,7 +430,7 @@ const testdetailwithauth = async (request, response) => {
     
     if (!labtestDetails) {
       return response.status(400).json({
-        message: "No Test",
+        message: "No Test Found",
         error: true,
       });
     }
