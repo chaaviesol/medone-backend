@@ -81,7 +81,7 @@ const labadd = async (request, response) => {
     logger.error(`Internal server error: ${error.message} in labadd API`);
     response.status(500).json({ message: "An error occurred", error: true });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -105,7 +105,7 @@ const getlabs = async (request, response) => {
     );
     response.status(500).json({ message: "An error occurred", error: true });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -271,7 +271,7 @@ const getlabtests = async (request, response) => {
     );
     response.status(500).json({ message: "An error occurred", error: true });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -375,7 +375,7 @@ const testdetail = async (request, response) => {
   try {
     const { id } = request.body;
 
-    const labtestDetails = await prisma.labtest_details.findMany({
+    const labtestDetails = await prisma.labtest_details.findFirst({
       where: {
         id: id,
       },
@@ -413,8 +413,8 @@ const testdetail = async (request, response) => {
 const testdetailwithauth = async (request, response) => {
   try {
     const { id } = request.body;
-    const user_id = request.user.userId;
-    const labtestDetails = await prisma.labtest_details.findMany({
+    const user_id = request.user.userId
+    const labtestDetails = await prisma.labtest_details.findFirst({
       where: {
         id: id,
       },
@@ -427,7 +427,13 @@ const testdetailwithauth = async (request, response) => {
         home_collection: true,
       },
     });
-    if (labtestDetails) {
+    
+    if (!labtestDetails) {
+      return response.status(400).json({
+        message: "No Test Found",
+        error: true,
+      });
+    }
       const getcart = await prisma.labtest_cart.findFirst({
         where: {
           user_id: user_id,
@@ -437,20 +443,16 @@ const testdetailwithauth = async (request, response) => {
           id: true,
         },
       });
+      console.log({getcart})
       const details = {
         ...labtestDetails,
-        incart: !!getcart,
+        incart: !!getcart
       };
       return response.status(200).json({
         data: details,
         success: true,
       });
-    } else {
-      return response.status(400).json({
-        message: "No Data",
-        error: true,
-      });
-    }
+   
   } catch (error) {
     logger.error(
       `Internal server error: ${error.message} in labtest-testdetailwithauth API`
@@ -644,23 +646,23 @@ const getpackagetests = async (request, response) => {
   try {
     const getall = await prisma.lab_packages.findMany();
     if (getall.length > 0) {
-      const allLabTestIds = getall.flatMap((pkg) => pkg.labtest_ids);
+      // const allLabTestIds = getall.flatMap((pkg) => pkg.labtest_ids);
 
-      const labtestDetails = await prisma.labtest_details.findMany({
-        where: {
-          id: { in: allLabTestIds },
-        },
-      });
+      //       const labtestDetails = await prisma.labtest_details.findMany({
+      //         where: {
+      //           id: { in: allLabTestIds },
+      //         },
+      //       });
 
-      const packagesWithTests = getall.map((pkg) => ({
-        ...pkg,
-        tests: labtestDetails.filter((test) =>
-          pkg.labtest_ids.includes(test.id)
-        ),
-      }));
-
+      //       const packagesWithTests = getall.map((pkg) => ({
+      //         ...pkg,
+      //         tests: labtestDetails.filter((test) =>
+      //           pkg.labtest_ids.includes(test.id)
+      //         ),
+      //       }));
+      // console.log({packagesWithTests})
       return response.status(200).json({
-        data: packagesWithTests,
+        data: getall,
         success: true,
       });
     } else {
@@ -1021,8 +1023,7 @@ const testToCart = async (request, response) => {
 };
 
 const gettestCart = async (request, response) => {
-  const user_id = request.user?.userId;
-
+  const user_id = request.user.userId
   try {
     if (!user_id) {
       logger.error("user_id is undefined in labtest-getCart API");
@@ -1088,18 +1089,27 @@ const gettestCart = async (request, response) => {
             id: labPackageDetail.id,
             test_number: labPackageDetail.test_number,
             price: labPackageDetail.price,
+            home_collection: labPackageDetail.home_collection,
             labtest_ids: labPackageDetail.labtest_ids,
           });
         }
       }
     }
+    const hasCenter = extractedResponse.some(
+      (item) => item.home_collection === false
+    );
 
     response.status(200).json({
       success: true,
-      data: extractedResponse,
+      data: {
+        tests: extractedResponse,
+        testLocation: hasCenter ? "center" : "home",
+      },
     });
   } catch (error) {
-    logger.error(`Internal server error: ${error.message} in gettestCart API`);
+    logger.error(
+      `Internal server error: ${error.message} in labtest-gettestCart API`
+    );
     response.status(500).json({
       error: true,
       message: "Internal server error",
@@ -1254,8 +1264,8 @@ const checkout = async (request, response) => {
 
       if (order_type != "prescription") {
         let findcollection = "home";
+
         for (let test of tests) {
-          const net_amount = parseInt(test.quantity) * parseInt(test.mrp);
           let find;
 
           if (test.test_number.includes("T")) {
@@ -1288,8 +1298,6 @@ const checkout = async (request, response) => {
                 },
               },
               test_number: test.test_number,
-              order_qty: parseInt(test.quantity),
-              net_amount: net_amount,
               created_date: datetime,
             },
           });
@@ -1575,42 +1583,58 @@ const getorderdetails = async (request, response) => {
         test_collection: true,
       },
     });
-    let pincode = getdetails?.pincode;
-    if (!pincode) {
-      return response.status(400).json({
-        error: true,
-        message: "pincode can't be null or empty.",
+    if (!getdetails) {
+      return response.status(404).json({
+        message: "Order not found",
+        success: false,
       });
     }
 
-    if (isNaN(pincode)) {
-      return response.status(400).json({
-        error: true,
-        message: "Invalid pincode provided.",
-      });
+    const testdata = getdetails.labtest_list;
+    const labtestDetails = [];
+    for (const data of testdata) {
+      let testDetail;
+      if (data.test_number.includes("T")) {
+        testDetail = await prisma.labtest_order.findFirst({
+          where: {
+            test_number: data.test_number,
+          },
+          select: {
+            test_number: true,
+            name: true,
+            mrp: true,
+            description: true,
+          },
+        });
+      } else {
+        testDetail = await prisma.lab_packages.findFirst({
+          where: {
+            test_number: data.test_number,
+          },
+          select: {
+            test_number: true,
+            package_name: true,
+            price: true,
+            about: true,
+          },
+        });
+      }
+      if (testDetail) {
+        labtestDetails.push(testDetail);
+      }
     }
-
-    let labs = await prisma.lab_details.findMany({});
-    const givenPincode = pincode;
-    function findNearestPinCodes(labs, givenPincode, count = 3) {
-      labs.sort(
-        (a, b) =>
-          Math.abs(a.pincode - givenPincode) -
-          Math.abs(b.pincode - givenPincode)
-      );
-
-      return labs.slice(0, count);
-    }
-
-    const nearestlabs = findNearestPinCodes(labs, givenPincode);
+    const responseDetails = {
+      ...getdetails,
+      labtest_details: labtestDetails,
+    };
     return response.status(200).json({
-      data: nearestlabs,
+      data: responseDetails,
       success: true,
       error: false,
     });
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in labtest-nearestlabs API`
+      `Internal server error: ${error.message} in labtest-getorderdetails API`
     );
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
@@ -1645,4 +1669,5 @@ module.exports = {
   getpackageswithauth,
   packagedetailwithauth,
   testdetailwithauth,
+  getorderdetails,
 };

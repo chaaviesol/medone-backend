@@ -27,6 +27,7 @@ const {
   getpackageswithauth,
   packagedetailwithauth,
   testdetailwithauth,
+  getorderdetails
 } = require("./labtest.controller");
 const LabtestRouter = express.Router();
 const auth = require("../../middleware/Auth/auth");
@@ -52,9 +53,10 @@ LabtestRouter.post("/assignlab", assignlab);
 LabtestRouter.get("/myorders", auth, myorders);
 LabtestRouter.post("/checkout", checkout);
 LabtestRouter.get("/alltestlistorders", alltestlistorders);
-LabtestRouter.post("/getlaboratories", getlaboratories); //get labs for assigning (based on tests and user pincode)
+LabtestRouter.post("/getlaboratories", getlaboratories); ////get labs for assigning (based on tests and user pincode)
 LabtestRouter.post("/gettestswithauth", auth, gettestswithauth);
 LabtestRouter.post("/getpackageswithauth", auth, getpackageswithauth);
 LabtestRouter.post("/packagedetailwithauth", auth, packagedetailwithauth);
 LabtestRouter.post("/testdetailwithauth", auth, testdetailwithauth);
+LabtestRouter.post("/getorderdetails",getorderdetails)
 module.exports = LabtestRouter;
