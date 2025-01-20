@@ -56,6 +56,8 @@ model generic_product {
   brand                                                                   String?
   hsn                                                                     String?
   prescription_required                                                   Boolean?
+  unit_of_measurement                                                     String?
+  medicine_unit                                                           Int?
   selling_price                                                           Decimal?                 @db.Decimal(10, 2)                  
   customer_cart                                                           customer_cart[]
   sales_list                                                              sales_list[]

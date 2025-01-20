@@ -157,7 +157,7 @@ const getcategory = async (request, response) => {
     );
     console.error(error);
     response.status(500).json({ error: "Internal Server Error" });
-  } 
+  }
   // finally {
   //   //await prisma.$disconnect();
   // }
@@ -186,9 +186,9 @@ const deletecategory = async (request, response) => {
       // Check if there are products associated with this category
       const checkcategory = await prisma.generic_product.findFirst({
         where: {
-          category:{
-            array_contains:check.category,
-          } 
+          category: {
+            array_contains: check.category,
+          },
         },
       });
 
@@ -251,10 +251,17 @@ const getcategorywise = async (request, response) => {
               (cat) => normalizeString(cat) === normalizedCategory
             );
           })
-          .map((product) => ({
-            ...product,
-            quantity: 0,
-          }));
+          .map((product) => {
+            const sellingPrice =
+              product.selling_price !== null
+                ? product.selling_price
+                : parseInt(product.mrp) - parseInt(product.mrp) * 0.1;
+            return {
+              ...product,
+              quantity: 0,
+              selling_price: sellingPrice, // Send calculated selling_price
+            };
+          });
 
         resultObject.push({
           id: categories[i].id,
@@ -281,7 +288,6 @@ const getcategorywise = async (request, response) => {
     //await prisma.$disconnect();
   }
 };
-
 
 ///getcategory for mobile app
 
@@ -322,11 +328,19 @@ const getcategorywise_app = async (request, response) => {
               (cat) => normalizeString(cat) === normalizedCategory
             );
           })
-          .map((product) => ({
-            ...product,
-            quantity: cartProductMap.get(product.id) || 0, // Set quantity from the cart or default to 0
-            inCart: cartProductMap.has(product.id), // Check if product is in the cart
-          }));
+          .map((product) => {
+            const sellingPrice =
+              product.selling_price !== null
+                ? product.selling_price
+                : parseInt(product.mrp) - parseInt(product.mrp) * 0.1;
+               
+            return {
+              ...product,
+              quantity: cartProductMap.get(product.id) || 0, // Set quantity from the cart or default to 0
+              inCart: cartProductMap.has(product.id), // Check if product is in the cart
+              selling_price: sellingPrice,
+            };
+          });
 
         resultObject.push({
           id: categories[i].id,
@@ -354,5 +368,10 @@ const getcategorywise_app = async (request, response) => {
   }
 };
 
-
-module.exports = { addcategory, getcategory, deletecategory, getcategorywise, getcategorywise_app};
+module.exports = {
+  addcategory,
+  getcategory,
+  deletecategory,
+  getcategorywise,
+  getcategorywise_app,
+};

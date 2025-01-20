@@ -22,7 +22,7 @@ const UserRouter = express.Router();
 UserRouter.route("/addusers").post(addUsers);
 UserRouter.route("/userlogin").post(userLogin);
 UserRouter.route("/getusers").get(getusers);
-UserRouter.post("/edituser", auth, upload.single("image"), edituser);
+UserRouter.post("/edituser", auth, upload.array("images"), edituser);
 
 UserRouter.post(
   "/completeRegistration",

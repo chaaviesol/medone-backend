@@ -201,6 +201,8 @@ const productadd = async (request, response) => {
       images,
       hsn,
       prescription_required,
+      unit_of_measurement,
+      medicine_unit,
       composition,
       product_type,
     } = JSON.parse(request.body.data);
@@ -226,7 +228,12 @@ const productadd = async (request, response) => {
           productImage[keyName] = images[i];
         }
       }
-      const sellingPrice = parseInt(mrp) * 0.1;
+      const isMedicineCategory = category.some((cat) =>
+        cat.toLowerCase().includes("medicines")
+      );
+      const sellingPrice = isMedicineCategory
+        ? null
+        : parseInt(mrp) - parseInt(mrp) * 0.1;
       const create = await prisma.generic_product.update({
         where: {
           id: id,
@@ -246,6 +253,8 @@ const productadd = async (request, response) => {
           prescription_required,
           composition,
           selling_price: sellingPrice,
+          medicine_unit: medicine_unit,
+          unit_of_measurement: unit_of_measurement,
         },
       });
       if (create) {
@@ -263,6 +272,12 @@ const productadd = async (request, response) => {
         let keyName = `image${i + 1}`;
         productImage[keyName] = product_images[i]?.location;
       }
+      const isMedicineCategory = category.some((cat) =>
+        cat.toLowerCase().includes("medicines")
+      );
+      const sellingPrice = isMedicineCategory
+        ? null
+        : parseInt(mrp) - parseInt(mrp) * 0.1;
 
       const create = await prisma.generic_product.create({
         data: {
@@ -279,6 +294,9 @@ const productadd = async (request, response) => {
           product_type,
           prescription_required,
           composition,
+          selling_price: sellingPrice,
+          medicine_unit: medicine_unit,
+          unit_of_measurement: unit_of_measurement,
         },
       });
       if (create) {
@@ -329,6 +347,32 @@ const disableproduct = async (request, response) => {
   }
 };
 
+// const getproducts = async (request, response) => {
+//   try {
+//     const allproducts = await prisma.generic_product.findMany({
+//       where: {
+//         is_active: "Y",
+//       },
+//     });
+//     if (allproducts.length > 0) {
+//       return response.status(200).json({
+//         data: allproducts,
+//         success: true,
+//       });
+//     }
+//   } catch (error) {
+//     logger.error(
+//       `Internal server error: ${error.message} in pharmacy getproducts API`
+//     );
+//     response.status(500).json({
+//       error: true,
+//       message: "Internal server error",
+//     });
+//   } finally {
+//     await prisma.$disconnect();
+//   }
+// };
+
 const getproducts = async (request, response) => {
   try {
     const allproducts = await prisma.generic_product.findMany({
@@ -336,6 +380,13 @@ const getproducts = async (request, response) => {
         is_active: "Y",
       },
     });
+
+    allproducts.forEach((product) => {
+      if (product.selling_price === null && product.mrp) {
+        product.selling_price = product.mrp - product.mrp * 0.1;
+      }
+    });
+
     if (allproducts.length > 0) {
       return response.status(200).json({
         data: allproducts,
@@ -344,7 +395,7 @@ const getproducts = async (request, response) => {
     }
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in pharmacy getproducts API`
+      `Internal server error: ${error.message} in pharmacy -getproducts API`
     );
     response.status(500).json({
       error: true,

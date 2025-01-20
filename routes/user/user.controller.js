@@ -706,13 +706,95 @@ const getusers = async (request, response) => {
   }
 };
 
+// const edituser = async (request, response) => {
+//   const secretKey = process.env.ENCRYPTION_KEY;
+
+//   try {
+//     const id = request.user.userId;
+//     const userimg = request.file?.location || request.body.image;
+//     console.log(userimg);
+//     const { name, ageGroup, gender, pincode } = JSON.parse(request.body.data);
+//     if (id) {
+//       const userdata = await prisma.user_details.findUnique({
+//         where: {
+//           id: id,
+//         },
+//       });
+//       const decryptedName = decrypt(userdata.name, secretKey);
+//       let decryptedAgeGroup;
+//       if (userdata.ageGroup) {
+//         decryptedAgeGroup = decrypt(userdata?.ageGroup, secretKey);
+//       }
+//       let decryptedGender;
+//       if (userdata?.gender) {
+//         decryptedGender = decrypt(userdata?.gender, secretKey);
+//       }
+
+//       const isNameChanged = decryptedName !== name;
+//       const isAgeGroupChanged = decryptedAgeGroup !== ageGroup;
+//       const isGenderChanged = decryptedGender !== gender;
+//       const isPincodeChanged = userdata.pincode !== pincode;
+//       const isImageChanged = userdata.image !== userimg;
+
+//       if (
+//         !isNameChanged &&
+//         !isAgeGroupChanged &&
+//         !isGenderChanged &&
+//         !isPincodeChanged &&
+//         !isImageChanged
+//       ) {
+//         return response.status(201).json({
+//           message: "No changes detected",
+//           success: false,
+//           error: true,
+//         });
+//       }
+//       const datetime = getCurrentDateInIST();
+//       const encryptedname = encrypt(name, secretKey);
+//       const encryptedagegroup = encrypt(ageGroup, secretKey);
+//       const encryptedgender = encrypt(gender, secretKey);
+//       const update = await prisma.user_details.updateMany({
+//         where: {
+//           id: id,
+//         },
+//         data: {
+//           name: encryptedname,
+//           ageGroup: encryptedagegroup,
+//           gender: encryptedgender,
+//           pincode: pincode,
+//           updatedDate: datetime,
+//           image: userimg,
+//         },
+//       });
+//       if (update) {
+//         response.status(200).json({
+//           message: "successfully updated",
+//           success: true,
+//           error: false,
+//         });
+//       }
+//     }
+//   } catch (error) {
+//     console.log("errr", error);
+//     logger.error(`Internal server error: ${error.message} in edituser api`);
+//     return response.status(500).json({
+//       error: true,
+//       success: false,
+//       message: "Internal Server Error!",
+//     });
+//   } finally {
+//     //await prisma.$disconnect();
+//   }
+// };
+
+//////////////////////
+
 const edituser = async (request, response) => {
   const secretKey = process.env.ENCRYPTION_KEY;
 
   try {
     const id = request.user.userId;
-    const userimg = request.file?.location || request.body.image;
-    console.log(userimg);
+    const userimg = request.files[0].location;
     const { name, ageGroup, gender, pincode } = JSON.parse(request.body.data);
     if (id) {
       const userdata = await prisma.user_details.findUnique({
@@ -783,11 +865,10 @@ const edituser = async (request, response) => {
       message: "Internal Server Error!",
     });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
-//////////////////////
 const getprofile = async (request, response) => {
   console.log("getprofileeeee=====");
   const secretKey = process.env.ENCRYPTION_KEY;
