@@ -151,6 +151,7 @@ model notification{
   message                String?
   status                 String?
   view_status            String?
+  notificationTime       String?     
   created_date           DateTime @default(now())
 }
 

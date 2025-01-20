@@ -77,27 +77,38 @@ server.post('/send-notification', async (req, res) => {
         status: "Not seen",
       },
     });
-    // console.log({ getNotification });
-    if(getNotification.length<1){
+
+    if (getNotification.length < 1) {
       return res.status(404).json({
         error: true,
         success: false,
         message: "No unseen notifications available",
       });
     }
-    // if (getNotification.length > 0) {
-      const sentNotifications = []; // Array to store details of sent notifications
 
-      for (const notification of getNotification) {
-        // if (!fcmToken) {
-        //   console.error(`Missing token for notification ID: ${notification.id}`);
-        //   continue;
-        // }
+    const sentNotifications = []; // Array to store details of sent notifications
+    const currentDateTime = new Date();
+    const currentDate = currentDateTime.toISOString().split('T')[0]; // Extract current date in YYYY-MM-DD format
+    const currentTime = currentDateTime.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    }); // Extract current time in HH:mm AM/PM format
 
+    for (const notification of getNotification) {
+      const notificationDate = new Date(notification.created_date).toISOString().split('T')[0]; // Extract notification date
+      const notificationTime = new Date(notification.notificationTime).toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      }); // Extract notification time
+
+      // Check if current date and time match notification's date and time
+      if (currentDate === notificationDate && currentTime === notificationTime) {
         try {
           const response = await sendNotification(fcmToken, notification.title, notification.message);
           console.log("Successfully sent the notification ----->", response);
-          
+
           // Update the notification status to "Sent"
           await prisma.notification.update({
             where: { id: notification.id },
@@ -112,26 +123,23 @@ server.post('/send-notification', async (req, res) => {
             status: "Sent",
             response,
           });
-          
         } catch (error) {
           console.error(`Error sending notification for ID ${notification.id} ----->`, error);
           continue;
         }
+      } else {
+        console.log(
+          `Notification ID ${notification.id} is not scheduled for this date and time: ${currentDate}, ${currentTime}`
+        );
       }
+    }
 
-      return res.status(200).json({
-        error: false,
-        success: true,
-        message: "Notifications processed successfully",
-        data: sentNotifications, // Include sent notification details
-      });
-    // } else {
-      // return res.status(404).json({
-      //   error: true,
-      //   success: false,
-      //   message: "No unseen notifications available",
-      // });
-    // }
+    return res.status(200).json({
+      error: false,
+      success: true,
+      message: "Notifications processed successfully",
+      data: sentNotifications, // Include sent notification details
+    });
   } catch (error) {
     console.error("Error in /send-notification:", error);
     return res.status(500).json({
@@ -140,6 +148,7 @@ server.post('/send-notification', async (req, res) => {
     });
   }
 });
+
 
 // Define the sendNotification function
 const sendNotification = async (token, title, message) => {

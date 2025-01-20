@@ -807,532 +807,7 @@ const addMedicineSchedule = async(request,response)=>{
 
 
 
-// const notifyMedicineSchedule = async (request, response) => {
-//   try {
-//     const { userid } = request.body;
-//     process.env.TZ = 'Asia/Kolkata';
 
-//     // Fetch user routine
-//     const findRoutine = await prisma.dailyRoutine.findFirst({
-//       where: { userId: userid },
-//     });
-
-//     if (!findRoutine) {
-//       const addDailyRoutine = await prisma.dailyRoutine.create({
-//         data:{
-//           userId:userid,
-//           routine:{
-//             set:[
-//               {
-//                 lunch: "01:00 PM",
-//                 sleep: "10:00 PM",
-//                 dinner: "07:30 PM",
-//                 wakeUp: "06:00 AM",
-//                 exercise: "07:30 AM",
-//                 breakfast: "08:00 AM"
-//               }
-//             ]
-//           }
-//         }
-//       })
-//      console.log({addDailyRoutine})
-//       return response.status(404).json({
-//         error: true,
-//         success: false,
-//         message: "User routine not found",
-//         data:addDailyRoutine
-//       });
-//     }
-
-//     const routineData = findRoutine.routine;
-//     const breakfastTimeString = routineData[0].breakfast || null;
-//     const lunchTimeString = routineData[0].lunch || null;
-//     const dinnerTimeString = routineData[0].dinner || null;
-
-//     if (!breakfastTimeString || !lunchTimeString || !dinnerTimeString) {
-//       return response.status(400).json({
-//         error: true,
-//         success: false,
-//         message: "Invalid or missing meal times in user's routine",
-//       });
-//     }
-
-//     // Fetch medicine schedule
-//     const medicineSchedule = await prisma.medicine_timetable.findMany({
-//       where: { 
-//         userId: userid,
-//         active_status:"true" ///newly added for test
-
-//        },
-//       select: {
-//         id: true,
-//         medicine: true,
-//         timing: true,
-//         afterFd_beforeFd: true,
-//         medicine_type: true,
-//         startDate: true,
-//         no_of_days: true,
-//         daysInterval:true,
-//         timeInterval:true
-//       },
-//     });
-
-//     if (!medicineSchedule || medicineSchedule.length === 0) {
-//       return response.status(404).json({
-//         error: true,
-//         success: false,
-//         message: "No medicine schedule found for this user",
-//       });
-//     }
-
-//     const now = new Date();
-//     const parseTime = (timeString) => {
-//       const [hours, minutes] = timeString.split(/[: ]/).map(Number);
-//       const isPM = timeString.includes("PM");
-//       const date = new Date();
-//       date.setHours(isPM && hours !== 12 ? hours + 12 : hours === 12 && !isPM ? 0 : hours, minutes);
-//       return date;
-//     };
-
-//     const mealTimes = {
-//       Morning: parseTime(breakfastTimeString),
-//       lunch: parseTime(lunchTimeString),
-//       dinner: parseTime(dinnerTimeString),
-//     };
-
-//     let notifications = [];
-//     for (const medicine of medicineSchedule) {
-//       const { timing, afterFd_beforeFd, id} = medicine;
-//       const times = Object.values(timing[0]);
-//       console.log("startDate-----",medicine.startDate)
-//       const startDateObj = new Date(medicine.startDate);
-      
-
-//       console.log({startDateObj})
-//       const numberOfDays = parseInt(medicine.no_of_days, 10);
-//       console.log({numberOfDays})
-//       const endDate = new Date(startDateObj);
-      
-//       endDate.setDate(endDate.getDate() + numberOfDays);
-//       console.log({endDate})
-//       const currentDate = new Date();
-//       if (currentDate < startDateObj || currentDate > endDate) {
-//         console.log(`Skipping medicine ID: ${id} as it is out of the active range`);
-//         const updateInactiveStatus = await prisma.medicine_timetable.updateMany({
-//           where:{
-//             id:id
-//           },
-//           data:{
-//             active_status:"inactive"
-//           }
-//         })
-//         console.log({updateInactiveStatus})
-//         continue;
-//       }
-
-//       for (const notifyTime of times) {
-//         const notifyTimeOfDay = notifyTime.toLowerCase();
-//          console.log({notifyTimeOfDay})
-//         // Check if the medicine has already been taken
-//         const existingTakenRecord = await prisma.medication_records.findFirst({
-//           where: {
-//             userId: userid,
-//             timetable_id: id,
-//             taken_time: notifyTimeOfDay,
-//             created_date: {
-//               gte: new Date(currentDate.toISOString().split("T")[0] + "T00:00:00.000Z"),
-//               lt: new Date(currentDate.toISOString().split("T")[0] + "T23:59:59.999Z"),
-//             },
-//             status: "Taken",
-//           },
-//         });
-
-//         if (existingTakenRecord) {
-//           console.log(`Skipping notification for medicine ID: ${id} as it is already taken for ${notifyTimeOfDay}`);
-//           continue;
-//         }
-
-//         let notificationTime;
-//         if (notifyTimeOfDay === "morning") {
-//           notificationTime = afterFd_beforeFd === "before food"
-//             ? new Date(mealTimes.Morning.getTime() - 45 * 60000)
-//             : mealTimes.Morning;
-//         } else if (notifyTimeOfDay === "lunch") {
-//           notificationTime = afterFd_beforeFd === "before food"
-//             ? new Date(mealTimes.lunch.getTime() - 45 * 60000)
-//             : mealTimes.lunch;
-//         } else if (notifyTimeOfDay === "dinner") {
-//           notificationTime = afterFd_beforeFd === "before food"
-//             ? new Date(mealTimes.dinner.getTime() - 45 * 60000)
-//             : mealTimes.dinner;
-//         }
-//         ///////newly adding code////////
-//         console.log("timetableid-------",id)
-//          if (notificationTime) {
-//           const validUntil = new Date(notificationTime.getTime() + 2 * 60 * 60 * 1000);
-          
-//           if (now > validUntil) {
-//             await prisma.medication_records.create({
-//               data: {
-//                 userId: userid,
-//                 timetable_id: id,
-//                 taken_time: notifyTimeOfDay,
-//                 status: "Skipped",
-//                 taken_status:"No",
-//                 created_date: new Date(),
-//               },
-//             });
-//             console.log(`Medicine ID: ${id} skipped for ${notifyTimeOfDay} as valid time has passed`);
-//             continue;
-//           }
-
-
-
-
-//             notifications.push({
-//               medicine_timetableID: id,
-//               medicine: medicine.medicine[0].name,
-//               notificationTime: notificationTime.toLocaleTimeString("en-US", {
-//                 hour: "2-digit",
-//                 minute: "2-digit",
-//                 hour12: true,
-//               }),
-//               medicine_type: medicine.medicine_type,
-//               validUntil: validUntil.toLocaleTimeString("en-US", {
-//                 hour: "2-digit",
-//                 minute: "2-digit",
-//                 hour12: true,
-//               }),
-//               timeOfDay: notifyTimeOfDay,
-//             });
-//           }
-//         }
-  
-//     }
-//     // Sort notifications by time of day
-//     notifications.sort((a, b) => {
-//       const timeOrder = { morning: 1, lunch: 2, dinner: 3 };
-//       return timeOrder[a.timeOfDay] - timeOrder[b.timeOfDay];
-//     });
-
-
-//     if (notifications.length === 0) {
-//       return response.status(404).json({
-//         error: true,
-//         success: false,
-//         message: "No notifications scheduled",
-//       });
-//     }
-
-  
-
-//     return response.status(200).json({
-//       error: false,
-//       success: true,
-//       message: "Notifications scheduled",
-//       notifications,
-//     });
-//   } catch (error) {
-//     console.error({ error });
-//     return response.status(500).json({ error: error.message });
-//   }
-// };
-
-
-// const notifyMedicineSchedule = async (request, response) => {
-//   try {
-//     const { userid } = request.body;
-//     process.env.TZ = 'Asia/Kolkata';
-//     const today = new Date().toISOString().split('T')[0];
-//     console.log({today})
-//     // Fetch user routine
-//     const findRoutine = await prisma.dailyRoutine.findFirst({
-//       where: { 
-//         userId: userid 
-//       },
-//     });
-
-//     if (!findRoutine) {
-//       const addDailyRoutine = await prisma.dailyRoutine.create({
-//         data: {
-//           userId: userid,
-//           routine: [
-            
-//               {
-//                 lunch: "01:00 PM",
-//                 sleep: "10:00 PM",
-//                 dinner: "07:30 PM",
-//                 wakeUp: "06:00 AM",
-//                 exercise: "07:30 AM",
-//                 breakfast: "08:00 AM",
-//               },
-            
-//             ],
-//         },
-//       });
-//       // console.log({ addDailyRoutine });
-//       return response.status(404).json({
-//         error: true,
-//         success: false,
-//         message: "User routine not found",
-//         data: addDailyRoutine,
-//       });
-//     }
-
-//     const routineData = findRoutine.routine;
-//     const breakfastTimeString = routineData[0].breakfast || null;
-//     const lunchTimeString = routineData[0].lunch || null;
-//     const dinnerTimeString = routineData[0].dinner || null;
-
-//     if (!breakfastTimeString || !lunchTimeString || !dinnerTimeString) {
-//       return response.status(400).json({
-//         error: true,
-//         success: false,
-//         message: "Invalid or missing meal times in user's routine",
-//       });
-//     }
-
-//     // Fetch medicine schedule
-//     const medicineSchedule = await prisma.medicine_timetable.findMany({
-//       where: {
-//         userId: userid,
-//         active_status: "true", // newly added for test purpose
-//       },
-//       select: {
-//         id: true,
-//         medicine: true,
-//         timing: true,
-//         afterFd_beforeFd: true,
-//         medicine_type: true,
-//         startDate: true,
-//         no_of_days: true,
-//         daysInterval: true,
-//         timeInterval: true,
-//       },
-//     });
-//     console.log({medicineSchedule})
-    
-//     if (!medicineSchedule || medicineSchedule.length === 0) {
-//       return response.status(404).json({
-//         error: true,
-//         success: false,
-//         message: "No medicine schedule found for this user",
-//       });
-//     }
-    
-//     const now = new Date();
-//     const parseTime = (timeString) => {
-//       console.log({timeString})
-//       const [hours, minutes] = timeString.split(/[: ]/).map(Number);
-//       const isPM = timeString.includes("PM");
-//       const date = new Date();
-//       date.setHours(
-//         isPM && hours !== 12 ? hours + 12 : hours === 12 && !isPM ? 0 : hours,
-//         minutes
-//       );
-//       return date;
-//     };
-
-//     const mealTimes = {
-//       Morning: parseTime(breakfastTimeString),
-//       lunch: parseTime(lunchTimeString),
-//       dinner: parseTime(dinnerTimeString),
-//     };
-//     console.log({mealTimes})
-    
-//      /////// new line of code////////
-//     let notifications = [];
-//     let lastNotificationTime = null; // Tracks the last notification time
-
-//     for (const medicine of medicineSchedule) {
-//       const { timing, afterFd_beforeFd, id, startDate, daysInterval, timeInterval } = medicine;
-//        console.log("timeInterval---------",timeInterval)
-//       const startDateObj = new Date(startDate);
-//       const currentDate = new Date();
-    
-//       if (daysInterval) {
-//         const timeDifference = Math.abs(currentDate - startDateObj);
-//         console.log({timeDifference})
-//         const daysSinceStart = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
-//         console.log({daysSinceStart})
-//         const isNotificationDay = daysSinceStart % daysInterval === 0;
-//          console.log({isNotificationDay})
-
-//         if (!isNotificationDay) {
-//           console.log(`Skipping medicine ID: ${id} as today is not a notification day based on daysInterval`);
-//           continue;
-//         }
-//       }
-    
-//       const numberOfDays = parseInt(medicine.no_of_days, 10);
-//       const endDate = new Date(startDateObj);
-//       endDate.setDate(endDate.getDate() + numberOfDays);
-//       console.log({endDate})
-
-//       if (currentDate < startDateObj || currentDate > endDate) {
-//         console.log(`Skipping medicine ID: ${id} as it is out of the active range`);
-//         await prisma.medicine_timetable.updateMany({
-//           where: { id: id },
-//           data: { active_status: "inactive" },
-//         });
-//         continue;
-//       }
-    
-//       for (const notifyTime of Object.values(timing[0])) {
-//         const notifyTimeOfDay = notifyTime.toLowerCase();
-    
-//         // Skip notifications if time has passed
-//         const now = new Date();
-//         const mealTime = mealTimes[notifyTimeOfDay];
-//         console.log({mealTime})
-//         if (notifyTimeOfDay === "morning" && now > mealTimes.lunch) continue;
-//         if (notifyTimeOfDay === "lunch" && now > mealTimes.dinner) continue;
-    
-//         const existingTakenRecord = await prisma.medication_records.findFirst({
-//           where: {
-//             userId: userid,
-//             timetable_id: id,
-//             taken_time: notifyTimeOfDay,
-//             created_date: {
-//               gte: new Date(currentDate.toISOString().split("T")[0] + "T00:00:00.000Z"),
-//               lt: new Date(currentDate.toISOString().split("T")[0] + "T23:59:59.999Z"),
-//             },
-//             OR: [
-//               { status: "Taken" },
-//               { status: "Skipped" },
-//             ],
-//           },
-//         });
-    
-//         if (existingTakenRecord) {
-//           console.log(`Skipping notification for medicine ID: ${id} as it is already taken for ${notifyTimeOfDay}`);
-//           continue;
-//         }
-    
-//         // let notificationTime;
-//         // if (!lastNotificationTime) {
-//         //   // First notification based on meal times
-//         //   if (notifyTimeOfDay === "morning") {
-//         //     notificationTime = afterFd_beforeFd === "before food"
-//         //       ? new Date(mealTimes.Morning.getTime() - 45 * 60000)
-//         //       : mealTimes.Morning;
-//         //   } else if (notifyTimeOfDay === "lunch") {
-//         //     notificationTime = afterFd_beforeFd === "before food"
-//         //       ? new Date(mealTimes.lunch.getTime() - 45 * 60000)
-//         //       : mealTimes.lunch;
-//         //   } else if (notifyTimeOfDay === "dinner") {
-//         //     notificationTime = afterFd_beforeFd === "before food"
-//         //       ? new Date(mealTimes.dinner.getTime() - 45 * 60000)
-//         //       : mealTimes.dinner;
-//         //   }
-//         // } else {
-//         //   // Calculate notification time using the timeInterval
-//         //   data.timing = [{ time1: "Morning" }];
-//         //   notificationTime = new Date(lastNotificationTime.getTime() + timeInterval * 60 * 60 * 1000);
-//         // }
-//         // console.log({notificationTime})
-//         // console.log({lastNotificationTime})
-
-//         let notificationTime;
-
-//         if (!timeInterval) {
-//           // First notification based on meal times if timeInterval is absent
-//           if (notifyTimeOfDay === "morning") {
-//             notificationTime = afterFd_beforeFd === "before food"
-//               ? new Date(mealTimes.Morning.getTime() - 45 * 60000)
-//               : mealTimes.Morning;
-//           } else if (notifyTimeOfDay === "lunch") {
-//             notificationTime = afterFd_beforeFd === "before food"
-//               ? new Date(mealTimes.lunch.getTime() - 45 * 60000)
-//               : mealTimes.lunch;
-//           } else if (notifyTimeOfDay === "dinner") {
-//             notificationTime = afterFd_beforeFd === "before food"
-//               ? new Date(mealTimes.dinner.getTime() - 45 * 60000)
-//               : mealTimes.dinner;
-//           }
-//         } else {
-//           console.log("hiiiiiiiiii")
-//           // Repeated notification logic when timeInterval exists
-//           const currentTime = new Date();
-//           if (!lastNotificationTime) {
-//             // Set the first notification time based on meal times
-//             lastNotificationTime = currentTime;
-//             notificationTime = currentTime;
-//           } else {
-//             // Calculate the next notification time based on timeInterval
-//             notificationTime = new Date(lastNotificationTime.getTime() + timeInterval * 60000);
-//             while (notificationTime <= currentTime) {
-//               // Skip past overdue notifications
-//               notificationTime = new Date(notificationTime.getTime() + timeInterval * 60000);
-//             }
-//             lastNotificationTime = notificationTime;
-//           }
-//         }
-        
-//         console.log({ notificationTime });
-//         console.log({ lastNotificationTime });
-        
-//         if (now > new Date(notificationTime.getTime() + 2 * 60 * 60 * 1000)) {
-//           await prisma.medication_records.create({
-//             data: {
-//               userId: userid,
-//               timetable_id: id,
-//               taken_time: notifyTimeOfDay,
-//               status: "Skipped",
-//               taken_status: "No",
-//               created_date: new Date(),
-//             },
-//           });
-//           console.log(`Medicine ID: ${id} skipped for ${notifyTimeOfDay} as valid time has passed`);
-//           continue;
-//         }
-        
-//         notifications.push({
-//           medicine_timetableID: id,
-//           medicine: medicine.medicine[0].name,
-//           notificationTime: notificationTime.toLocaleTimeString("en-US", {
-//             hour: "2-digit",
-//             minute: "2-digit",
-//             hour12: true,
-//           }),
-//           medicine_type: medicine.medicine_type,
-//           validUntil: new Date(notificationTime.getTime() + 2 * 60 * 60 * 1000).toLocaleTimeString("en-US", {
-//             hour: "2-digit",
-//             minute: "2-digit",
-//             hour12: true,
-//           }),
-//           timeOfDay: notifyTimeOfDay,
-//         });
-    
-//       }
-//     }
-    
-
-//     // Sort notifications by time of day
-//     notifications.sort((a, b) => {
-//       const timeOrder = { morning: 1, lunch: 2, dinner: 3 };
-//       return timeOrder[a.timeOfDay] - timeOrder[b.timeOfDay];
-//     });
-
-//     if (notifications.length === 0) {
-//       return response.status(404).json({
-//         error: true,
-//         success: false,
-//         message: "No notifications scheduled",
-//       });
-//     }
-
-//     return response.status(200).json({
-//       error: false,
-//       success: true,
-//       message: "Notifications scheduled",
-//       notifications,
-//     });
-//   } catch (error) {
-//     console.error({ error });
-//     return response.status(500).json({ error: error.message });
-//   }
-// };
 
 
 const notifyMedicineSchedule = async (request, response) => {
@@ -1432,12 +907,24 @@ const notifyMedicineSchedule = async (request, response) => {
       lunch: parseTime(lunchTimeString),
       dinner: parseTime(dinnerTimeString),
     };
-    
+    console.log({mealTimes})
+
     let notifications = [];
     let lastNotificationTime = null;
 
     for (const medicine of medicineSchedule) {
       const { timing, afterFd_beforeFd, id, startDate, daysInterval, timeInterval } = medicine;
+      console.log("timeintterval---------",timeInterval)
+
+  //     console.log("TimeInterval detected:", timeInterval);
+  // console.log("Type of timeInterval:", typeof timeInterval);
+  // console.log("Trimmed timeInterval:", timeInterval.trim());
+  // console.log("Parsed timeInterval as number:", parseInt(timeInterval));
+  // console.log("Is NaN:", isNaN(parseInt(timeInterval)));
+
+  // const parsedInterval = parseInt(timeInterval, 10);
+  // console.log({parsedInterval})
+
 
       const startDateObj = new Date(startDate);
       const currentDate = new Date();
@@ -1456,6 +943,7 @@ const notifyMedicineSchedule = async (request, response) => {
       const endDate = new Date(startDateObj);
       endDate.setDate(endDate.getDate() + numberOfDays);
 
+      // console.log("endDate------",endDate)
       if (currentDate < startDateObj || currentDate > endDate) {
         await prisma.medicine_timetable.updateMany({
           where: { id: id },
@@ -1463,13 +951,19 @@ const notifyMedicineSchedule = async (request, response) => {
         });
         continue;
       }
-
+      // console.log("newInterval----",timeInterval)
       for (const notifyTime of Object.values(timing[0])) {
         const notifyTimeOfDay = notifyTime.toLowerCase();
+        console.log({notifyTimeOfDay})
+        const endOfDay = new Date();
+        endOfDay.setHours(23, 59, 59, 999);
+        // console.log("newInterval----",timeInterval)
+        // if (notifyTimeOfDay === "morning" && now > mealTimes.lunch) continue;
+        
+        // if (notifyTimeOfDay === "lunch" && now > mealTimes.dinner) continue;
+        // if (notifyTimeOfDay === "dinner" && now > endOfDay) continue;    ///newly added code
 
-        if (notifyTimeOfDay === "morning" && now > mealTimes.lunch) continue;
-        if (notifyTimeOfDay === "lunch" && now > mealTimes.dinner) continue;
-
+       
         const existingTakenRecord = await prisma.medication_records.findFirst({
           where: {
             userId: userid,
@@ -1485,14 +979,16 @@ const notifyMedicineSchedule = async (request, response) => {
             ],
           },
         });
-
-        if (existingTakenRecord) {
-          continue;
-        }
+        console.log("existingTakenRecord-------",existingTakenRecord)
+        
+        // if (existingTakenRecord) {
+        //   continue;
+        // }
 
         let notificationTime;
-
+      
         if (!timeInterval) {
+          // console.log("parsed-----",parsedInterval)
           if (notifyTimeOfDay === "morning") {
             notificationTime = afterFd_beforeFd === "before food"
               ? new Date(mealTimes.morning.getTime() - 45 * 60000)
@@ -1507,7 +1003,9 @@ const notifyMedicineSchedule = async (request, response) => {
               : mealTimes.dinner;
           }
         } else {
+         
           if (timeInterval) {
+            console.log("jjjj")
             // Convert the time interval from hours to milliseconds
             const intervalMs = parseInt(timeInterval) * 60 * 60 * 1000; // Convert hours to milliseconds
           
@@ -1519,11 +1017,12 @@ const notifyMedicineSchedule = async (request, response) => {
             while (notificationTime <= endOfDay) {
               // Determine the timeOfDay based on the notification time
               const notificationHour = notificationTime.getHours();
+              console.log("notificationHour---------",notificationHour)
               let timeOfDay = "interval";
           
-              if (notificationHour >= 5 && notificationHour < 11) {
+              if (notificationHour >= 5 && notificationHour <= 11) {
                 timeOfDay = "morning";
-              } else if (notificationHour >= 12 && notificationHour < 16) {
+              } else if (notificationHour >= 12 && notificationHour <= 16) {
                 timeOfDay = "lunch";
               } else if (
                 (notificationHour >= 17 && notificationHour <= 23) || // Night starts at 5 PM
@@ -1531,37 +1030,79 @@ const notifyMedicineSchedule = async (request, response) => {
               ) {
                 timeOfDay = "night";
               }
-          
+              const medicineName = medicine.medicine[0]?.name || "Unknown Medicine";
+              const message = `Time to take ${medicineName} - ${afterFd_beforeFd} ${timeOfDay}`;
+
+              const formattedNotificationTime = notificationTime.toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              });
+            
+              const validUntilTime = new Date(notificationTime.getTime() + 2 * 60 * 60 * 1000).toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              });
+            
+            
               notifications.push({
                 medicine_timetableID: id,
                 medicine: medicine.medicine[0]?.name || "Unknown Medicine",
-                notificationTime: notificationTime.toLocaleTimeString("en-US", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: true,
-                }),
+                // notificationTime: notificationTime.toLocaleTimeString("en-US", {
+                //   hour: "2-digit",
+                //   minute: "2-digit",
+                //   hour12: true,
+                // }),
+                notificationTime:formattedNotificationTime,
                 medicine_type: medicine.medicine_type,
-                validUntil: new Date(notificationTime.getTime() + 2 * 60 * 60 * 1000).toLocaleTimeString("en-US", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: true,
-                }),
+                // validUntil: new Date(notificationTime.getTime() + 2 * 60 * 60 * 1000).toLocaleTimeString("en-US", {
+                //   hour: "2-digit",
+                //   minute: "2-digit",
+                //   hour12: true,
+                // }),
+                validUntil:validUntilTime,
                 timeOfDay,
+                message
               });
           
               // Increment the notification time by the interval
               notificationTime = new Date(notificationTime.getTime() + intervalMs);
+
+              console.log({notificationTime})
+             
+              // const notificationTime = convertTo24HourDate(notificationTime);
+              // console.log({notificationTime})
+
+              const existingNotification = await prisma.notification.findFirst({
+                where: {
+                  user_id: userid,
+                  message,
+                  notificationTime :formattedNotificationTime,
+                },
+              });
+              console.log({existingNotification})
+              if (!existingNotification) {
+                await prisma.notification.create({
+                  data: {
+                    user_id: userid,
+                    message,
+                    status: "Not seen",
+                    view_status: "false",
+                    created_date: new Date(), 
+                    notificationTime  : formattedNotificationTime, 
+                  },
+                });
+              }
             }
           } else {
             console.error(`Missing or invalid timeInterval for medicine ID: ${id}`);
-            // Skip this entry or apply default behavior
+           
           }
-          
-        
-        }
-
+    }
         // if (now > new Date(notificationTime.getTime() + 2 * 60 * 60 * 1000)) 
           if (notificationTime && now > new Date(notificationTime.getTime() + 2 * 60 * 60 * 1000))
+           
           {
           await prisma.medication_records.create({
             data: {
@@ -1576,46 +1117,74 @@ const notifyMedicineSchedule = async (request, response) => {
           continue;
         }
 
-        // notifications.push({
-        //   medicine_timetableID: id,
-        //   medicine: medicine.medicine[0].name,
-        //   notificationTime: notificationTime.toLocaleTimeString("en-US", {
-        //     hour: "2-digit",
-        //     minute: "2-digit",
-        //     hour12: true,
-        //   }),
-        //   medicine_type: medicine.medicine_type,
-        //   validUntil: new Date(notificationTime.getTime() + 2 * 60 * 60 * 1000).toLocaleTimeString("en-US", {
-        //     hour: "2-digit",
-        //     minute: "2-digit",
-        //     hour12: true,
-        //   }),
-        //   timeOfDay: notifyTimeOfDay,
-        // });
-
-
+        
 
         if (notificationTime && !isNaN(notificationTime.getTime())) {
+          const medicineName = medicine.medicine[0]?.name || "Unknown Medicine";
+          const message = `Time to take ${medicineName} - ${afterFd_beforeFd} ${notifyTimeOfDay}`;
+
+          const formattedNotificationTime = notificationTime.toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+          });
+        
+          const validUntilTime = new Date(notificationTime.getTime() + 2 * 60 * 60 * 1000).toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+          });
+
           notifications.push({
             medicine_timetableID: id,
             medicine: medicine.medicine[0].name,
-            notificationTime: notificationTime.toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: true,
-            }),
+            notificationTime:formattedNotificationTime,
+            // notificationTime: notificationTime.toLocaleTimeString("en-US", {
+            //   hour: "2-digit",
+            //   minute: "2-digit",
+            //   hour12: true,
+            // }),
             medicine_type: medicine.medicine_type,
-            validUntil: new Date(notificationTime.getTime() + 2 * 60 * 60 * 1000).toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: true,
-            }),
+            // validUntil: new Date(notificationTime.getTime() + 2 * 60 * 60 * 1000).toLocaleTimeString("en-US", {
+            //   hour: "2-digit",
+            //   minute: "2-digit",
+            //   hour12: true,
+            // }),
+            validUntil:validUntilTime,
             timeOfDay: notifyTimeOfDay,
+            message
           });
-        } else {
-          console.error("Invalid notificationTime:", notificationTime);
-          // Optionally, continue or skip this entry
-        }
+        
+         console.log({notifications})
+         console.log("notificationTimennnnnnnnnnnnn------------",formattedNotificationTime)
+
+        
+       ////create notification
+       const existingNotification = await prisma.notification.findFirst({
+        where: {
+          user_id: userid,
+          message,
+          notificationTime  : formattedNotificationTime,
+        },
+      });
+      // console.log({existingNotification})
+      if (!existingNotification) {
+        await prisma.notification.create({
+          data: {
+            user_id: userid,
+            message,
+            status: "Not seen",
+            view_status: "false",
+            created_date: new Date(), 
+            notificationTime  :formattedNotificationTime, 
+          },
+        });
+      }
+     
+    } else {
+      console.error("Invalid notificationTime:", notificationTime);
+      
+    }
         
       }
     }
@@ -1645,29 +1214,24 @@ const notifyMedicineSchedule = async (request, response) => {
   }
 };
 
+// function convertTo24HourDate(notificationTime) {
+//   const [time, modifier] = notificationTime.split(" "); // Split into time and AM/PM
+//   let [hours, minutes] = time.split(":").map(Number);
+
+//   if (modifier === "PM" && hours < 12) {
+//     hours += 12; // Convert PM to 24-hour format
+//   } else if (modifier === "AM" && hours === 12) {
+//     hours = 0; // Convert 12 AM to 00
+//   }
+
+//   // Get current date to retain the year, month, day, and set the converted time
+//   const today = new Date();
+//   today.setHours(hours, minutes, 0, 0); // Set the time based on the converted values
+
+//   return today;
+// }
 
 
-const convertTime = (timeString) => {
-  if (!timeString || typeof timeString !== 'string') {
-    console.error("Invalid time string:", timeString);
-    return null;
-  }
-
-  const [time, modifier] = timeString.split(' ');
-  let [hours, minutes] = time.split(':');
-
-  if (hours === '12') {
-    // Keep '12' as is for PM, but convert '12 AM' to '00'
-    if (modifier === 'AM') {
-      hours = '00';
-    }
-  } else if (modifier === 'PM') {
-    // Convert PM times, except for 12 PM, to 24-hour format
-    hours = String(parseInt(hours, 10) + 12);
-  }
-
-  return `${hours.padStart(2, '0')}:${minutes}`;
-};
 
 
 
