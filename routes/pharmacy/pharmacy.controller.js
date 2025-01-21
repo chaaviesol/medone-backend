@@ -253,7 +253,7 @@ const productadd = async (request, response) => {
           prescription_required,
           composition,
           selling_price: sellingPrice,
-          medicine_unit: medicine_unit,
+          medicine_unit: parseInt(medicine_unit),
           unit_of_measurement: unit_of_measurement,
         },
       });
@@ -295,7 +295,7 @@ const productadd = async (request, response) => {
           prescription_required,
           composition,
           selling_price: sellingPrice,
-          medicine_unit: medicine_unit,
+          medicine_unit: parseInt(medicine_unit),
           unit_of_measurement: unit_of_measurement,
         },
       });

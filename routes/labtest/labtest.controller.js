@@ -413,7 +413,7 @@ const testdetail = async (request, response) => {
 const testdetailwithauth = async (request, response) => {
   try {
     const { id } = request.body;
-    const user_id = request.user.userId
+    const user_id = request.user.userId;
     const labtestDetails = await prisma.labtest_details.findFirst({
       where: {
         id: id,
@@ -427,32 +427,31 @@ const testdetailwithauth = async (request, response) => {
         home_collection: true,
       },
     });
-    
+
     if (!labtestDetails) {
       return response.status(400).json({
         message: "No Test Found",
         error: true,
       });
     }
-      const getcart = await prisma.labtest_cart.findFirst({
-        where: {
-          user_id: user_id,
-          test_number: labtestDetails.test_number,
-        },
-        select: {
-          id: true,
-        },
-      });
-      console.log({getcart})
-      const details = {
-        ...labtestDetails,
-        incart: !!getcart
-      };
-      return response.status(200).json({
-        data: details,
-        success: true,
-      });
-   
+    const getcart = await prisma.labtest_cart.findFirst({
+      where: {
+        user_id: user_id,
+        test_number: labtestDetails.test_number,
+      },
+      select: {
+        id: true,
+      },
+    });
+    console.log({ getcart });
+    const details = {
+      ...labtestDetails,
+      incart: !!getcart,
+    };
+    return response.status(200).json({
+      data: details,
+      success: true,
+    });
   } catch (error) {
     logger.error(
       `Internal server error: ${error.message} in labtest-testdetailwithauth API`
@@ -514,7 +513,7 @@ const labtestupdate = async (request, response) => {
     response.status(200).json({
       error: false,
       success: true,
-      message: "Successfully updated",
+      message: "Test updated successfully!",
     });
   } catch (err) {
     logger.error(
@@ -1023,7 +1022,7 @@ const testToCart = async (request, response) => {
 };
 
 const gettestCart = async (request, response) => {
-  const user_id = request.user.userId
+  const user_id = request.user.userId;
   try {
     if (!user_id) {
       logger.error("user_id is undefined in labtest-getCart API");
