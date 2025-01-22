@@ -89,7 +89,7 @@ model sales_list {
   sales_id        Int
   product_id      Int
   order_qty       Int?
-  net_amount      Int?
+  net_amount      Decimal?                 @db.Decimal(10, 2)
   selling_price   Int?
   discount        Int?
   batch_no        String?
