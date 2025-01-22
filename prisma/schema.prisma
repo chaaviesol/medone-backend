@@ -91,6 +91,7 @@ model sales_list {
   order_qty       Int?
   net_amount      Int?
   selling_price   Int?
+  discount        Int?
   batch_no        String?
   pharmacy_name   String?         
   created_date    DateTime?                     
@@ -253,7 +254,8 @@ model sales_order {
   prescription_image     Json?   
   patient_name           String?
   doctor_name            String? 
-  pharmacy_id            Int?        
+  pharmacy_id            Int?
+  otp                    Int?        
   sales_list             sales_list[]
   users                  user_details? @relation(fields: [customer_id],references: [id])
   pharmacy               pharmacy_details? @relation(fields: [pharmacy_id],references: [id])

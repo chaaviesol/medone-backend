@@ -638,6 +638,8 @@ const salesorder = async (request, response) => {
       const so_num = "SO";
       const startOfYear = new Date(new Date().getFullYear(), 0, 1);
       const endOfYear = new Date(new Date().getFullYear() + 1, 0, 1);
+      //generate otp
+      const otp = Math.floor(100000 + Math.random() * 900000);
       const existingsalesOrders = await prisma.sales_order.findMany({
         where: {
           created_date: {
@@ -673,6 +675,7 @@ const salesorder = async (request, response) => {
           district,
           contact_no: contact_no.toString(),
           pincode: parseInt(pincode),
+          otp:otp
         },
       });
 
@@ -1156,12 +1159,14 @@ const getinvsalesorder = async (request, response) => {
         pincode: true,
         prescription_image: true,
         patient_name: true,
+        total_amount: true,
         sales_list: {
           select: {
             id: true,
             order_qty: true,
             net_amount: true,
             pharmacy_name: true,
+            discount: true,
             generic_prodid: {
               select: {
                 id: true,
@@ -1171,6 +1176,9 @@ const getinvsalesorder = async (request, response) => {
                 description: true,
                 hsn: true,
                 product_type: true,
+                selling_price: true,
+                unit_of_measurement: true,
+                medicine_unit: true,
               },
             },
           },
@@ -1184,8 +1192,14 @@ const getinvsalesorder = async (request, response) => {
     const userId = getdata?.users.id;
     const medication_details = (getdata.sales_list || getdata).map((item) => {
       const mrp = item?.generic_prodid?.mrp;
-      const discount = mrp ? mrp * 0.1 : 0; // Calculate 10% discount
-      const final_price = mrp ? mrp - discount : 0;
+      const final_price = item?.generic_prodid?.selling_price ?? mrp;
+      const total_price =
+        item?.generic_prodid?.unit_of_measurement !== null
+          ? item?.generic_prodid?.unit_of_measurement === "strip"
+            ? (item?.order_qty * final_price) /
+              item?.generic_prodid?.medicine_unit
+            : item?.order_qty * item?.generic_prodid.selling_price
+          : item?.order_qty * final_price;
 
       return {
         id: item?.generic_prodid?.id || "",
@@ -1202,6 +1216,8 @@ const getinvsalesorder = async (request, response) => {
         mrp: item?.generic_prodid?.mrp || "",
         net_amount: item?.net_amount || "",
         selling_price: final_price || "",
+        discount: item?.discount || 0,
+        total: total_price,
       };
     });
     if (medication_details.length === 0) {
@@ -1256,9 +1272,9 @@ const createinvoice = async (request, response) => {
   console.log("cretttttt", request.body);
   try {
     const datetime = getCurrentDateInIST();
-    const { sales_id, sold_by, userId, doctor_name } = request.body;
+    const { sales_id, userId, doctor_name,total_amount } = request.body;
     const medication_details = request.body.medicine_details;
-    if (!sales_id || !medication_details || !sold_by) {
+    if (!sales_id || !medication_details ) {
       return response.status(400).json({ error: "All fields are required" });
     }
 
@@ -1269,6 +1285,7 @@ const createinvoice = async (request, response) => {
         },
         data: {
           doctor_name,
+          total_amount:total_amount,
           so_status: "confirmed",
           updated_date: istDate,
         },
@@ -1289,6 +1306,8 @@ const createinvoice = async (request, response) => {
             category,
             interval,
             every,
+            discount,
+            total,
             product_type,
           } = medicinedet;
 
@@ -1352,6 +1371,8 @@ const createinvoice = async (request, response) => {
             data: {
               batch_no: batch_no,
               selling_price: Number(selling_price),
+              discount:discount,
+              net_amount:total
             },
           });
         }
@@ -1716,10 +1737,8 @@ const getprods = async (request, response) => {
     if (allproducts.length > 0) {
       const medication_details = allproducts.map((item) => {
         const mrp = item?.mrp;
-        // Calculate 10% discount
-        const discount = mrp ? mrp * 0.1 : 0;
-        const selling_price = mrp ? mrp - discount : 0;
 
+        const selling_price = allproducts?.selling_price ?? mrp;
         return {
           ...item,
           selling_price,
