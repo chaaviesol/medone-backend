@@ -675,7 +675,7 @@ const salesorder = async (request, response) => {
           district,
           contact_no: contact_no.toString(),
           pincode: parseInt(pincode),
-          otp:otp
+          otp: otp,
         },
       });
 
@@ -1272,9 +1272,9 @@ const createinvoice = async (request, response) => {
   console.log("cretttttt", request.body);
   try {
     const datetime = getCurrentDateInIST();
-    const { sales_id, userId, doctor_name,total_amount } = request.body;
+    const { sales_id, userId, doctor_name, total_amount } = request.body;
     const medication_details = request.body.medicine_details;
-    if (!sales_id || !medication_details ) {
+    if (!sales_id || !medication_details) {
       return response.status(400).json({ error: "All fields are required" });
     }
 
@@ -1285,7 +1285,7 @@ const createinvoice = async (request, response) => {
         },
         data: {
           doctor_name,
-          total_amount:total_amount,
+          total_amount: total_amount,
           so_status: "confirmed",
           updated_date: istDate,
         },
@@ -1371,8 +1371,8 @@ const createinvoice = async (request, response) => {
             data: {
               batch_no: batch_no,
               selling_price: Number(selling_price),
-              discount:discount,
-              net_amount:total
+              discount: discount,
+              net_amount: total,
             },
           });
         }
@@ -1422,13 +1422,6 @@ const prescriptioninvoice = async (request, response) => {
           updated_date: istDate,
         },
       });
-      // const saleinvoice = await prisma.sales_invoice.create({
-      //   data: {
-      //     sales_id,
-      //     sold_by,
-      //     created_date: datetime,
-      //   },
-      // });
 
       await prisma.sales_order.update({
         where: {
@@ -1455,6 +1448,8 @@ const prescriptioninvoice = async (request, response) => {
           interval,
           every,
           category,
+          discount,
+          total,
           product_type,
         } = medicinedet;
         if (category.some((item) => item.toLowerCase() === "medicines")) {
@@ -1471,7 +1466,10 @@ const prescriptioninvoice = async (request, response) => {
             };
 
             const timingObject = timing.reduce((acc, time) => {
-              const key = timeMapping[time.toLowerCase()];
+              const key =
+                time === "Morning" 
+                  ? timeMapping["Morning"]
+                  : timeMapping[time.toLowerCase()]; 
               if (key) {
                 acc[key] = time;
               }
@@ -1495,7 +1493,7 @@ const prescriptioninvoice = async (request, response) => {
               medicine: medicine,
               afterFd_beforeFd,
               no_of_days,
-              totalQuantity,
+              totalQuantity: totalQuantity.toString(),
               timing: newtiming,
               takingQuantity,
               app_flag: false,
@@ -1507,7 +1505,6 @@ const prescriptioninvoice = async (request, response) => {
           });
         }
 
-        const net_amount = Number(totalQuantity) * Number(mrp);
         await prisma.sales_list.create({
           data: {
             generic_prodid: {
@@ -1520,9 +1517,9 @@ const prescriptioninvoice = async (request, response) => {
                 sales_id: sales_id,
               },
             },
-
+            discount: parseInt(discount),
             order_qty: Number(totalQuantity),
-            net_amount: net_amount,
+            net_amount: total,
             created_date: datetime,
             batch_no: batch_no,
             selling_price: Number(selling_price),

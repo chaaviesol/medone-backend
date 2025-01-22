@@ -472,6 +472,7 @@ const getorderdetails = async (request, response) => {
         so_number: true,
         so_status: true,
         order_type: true,
+        total_amount:true,
         remarks: true,
         users: {
           select: { id: true, name: true },
@@ -492,6 +493,7 @@ const getorderdetails = async (request, response) => {
             order_qty: true,
             net_amount: true,
             selling_price: true,
+            discount:true,
             batch_no: true,
             generic_prodid: {
               select: {
