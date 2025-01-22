@@ -628,71 +628,143 @@ const get_fulfilledOrders = async(req,res)=>{
 }
 
 /////wallet/////
-const wallet = async(req,res)=>{
+const wallet = async (req, res) => {
+  try {
+    const { driverId } = req.body;
+    if (!driverId) {
+      return res.status(404).json({
+        error: true,
+        success: false,
+        message: "driverId is required..........",
+      });
+    }
+
+    const orderDetails = await prisma.delivery_assign.findMany({
+      where: {
+        deliverypartner_id: driverId,
+        status: "delivered",
+        payment_method: "cod",
+      },
+      select: {
+        id: true,
+        sales_id: true,
+      },
+    });
+    console.log({ orderDetails });
+
+    // To store aggregated data
+    const walletMap = new Map();
+
+    for (let i = 0; i < orderDetails.length; i++) {
+      const findPharmacy = await prisma.sales_order.findFirst({
+        where: {
+          sales_id: orderDetails[i].sales_id,
+        },
+        select: {
+          total_amount: true,
+          pharmacy_id: true,
+        },
+      });
+
+      console.log({ findPharmacy });
+      const amount = findPharmacy.total_amount;
+      console.log({amount})
+
+      const findPharmacyName = await prisma.pharmacy_details.findFirst({
+        where: {
+          id: findPharmacy.pharmacy_id,
+        },
+        select: {
+          id: true,
+          name: true,
+        },
+      });
+
+      console.log({ findPharmacyName });
+      const pharmacyName = findPharmacyName.name;
+      const amounts = parseFloat(findPharmacy.total_amount); // Ensure it's a number
+      if (!walletMap.has(findPharmacyName.id)) {
+        walletMap.set(findPharmacyName.id, {
+          pharmacy: pharmacyName,
+          amount: 0,
+          orders: [],
+        });
+      }
+
+     
+  const walletEntry = walletMap.get(findPharmacy.pharmacy_id);
+  walletEntry.amount += amounts; // Perform arithmetic
+  walletEntry.orders.push(orderDetails[i]);
+    }
+
+    // Convert Map to an array for the response
+    const wallet = Array.from(walletMap.values()).map((entry) => ({
+      pharmacy: entry.pharmacy,
+      totalAmount: entry.amount,
+      // orders: entry.orders,
+    }));
+
+    const walletTotal =[]
+    for(let j=0; j<wallet.length; j++){
+        const walletAmount = wallet[j].totalAmount
+        console.log({walletAmount})
+        let totalWalletAmount = wallet.reduce((sum, item) => sum + item.totalAmount, 0);
+        console.log({ totalWalletAmount });
+        walletTotal.push({totalWalletAmount})
+    }
+    console.log({walletTotal})
+    return res.status(200).json({
+      error: false,
+      success: true,
+      message: "Successful.........",
+      data: wallet,
+      walletTotal:walletTotal
+    });
+  } catch (err) {
+    logger.error(
+      `Internal server error: ${err.message} in wallet API`,
+      console.log({ err })
+    );
+    res.status(400).json({
+      error: true,
+      message: "Internal server error",
+    });
+  }
+};
+
+
+//////////add payment method//////////
+const addPayment_method = async(req,res)=>{
   try{
-    const{driverId} = req.body
-    if(!driverId){
+    const{sales_id,payment_method,driverId} = req.body
+    if(!sales_id || !payment_method){
       return res.status(404).json({
         error:true,
         success:false,
-        message:"driverId is required.........."
+        message:"missing fields........"
+       
       })
     }
-    const orderDetails = await prisma.delivery_assign.findMany({
+
+    const paymentData = await prisma.delivery_assign.updateMany({
       where:{
-        deliverypartner_id:driverId,
-        status:"delivered"
+        sales_id:sales_id,
+        deliverypartner_id:driverId
       },
-      select:{
-        id:true,
-        sales_id:true,
-        
+      data:{
+        payment_method
       }
     })
-    console.log({orderDetails})
-    const wallet = []
-    for(let i=0; i<orderDetails.length;i++){
-      const findPharmacy = await prisma.sales_order.findFirst({
-        where:{
-          sales_id:orderDetails[i].sales_id
-        },
-        select:{
-          total_amount:true,
-          pharmacy_id:true
-        }
-      })
-      console.log({findPharmacy})
-      const amount = findPharmacy.total_amount
-      console.log({amount})
-
-      const findPharmacyName = await prisma.pharmacy_details.findMany({
-        where:{
-          id:findPharmacy.pharmacy_id
-        },
-        select:{
-          id:true,
-          name:true,
-
-        }
-      })
-      console.log({findPharmacyName})
-      const pharmacyName = findPharmacyName[0].name
-      console.log({pharmacyName})
-      wallet.push({
-        ...orderDetails[i],
-       pharmacy:pharmacyName,
-       amount:amount
-      })
-    }
-    return res.status(200).json({
+    console.log({paymentData})
+    res.status(200).json({
       error:false,
       success:true,
-      message:"Successfull.........",
-      data:wallet
+      message:"Successfull........",
+      data:paymentData
     })
   }catch (err) {
         logger.error(
-          `Internal server error: ${err.message} in get_fulfilledOrders api`,
+          `Internal server error: ${err.message} in addPayment_method api`,
           console.log({err})
         );
         res.status(400).json({
@@ -1155,5 +1227,6 @@ const forgot_password = async (req, res) => {
     prescriptionStatus,
     add_stampStatus,
     changePassword,
-    forgot_password
+    forgot_password,
+    addPayment_method
   }

@@ -12,7 +12,8 @@ const {driver_login,
     prescriptionStatus,
     add_stampStatus,
     changePassword,
-    forgot_password
+    forgot_password,
+    addPayment_method
 } = require('./driverApp.controller')
 const driverRouter = express.Router()
 
@@ -32,7 +33,7 @@ driverRouter.post('/prescriptionStatus',prescriptionStatus)  /// if status is re
 driverRouter.post('/add_stampStatus',add_stampStatus)
 driverRouter.post('/changePassword',changePassword)
 driverRouter.post('/forgot_password',forgot_password)
-
+driverRouter.post('/addPayment_method',addPayment_method)
 
 
 

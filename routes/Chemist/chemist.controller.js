@@ -953,7 +953,7 @@ const verifyOtp = async(req,res)=>{
     })
     console.log({verify})
     if(!verify){
-      return res.status(200).json({
+      return res.status(404).json({
         error:true,
         success:false,
         message:"check otp......",
