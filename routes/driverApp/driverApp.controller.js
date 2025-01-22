@@ -644,10 +644,15 @@ const wallet = async (req, res) => {
         deliverypartner_id: driverId,
         status: "delivered",
         payment_method: "cod",
+        OR: [
+          { credited_payment: { not: "yes" } },
+          { credited_payment: null },
+        ],
       },
       select: {
         id: true,
         sales_id: true,
+       
       },
     });
     console.log({ orderDetails });
@@ -765,6 +770,47 @@ const addPayment_method = async(req,res)=>{
   }catch (err) {
         logger.error(
           `Internal server error: ${err.message} in addPayment_method api`,
+          console.log({err})
+        );
+        res.status(400).json({
+          error: true,
+          message: "internal server error",
+        });
+      }
+}
+
+//////////for adding payment status//////////
+const payment_creditedStatus = async(req,res)=>{
+  try{
+    const{sales_id,credited_Payment,driverId} = req.body
+    if(!sales_id || !credited_Payment){
+      return res.status(404).json({
+        error:true,
+        success:false,
+        message:"missing fields........"
+       
+      })
+    }
+
+    const creditedpaymentStatus = await prisma.delivery_assign.updateMany({
+      where:{
+        sales_id:sales_id,
+        deliverypartner_id:driverId
+      },
+      data:{
+      credited_payment:credited_Payment
+      }
+    })
+    console.log({creditedpaymentStatus})
+    res.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull........",
+      data:creditedpaymentStatus
+    })
+  }catch (err) {
+        logger.error(
+          `Internal server error: ${err.message} in payment_creditedStatus api`,
           console.log({err})
         );
         res.status(400).json({
@@ -1228,5 +1274,6 @@ const forgot_password = async (req, res) => {
     add_stampStatus,
     changePassword,
     forgot_password,
-    addPayment_method
+    addPayment_method,
+    payment_creditedStatus
   }
