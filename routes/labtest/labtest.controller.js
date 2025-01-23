@@ -1174,7 +1174,7 @@ const checkout = async (request, response) => {
     pincode,
     contact_no,
     doctor_name,
-    patient_details,
+    patientDetails,
     delivery_details,
   } = request.body;
 
@@ -1220,7 +1220,7 @@ const checkout = async (request, response) => {
       const year = currentDate.getFullYear();
 
       const lastTwoDigits = year.toString().slice(-2);
-      const to_num = "TO";
+      const to_num = "LO";
       const startOfYear = new Date(new Date().getFullYear(), 0, 1);
       const endOfYear = new Date(new Date().getFullYear() + 1, 0, 1);
       const existingtestOrders = await prisma.labtest_order.findMany({
@@ -1249,7 +1249,7 @@ const checkout = async (request, response) => {
           status: "placed",
           remarks,
           order_type,
-          patient_details: patient_details,
+          patient_details: patientDetails,
           created_date: datetime,
           customer_id: userId,
           delivery_details: delivery_details,
