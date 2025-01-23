@@ -794,7 +794,7 @@ const edituser = async (request, response) => {
 
   try {
     const id = request.user.userId;
-    const userimg = request.files[0].location;
+    const userimg = request?.files[0]?.location;
     const { name, ageGroup, gender, pincode } = JSON.parse(request.body.data);
     if (id) {
       const userdata = await prisma.user_details.findUnique({
