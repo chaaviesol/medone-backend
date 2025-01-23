@@ -1170,7 +1170,6 @@ const checkout = async (request, response) => {
     status,
     remarks,
     order_type,
-    tests,
     delivery_location,
     pincode,
     contact_no,
@@ -1263,6 +1262,14 @@ const checkout = async (request, response) => {
 
       if (order_type != "prescription") {
         let findcollection = "home";
+        const tests=await prisma.labtest_cart.findMany({
+          where:{
+            user_id:userId
+          },
+          select:{
+            test_number:true
+          }
+        })
 
         for (let test of tests) {
           let find;
