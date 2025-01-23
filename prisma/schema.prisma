@@ -392,9 +392,7 @@ model labtest_order {
 model labtest_list {
   id              Int               @id @default(autoincrement())
   order_id        Int
-  test_number     String?
-  order_qty       Int?
-  net_amount      Int?        
+  test_number     String?     
   created_date    DateTime?                      
   labtest_order   labtest_order?  @relation(fields: [order_id], references: [order_id])  
 }
@@ -429,4 +427,90 @@ model doctor_details{
   expert_opinion             Boolean?
   video_consultaion          Boolean?
   last_active                DateTime?  
+}
+
+model assist_details{
+  id                        Int               @id @default(autoincrement())
+  type                      String?
+  name                      String?
+  gender                    String?
+  dob                       String?
+  address                   Json?
+  qualification             String?
+  shift                     String?
+  photo                     String?
+  phone_no                  String?
+  location                  String?
+  password                  String?
+  created_date              DateTime?
+  hospitalAssist_service    hospitalAssist_service[]
+  homeCare_Service          homeCare_Service[]
+  physiotherapist_service   physiotherapist_service[]
+}
+
+model homeCare_Service{
+  id                   Int               @id @default(autoincrement())
+  patient_name         String?
+  patient_contact_no   String?
+  patient_mobility     String?
+  patient_gender       String?
+  patient_age          String?
+  start_date           DateTime?
+  days_week            String?
+  general_specialized  String?
+  patient_location     Json?
+  requirements         String?
+  medical_documents    Json?
+  price                Int?
+  assist_id            Int?
+  created_date         DateTime?
+  assigned_date        DateTime?
+  assist_details       assist_details?  @relation(fields: [assist_id], references: [id])  
+}
+
+model physiotherapist_service{
+  id                   Int               @id @default(autoincrement())
+  patient_name         String?
+  patient_contact_no   String?
+  patient_mobility     String?
+  patient_gender       String?
+  patient_age          String?
+  start_date           DateTime?
+  days_week            String?
+  general_specialized  String?
+  patient_location     Json?
+  requirements         String?
+  medical_documents    Json?
+  price                Int?
+  assist_id            Int?
+  created_date         DateTime?
+  assigned_date        DateTime?
+  assist_details       assist_details?  @relation(fields: [assist_id], references: [id])
+}
+
+model hospitalAssist_service{
+  id                   Int               @id @default(autoincrement())
+  patient_name         String?
+  patient_contact_no   String?
+  patient_mobility     String?
+  patient_gender       String?
+  patient_age          String?
+  assist_type          String?
+  pickup_type          String?
+  hospital_name        String?
+  hospital_location    Json?
+  start_date           DateTime?
+  time                 String?
+  days_week            String?
+  patient_location    Json?
+  requirements         String?
+  medical_documents    Json?
+  price                Int?
+  assist_id            Int?
+  created_date         DateTime?
+  assigned_date        DateTime?
+  vehicle_type         String?
+  vehicle_id           String?
+  assist_details       assist_details?  @relation(fields: [assist_id], references: [id])
+
 }

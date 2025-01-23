@@ -812,23 +812,23 @@ const edituser = async (request, response) => {
         decryptedGender = decrypt(userdata?.gender, secretKey);
       }
 
-      const isNameChanged = decryptedName !== name;
-      const isAgeGroupChanged = decryptedAgeGroup !== ageGroup;
-      const isGenderChanged = decryptedGender !== gender;
-      const isPincodeChanged = userdata.pincode !== pincode;
+      // const isNameChanged = decryptedName !== name;
+      // const isAgeGroupChanged = decryptedAgeGroup !== ageGroup;
+      // const isGenderChanged = decryptedGender !== gender;
+      // const isPincodeChanged = userdata.pincode !== pincode;
 
-      if (
-        !isNameChanged &&
-        !isAgeGroupChanged &&
-        !isGenderChanged &&
-        !isPincodeChanged
-      ) {
-        return response.status(201).json({
-          message: "No changes detected",
-          success: false,
-          error: true,
-        });
-      }
+      // if (
+      //   !isNameChanged &&
+      //   !isAgeGroupChanged &&
+      //   !isGenderChanged &&
+      //   !isPincodeChanged
+      // ) {
+      //   return response.status(201).json({
+      //     message: "No changes detected",
+      //     success: false,
+      //     error: true,
+      //   });
+      // }
       const datetime = getCurrentDateInIST();
       const encryptedname = encrypt(name, secretKey);
       const encryptedagegroup = encrypt(ageGroup, secretKey);

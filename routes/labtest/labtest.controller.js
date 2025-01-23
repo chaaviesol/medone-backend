@@ -1443,8 +1443,6 @@ const alltestlistorders = async (request, response) => {
         labtest_list: {
           select: {
             order_id: true,
-            net_amount: true,
-            order_qty: true,
             test_number: true,
           },
         },
