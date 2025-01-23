@@ -706,7 +706,7 @@ const wallet = async (req, res) => {
     const wallet = Array.from(walletMap.values()).map((entry) => ({
       pharmacy: entry.pharmacy,
       totalAmount: entry.amount,
-      // orders: entry.orders,
+      orders: entry.orders,
     }));
 
     const walletTotal =[]
@@ -1257,6 +1257,48 @@ const forgot_password = async (req, res) => {
 
 
 
+const confirmDelivery_otp = async(req,res)=>{
+  try{
+    const{orderId,otp} = req.body
+    if(!orderId || !otp){
+      return res.status(404).json({
+        error:true,
+        success:false,
+        message:"missing field"
+      })
+    }
+    const confirmOtp = await prisma.sales_order.findMany({
+      where:{
+        sales_id:orderId,
+        otp:otp
+      }
+    })
+    console.log({confirmOtp})
+    if(!confirmOtp){
+      return res.status(404).json({
+        error:true,
+        success:false,
+        message:"Recheck otp"
+      })
+    }
+    return res.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfulll............",
+      data:confirmOtp
+    })
+
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in driver-confirmDelivery_otp API`
+    );
+    console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    //await prisma.$disconnect();
+  }
+}
+
 
 
 
@@ -1275,5 +1317,6 @@ const forgot_password = async (req, res) => {
     changePassword,
     forgot_password,
     addPayment_method,
-    payment_creditedStatus
+    payment_creditedStatus,
+    confirmDelivery_otp
   }
