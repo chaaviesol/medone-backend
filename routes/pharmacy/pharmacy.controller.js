@@ -584,7 +584,7 @@ const salesorder = async (request, response) => {
     so_status,
     remarks,
     order_type,
-    products,
+    // products,
     delivery_address,
     delivery_location,
     city,
@@ -680,6 +680,19 @@ const salesorder = async (request, response) => {
       });
 
       if (order_type != "prescription") {
+        const products = await prisma.customer_cart.findMany({
+          where: {
+            user_id: userId,
+          },
+          select: { prod_id: true, quantity: true },
+        });
+        if(!products){
+          return response.status(400).json({
+            error: true,
+            message: "The cart is empty. Please add products to proceed.",
+          });
+
+        }
         for (let product of products) {
           const net_amount = parseInt(product.quantity) * parseInt(product.mrp);
 
@@ -692,7 +705,7 @@ const salesorder = async (request, response) => {
               },
               generic_prodid: {
                 connect: {
-                  id: product.product_id,
+                  id: product.prod_id,
                 },
               },
               order_qty: parseInt(product.quantity),
@@ -1371,7 +1384,7 @@ const createinvoice = async (request, response) => {
             data: {
               batch_no: batch_no,
               selling_price: Number(selling_price),
-              discount: discount,
+              discount: parseInt(discount),
               net_amount: total,
             },
           });
@@ -1467,9 +1480,9 @@ const prescriptioninvoice = async (request, response) => {
 
             const timingObject = timing.reduce((acc, time) => {
               const key =
-                time === "Morning" 
+                time === "Morning"
                   ? timeMapping["Morning"]
-                  : timeMapping[time.toLowerCase()]; 
+                  : timeMapping[time.toLowerCase()];
               if (key) {
                 acc[key] = time;
               }
