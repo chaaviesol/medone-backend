@@ -816,14 +816,12 @@ const edituser = async (request, response) => {
       const isAgeGroupChanged = decryptedAgeGroup !== ageGroup;
       const isGenderChanged = decryptedGender !== gender;
       const isPincodeChanged = userdata.pincode !== pincode;
-      const isImageChanged = userdata.image !== userimg;
 
       if (
         !isNameChanged &&
         !isAgeGroupChanged &&
         !isGenderChanged &&
-        !isPincodeChanged &&
-        !isImageChanged
+        !isPincodeChanged
       ) {
         return response.status(201).json({
           message: "No changes detected",
