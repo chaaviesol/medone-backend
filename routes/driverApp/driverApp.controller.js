@@ -691,12 +691,16 @@ const wallet = async (req, res) => {
         select: {
           total_amount: true,
           pharmacy_id: true,
+          patient_name:true
+       
         },
       });
 
       console.log({ findPharmacy });
       const amount = findPharmacy.total_amount;
       console.log({amount})
+      const userName = findPharmacy.patient_name
+      console.log({userName})
 
       const findPharmacyName = await prisma.pharmacy_details.findFirst({
         where: {
@@ -713,8 +717,9 @@ const wallet = async (req, res) => {
       const amounts = parseFloat(findPharmacy.total_amount); // Ensure it's a number
       if (!walletMap.has(findPharmacyName.id)) {
         walletMap.set(findPharmacyName.id, {
+          // userName:userName,
           pharmacy: pharmacyName,
-          amount: 0,
+          amount:0,
           orders: [],
         });
       }
@@ -722,7 +727,11 @@ const wallet = async (req, res) => {
      
   const walletEntry = walletMap.get(findPharmacy.pharmacy_id);
   walletEntry.amount += amounts; // Perform arithmetic
-  walletEntry.orders.push(orderDetails[i]);
+  walletEntry.orders.push({...orderDetails[i],
+    userName: userName,        // Add userName
+    totalAmount: amounts, 
+
+    });
     }
 
     // Convert Map to an array for the response
@@ -730,6 +739,7 @@ const wallet = async (req, res) => {
       pharmacy: entry.pharmacy,
       totalAmount: entry.amount,
       orders: entry.orders,
+      
     }));
 
     const walletTotal =[]
