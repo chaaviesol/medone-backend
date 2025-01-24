@@ -271,7 +271,7 @@ const assignpharmacy = async (request, response) => {
         status: status,
         sales_id: sales_id,
         pharmacy_id: pharmacy_id,
-        created_date: datetime
+        created_date: datetime,
       },
     });
     const update = await prisma.sales_order.update({
@@ -471,7 +471,7 @@ const getorderdetails = async (request, response) => {
         so_number: true,
         so_status: true,
         order_type: true,
-        total_amount:true,
+        total_amount: true,
         remarks: true,
         users: {
           select: { id: true, name: true },
@@ -492,7 +492,7 @@ const getorderdetails = async (request, response) => {
             order_qty: true,
             net_amount: true,
             selling_price: true,
-            discount:true,
+            discount: true,
             batch_no: true,
             generic_prodid: {
               select: {
@@ -960,6 +960,34 @@ const assigndeliverypartner = async (request, response) => {
   }
 };
 
+const getdeliverypartners = async (request, response) => {
+  try {
+    const get = await prisma.delivery_partner.findMany();
+
+    if (get.length > 0) {
+      return response.status(200).json({
+        data: get,
+        success: true,
+      });
+    }else{
+      return response.status(400).json({
+        message: "No data",
+        success: true,
+      });
+
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in productquotation-getdeliverypartners API`
+    );
+    console.error(error);
+    response.status(500).json({ error: "Internal Server Error" });
+  }
+  // finally {
+  //   //await prisma.$disconnect();
+  // }
+};
+
 module.exports = {
   assignpharmacy,
   getpackedorders,
@@ -971,4 +999,5 @@ module.exports = {
   assigndeliverypartner,
   viewDeliveryPartners,
   adddeliverypartner,
+  getdeliverypartners,
 };

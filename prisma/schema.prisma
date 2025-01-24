@@ -468,6 +468,7 @@ model homeCare_Service{
   assist_id            Int?
   created_date         DateTime?
   assigned_date        DateTime?
+  status               String?
   assist_details       assist_details?  @relation(fields: [assist_id], references: [id])  
 }
 
@@ -488,6 +489,7 @@ model physiotherapist_service{
   assist_id            Int?
   created_date         DateTime?
   assigned_date        DateTime?
+  status               String?
   assist_details       assist_details?  @relation(fields: [assist_id], references: [id])
 }
 
@@ -514,6 +516,7 @@ model hospitalAssist_service{
   assigned_date        DateTime?
   vehicle_type         String?
   vehicle_id           String?
+  status               String?
   assist_details       assist_details?  @relation(fields: [assist_id], references: [id])
 
 }
