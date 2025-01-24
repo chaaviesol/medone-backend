@@ -636,7 +636,7 @@ const  assignpharmacy = async (request, response) => {
         sales_id: sales_id,
         pharmacy_id: pharmacy_id,
         created_date: datetime,
-        Stmodified_date: datetime,
+        // Stmodified_date: datetime,  
         
       },
     });
@@ -1379,7 +1379,7 @@ const addSeenStatus = async(req,res)=>{
  
 const orderSummery = async (req, res) => {
   try {
-    const { chemistId, month } = req.body;
+    const { chemistId } = req.body;
 
     if (!chemistId) {
       return res.status(400).json({ error: "Chemist ID is required" });
@@ -1389,37 +1389,13 @@ const orderSummery = async (req, res) => {
     const getCurrentDateInIST = () => {
       const now = new Date();
       const offset = 330; // IST offset in minutes (UTC+5:30)
-      const localTime = new Date(now.getTime() + offset * 60 * 1000);
-      return localTime;
+      return new Date(now.getTime() + offset * 60 * 1000);
     };
 
-    let startDate, endDate;
-
-    if (month) {
-      // If `month` is provided, check for range format
-      if (month.includes("-")) {
-        const [start, end] = month.split("-");
-        const [startMonth, startYear] = start.split("/");
-        const [endMonth, endYear] = end.split("/");
-
-        startDate = new Date(`${startYear}-${startMonth}-01`);
-        endDate = new Date(`${endYear}-${endMonth}-01`);
-        endDate.setMonth(endDate.getMonth() + 1);
-        endDate.setDate(0);
-      } else {
-        const [inputMonth, inputYear] = month.split("/");
-        startDate = new Date(`${inputYear}-${inputMonth}-01`);
-        endDate = new Date(startDate);
-        endDate.setMonth(startDate.getMonth() + 1);
-        endDate.setDate(0);
-      }
-    } else {
-      // If `month` is not provided, fetch data for the last 7 days
-      const currentDate = getCurrentDateInIST();
-      endDate = new Date(currentDate); // Current date
-      startDate = new Date(currentDate);
-      startDate.setDate(startDate.getDate() - 7); // Set to 7 days before the current date
-    }
+    // Calculate the start and end dates for the last 7 days
+    const endDate = getCurrentDateInIST(); // Current date
+    const startDate = new Date(endDate); // Clone the endDate
+    startDate.setDate(endDate.getDate() - 7); // Subtract 7 days
 
     console.log({ startDate, endDate });
 
@@ -1441,10 +1417,7 @@ const orderSummery = async (req, res) => {
     console.log({ orders });
 
     if (!orders.length) {
-      const message = month
-        ? `No orders found for the month(s) ${month}.`
-        : "No orders found for the last 7 days.";
-      return res.status(404).json({ message });
+      return res.status(404).json({ message: "No orders found in the last 7 days." });
     }
 
     const totalAmount = [];
@@ -1481,6 +1454,7 @@ const orderSummery = async (req, res) => {
     // await prisma.$disconnect();
   }
 };
+
 
 
 

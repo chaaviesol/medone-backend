@@ -1301,7 +1301,6 @@ const confirmDelivery_otp = async(req,res)=>{
 
 
 
-
   module.exports = {driver_login,
     getDriver_profile,
     getorder,
