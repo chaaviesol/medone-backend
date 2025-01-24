@@ -1304,11 +1304,19 @@ const confirmDelivery_otp = async(req,res)=>{
 /////verify otp///////
 const verifyOtp = async(req,res)=>{
   try{
-    const {driverId,otp} = req.body
-    if(driverId && otp){
+    const {driverEmail,otp} = req.body
+    if(driverEmail && otp){
+      const findId = await prisma.delivery_partner.findMany({
+        where:{
+           email:driverEmail
+        }
+      })
+      console.log({findId})
+      const driverId = findId[0].id
+      console.log({driverId})
     const verify = await prisma.delivery_partner.findUnique({
       where:{
-        id:pharmacyId,
+        id:driverId,
         otp:otp
       }
     })
@@ -1340,7 +1348,7 @@ const verifyOtp = async(req,res)=>{
       `Internal server error: ${error.message} in chemist-verifyOtp API`
     );
     console.error(error);
-    return response.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ error: "Internal Server Error" });
   } finally {
     //await prisma.$disconnect();
   }
