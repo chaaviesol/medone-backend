@@ -60,7 +60,6 @@ const addhospitalassist = async (request, response) => {
   try {
     let {
       id,
-      type,
       patient_mobility,
       patient_name,
       patient_age,
@@ -98,7 +97,6 @@ const addhospitalassist = async (request, response) => {
         id: id,
       },
       data: {
-        type,
         mobility,
         patient_name,
         patient_mobility,
@@ -108,7 +106,6 @@ const addhospitalassist = async (request, response) => {
         contact_person_name,
         patient_contact_no,
         assist_type,
-        location,
         hospital_name,
         patient_location,
         medication_records,
@@ -225,7 +222,6 @@ const addphysiotherapy = async (request, response) => {
   try {
     let {
       id,
-      type,
       patient_mobility,
       patient_name,
       patient_age,
@@ -234,7 +230,6 @@ const addphysiotherapy = async (request, response) => {
       patient_contact_no,
       patient_location,
       assist_type,
-      location,
       start_date,
       time,
       days_week,
@@ -263,7 +258,6 @@ const addphysiotherapy = async (request, response) => {
         id: id,
       },
       data: {
-        type,
         mobility,
         patient_name,
         patient_mobility,
@@ -272,7 +266,6 @@ const addphysiotherapy = async (request, response) => {
         contact_person_name,
         patient_contact_no,
         assist_type,
-        location,
         hospital_name,
         patient_location,
         medication_records,
