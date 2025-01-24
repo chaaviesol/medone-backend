@@ -242,11 +242,34 @@ const getorder = async(req,res)=>{
         message:"no order found.........."
       })
     }
+
+    const checkWallet = await prisma.delivery_partner.findMany({
+      where:{
+        id:driverId
+      },
+      select:{
+        wallet:true
+      }
+    })
+    console.log({checkWallet})
+
+    const hasBalance = checkWallet.some((wallet) => wallet.wallet > 0);
+    console.log({hasBalance})
+
+
+    const walletBalance =[]
+
+    if(hasBalance){
+    const walletMess = "Balance in wallet........."
+    walletBalance.push(walletMess)
+    }
+
     return res.status(200).json({
       error:false,
       success:true,
       message:"Successfull......",
-      data:pharmAddress
+      data:pharmAddress,
+      message:walletBalance
     })
 
 
