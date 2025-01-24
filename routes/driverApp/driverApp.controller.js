@@ -5,7 +5,7 @@ const winston = require("winston");
 const bcrypt = require('bcrypt')
 const {getCurrentDateInIST} = require('../../utils')
 const { encrypt, decrypt } = require("../../utils");
-
+const nodemailer = require('nodemailer')
 
 
 
@@ -1131,7 +1131,7 @@ const forgot_password = async (req, res) => {
           email:email
         },
         data:{
-          otp:parseInt(randomOTP)
+          otp:randomOTP
         }
       })
       console.log({add_temOtp})
