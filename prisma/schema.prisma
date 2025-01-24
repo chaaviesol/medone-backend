@@ -290,6 +290,7 @@ model delivery_partner{
   is_active                Boolean?
   pharmacy_ids              Json?
   created_date             DateTime?
+  otp                      String?
   delivery_assign          delivery_assign[]
 }
 

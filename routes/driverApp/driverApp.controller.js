@@ -1131,7 +1131,7 @@ const forgot_password = async (req, res) => {
           email:email
         },
         data:{
-          temp_otp:parseInt(randomOTP)
+          otp:parseInt(randomOTP)
         }
       })
       console.log({add_temOtp})
@@ -1301,6 +1301,52 @@ const confirmDelivery_otp = async(req,res)=>{
 
 
 
+/////verify otp///////
+const verifyOtp = async(req,res)=>{
+  try{
+    const {driverId,otp} = req.body
+    if(driverId && otp){
+    const verify = await prisma.delivery_partner.findUnique({
+      where:{
+        id:pharmacyId,
+        otp:otp
+      }
+    })
+    console.log({verify})
+    if(!verify){
+      return res.status(404).json({
+        error:true,
+        success:false,
+        message:"check otp......",
+       
+      })
+    }
+    return res.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull..........",
+      data:verify
+    })
+  }else{
+    return res.status(404).json({
+      error:true,
+      success:false,
+      message:"pharmacy id and otp are required..........."
+    })
+  }
+
+  }catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in chemist-verifyOtp API`
+    );
+    console.error(error);
+    return response.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    //await prisma.$disconnect();
+  }
+}
+
+
   module.exports = {driver_login,
     getDriver_profile,
     getorder,
@@ -1317,5 +1363,6 @@ const confirmDelivery_otp = async(req,res)=>{
     forgot_password,
     addPayment_method,
     payment_creditedStatus,
-    confirmDelivery_otp
+    confirmDelivery_otp,
+    verifyOtp
   }
