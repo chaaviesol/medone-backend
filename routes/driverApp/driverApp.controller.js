@@ -1355,6 +1355,55 @@ const verifyOtp = async(req,res)=>{
 }
 
 
+const settleFull_amt = async(req,res)=>{
+  try{
+    const{sales_id,credited_Payment,driverId} = req.body
+    if(!sales_id || !credited_Payment){
+      return res.status(404).json({
+        error:true,
+        success:false,
+        message:"missing fields........"
+       })
+    }
+
+    if(!Array.isArray(sales_id)){
+      return res.status(404).json({
+        error:true,
+        success:false,
+        message:"salesId should be an arrayy..........."
+       })
+    }
+
+    const creditedpaymentStatus = await prisma.delivery_assign.updateMany({
+      where:{
+        // sales_id:sales_id,
+        sales_id:{
+          in:sales_id
+        },
+        deliverypartner_id:driverId
+      },
+      data:{
+      credited_payment:credited_Payment
+      }
+    })
+    console.log({creditedpaymentStatus})
+    res.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull........",
+      data:creditedpaymentStatus
+    })
+  }catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in driver-settleFull_amt API`
+    );
+    console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    //await prisma.$disconnect();
+  }
+}
+
   module.exports = {driver_login,
     getDriver_profile,
     getorder,
@@ -1372,5 +1421,6 @@ const verifyOtp = async(req,res)=>{
     addPayment_method,
     payment_creditedStatus,
     confirmDelivery_otp,
-    verifyOtp
+    verifyOtp,
+    settleFull_amt
   }
