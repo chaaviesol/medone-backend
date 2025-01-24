@@ -291,6 +291,8 @@ model delivery_partner{
   pharmacy_ids              Json?
   created_date             DateTime?
   otp                      String?
+  wallet                   Int?
+  phone                    String?
   delivery_assign          delivery_assign[]
 }
 

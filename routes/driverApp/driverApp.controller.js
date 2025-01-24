@@ -716,8 +716,21 @@ const wallet = async (req, res) => {
         let totalWalletAmount = wallet.reduce((sum, item) => sum + item.totalAmount, 0);
         console.log({ totalWalletAmount });
         walletTotal.push({totalWalletAmount})
+         //// update delivery partner table////////
+    const updateDeliveryPartner = await prisma.delivery_partner.update({
+      where:{
+        id:driverId,
+       
+      },
+      data:{
+        wallet:totalWalletAmount
+      }
+    })
+    console.log({updateDeliveryPartner})
     }
     console.log({walletTotal})
+   
+
     return res.status(200).json({
       error: false,
       success: true,
