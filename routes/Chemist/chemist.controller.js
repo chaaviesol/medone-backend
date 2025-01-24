@@ -1420,12 +1420,15 @@ const orderSummery = async (req, res) => {
       return res.status(404).json({ message: "No orders found in the last 7 days." });
     }
 
-    const totalAmount = [];
+    // Create a map to store daily totals
+    const dailyTotals = {};
 
-    for (let i = 0; i < orders.length; i++) {
+    for (const order of orders) {
+      const orderDate = new Date(order.Stmodified_date).toISOString().split("T")[0]; // Get YYYY-MM-DD format
+
       const findPrice = await prisma.sales_order.findMany({
         where: {
-          sales_id: orders[i].sales_id,
+          sales_id: order.sales_id,
         },
         select: {
           total_amount: true,
@@ -1436,16 +1439,21 @@ const orderSummery = async (req, res) => {
 
       if (findPrice.length > 0) {
         const price = Number(findPrice[0].total_amount); // Ensure the amount is treated as a number
-        totalAmount.push(price);
+
+        // Accumulate the total for the specific date
+        dailyTotals[orderDate] = (dailyTotals[orderDate] || 0) + price;
       }
     }
 
-    // Calculate the grand total as a sum of totalAmounts
-    const grandTotal = totalAmount.reduce((acc, curr) => acc + curr, 0);
+    // Convert the dailyTotals map into an array of objects for response
+    const dayWiseResponse = Object.entries(dailyTotals).map(([date, totalAmount]) => ({
+      date,
+      totalAmount,
+    }));
 
     res.status(200).json({
       success: true,
-      grandTotal: grandTotal,
+      dayWiseResponse,
     });
   } catch (error) {
     console.error(`Internal server error: ${error.message} in chemist-orderSummery API`);
@@ -1454,6 +1462,7 @@ const orderSummery = async (req, res) => {
     // await prisma.$disconnect();
   }
 };
+
 
 
 
