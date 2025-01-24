@@ -1,19 +1,19 @@
 const express = require("express");
 require("dotenv").config();
-const cron = require("node-cron")
+const cron = require("node-cron");
 const bodyParser = require("body-parser");
 const PORT = process.env.PORT;
 const HOST = process.env.HOST;
 const server = express();
 const cors = require("cors");
-const admin = require('./firebase')
+const admin = require("./firebase");
 const authRouter = require("./routes/Auth/authRouters");
 const HospitalRouter = require("./routes/hospital/hospital.routes");
 const UserRouter = require("./routes/user/user.routes");
 const PharmacyRouter = require("./routes/pharmacy/pharmacy.routes");
 const medoneRouter = require("./routes/medOne/medone.routes");
 const productRouter = require("./routes/productcategory/productcategory.routes");
-const googleMapRouter=require("./routes/googleMap/googlemap.routes")
+const googleMapRouter = require("./routes/googleMap/googlemap.routes");
 const { PrismaClient } = require("@prisma/client");
 const pharmacyquotationRouter = require("./routes/pharmacyquotation/pharmacyquotation.routes");
 const { checkPrime } = require("crypto");
@@ -21,11 +21,10 @@ const chemistRouter = require("./routes/Chemist/chemist.routes");
 const prisma = new PrismaClient();
 
 //for zoom meeting////
-const axios = require('axios');
+const axios = require("axios");
 const driverRouter = require("./routes/driverApp/driverApp.routes");
 const LabtestRouter = require("./routes/labtest/labtest.routes");
-
-
+const servicesRouter = require("./routes/services/services.routes");
 
 server.use(
   cors({
@@ -41,14 +40,15 @@ server.use(express.urlencoded({ extended: true }));
 server.use("/auth", authRouter);
 server.use("/hospital", HospitalRouter);
 server.use("/user", UserRouter);
-server.use("/medone",medoneRouter)
+server.use("/medone", medoneRouter);
 server.use("/pharmacy", PharmacyRouter);
 server.use("/product", productRouter);
-server.use("/pharmacyquotation",pharmacyquotationRouter)
-server.use("/chemist",chemistRouter)
-server.use("/googlemap",googleMapRouter)
-server.use('/driver',driverRouter)
-server.use("/labtest",LabtestRouter)
+server.use("/pharmacyquotation", pharmacyquotationRouter);
+server.use("/chemist", chemistRouter);
+server.use("/googlemap", googleMapRouter);
+server.use("/driver", driverRouter);
+server.use("/labtest", LabtestRouter);
+server.use("/services", servicesRouter);
 
 if (process.env.NODE_ENV === "development") {
   server.listen(PORT, () => {
@@ -56,17 +56,8 @@ if (process.env.NODE_ENV === "development") {
   });
 }
 
-
-
-
-
-
-
-
-
-
 /////////////workinggggg///////////////////////
-server.post('/send-notification', async (req, res) => {
+server.post("/send-notification", async (req, res) => {
   const { userId, fcmToken } = req.body;
 
   try {
@@ -88,7 +79,7 @@ server.post('/send-notification', async (req, res) => {
 
     const sentNotifications = []; // Array to store details of sent notifications
     const currentDateTime = new Date();
-    const currentDate = currentDateTime.toISOString().split('T')[0]; // Extract current date in YYYY-MM-DD format
+    const currentDate = currentDateTime.toISOString().split("T")[0]; // Extract current date in YYYY-MM-DD format
     const currentTime = currentDateTime.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
@@ -96,17 +87,28 @@ server.post('/send-notification', async (req, res) => {
     }); // Extract current time in HH:mm AM/PM format
 
     for (const notification of getNotification) {
-      const notificationDate = new Date(notification.created_date).toISOString().split('T')[0]; // Extract notification date
-      const notificationTime = new Date(notification.notificationTime).toLocaleTimeString("en-US", {
+      const notificationDate = new Date(notification.created_date)
+        .toISOString()
+        .split("T")[0]; // Extract notification date
+      const notificationTime = new Date(
+        notification.notificationTime
+      ).toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
         hour12: true,
       }); // Extract notification time
 
       // Check if current date and time match notification's date and time
-      if (currentDate === notificationDate && currentTime === notificationTime) {
+      if (
+        currentDate === notificationDate &&
+        currentTime === notificationTime
+      ) {
         try {
-          const response = await sendNotification(fcmToken, notification.title, notification.message);
+          const response = await sendNotification(
+            fcmToken,
+            notification.title,
+            notification.message
+          );
           console.log("Successfully sent the notification ----->", response);
 
           // Update the notification status to "Sent"
@@ -124,7 +126,10 @@ server.post('/send-notification', async (req, res) => {
             response,
           });
         } catch (error) {
-          console.error(`Error sending notification for ID ${notification.id} ----->`, error);
+          console.error(
+            `Error sending notification for ID ${notification.id} ----->`,
+            error
+          );
           continue;
         }
       } else {
@@ -149,10 +154,9 @@ server.post('/send-notification', async (req, res) => {
   }
 });
 
-
 // Define the sendNotification function
 const sendNotification = async (token, title, message) => {
-  console.log("notification sended")
+  console.log("notification sended");
   const messagePayload = {
     token: token, // Ensure token is passed correctly
     notification: {
@@ -179,13 +183,10 @@ const sendNotification = async (token, title, message) => {
   }
 };
 
-   
 ///////for zoom////////
 
 // const CLIENT_ID = '';
 // const CLIENT_SECRET = '';
-
-
 
 // // Function to generate access token
 // const getAccessToken = async () => {
@@ -253,14 +254,6 @@ const sendNotification = async (token, title, message) => {
 //     res.status(500).json({ error: error.message });
 //   }
 // });
-
-
-
-
-
-
-
-
 
 // const CLIENT_ID = 'sBjEpNMUQO6iFNijmKM8hw';
 // const CLIENT_SECRET = 'TOo0N689dC2Y5zXw4QKtGdMWWRbf8tgl';

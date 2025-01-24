@@ -271,8 +271,7 @@ const assignpharmacy = async (request, response) => {
         status: status,
         sales_id: sales_id,
         pharmacy_id: pharmacy_id,
-        created_date: datetime,
-        Stmodified_date: datetime,
+        created_date: datetime
       },
     });
     const update = await prisma.sales_order.update({
