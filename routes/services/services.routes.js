@@ -7,7 +7,8 @@ const {
   addphysiotherapy,
   getphysiotherapyreqs,
   addhomeServiceenquiry,
-  addhomeservice
+  addhomeservice,
+  gethomeservicereqs
 } = require("./services.controller");
 const { upload } = require("../../middleware/Uploadimage");
 const auth = require("../../middleware/Auth/auth");
@@ -31,5 +32,6 @@ servicesRouter.post(
 servicesRouter.get("/getphysiotherapyreqs", getphysiotherapyreqs);
 servicesRouter.post('/addhomeServiceenquiry',addhomeServiceenquiry)
 servicesRouter.post('/addhomeservice',upload.array("images"),addhomeservice)
+servicesRouter.get('/gethomeservicereqs',gethomeservicereqs)
 
 module.exports = servicesRouter;

@@ -3,13 +3,13 @@ require("dotenv").config();
 
 const addhospitalassistenquiry = async (request, response) => {
   try {
-    const { patient_name, patient_contact_no } = request.body;
+    const { customer_id, patient_name, patient_contact_no } = request.body;
     const datetime = getCurrentDateInIST();
     const find = await prisma.hospitalAssist_service.findFirst({
       where: {
         patient_name,
         patient_contact_no,
-        created_date: datetime,
+        customer_id,
       },
       select: {
         id: true,
@@ -21,6 +21,7 @@ const addhospitalassistenquiry = async (request, response) => {
       const add = await prisma.hospitalAssist_service.create({
         data: {
           patient_name,
+          customer_id,
           patient_contact_no,
           status: "enquired",
           created_date: datetime,
@@ -102,7 +103,7 @@ const addhospitalassist = async (request, response) => {
         patient_mobility,
         patient_age,
         patient_gender,
-        status:"requested",
+        status: "requested",
         contact_person_name,
         patient_contact_no,
         assist_type,
@@ -165,13 +166,13 @@ const gethospitalassistantreqs = async (request, response) => {
 
 const physiotherapyenquiry = async (request, response) => {
   try {
-    const { patient_name, patient_contact_no } = request.body;
+    const { customer_id, patient_name, patient_contact_no } = request.body;
     const datetime = getCurrentDateInIST();
     const find = await prisma.physiotherapist_service.findFirst({
       where: {
         patient_name,
         patient_contact_no,
-        created_date: datetime,
+        customer_id,
       },
       select: {
         id: true,
@@ -184,7 +185,8 @@ const physiotherapyenquiry = async (request, response) => {
         data: {
           patient_name,
           patient_contact_no,
-          status:"enquired",
+          customer_id,
+          status: "enquired",
           created_date: datetime,
         },
       });
@@ -195,7 +197,7 @@ const physiotherapyenquiry = async (request, response) => {
         return response.status(200).json({
           success: true,
           error: false,
-          data: find,
+          data: adddata,
           message: "enquiry created successfully.",
         });
       }
@@ -222,19 +224,15 @@ const addphysiotherapy = async (request, response) => {
   try {
     let {
       id,
-      patient_mobility,
       patient_name,
-      patient_age,
-      patient_gender,
-      hospital_name,
       patient_contact_no,
-      patient_location,
-      assist_type,
+      patient_mobility,
+      patient_gender,
+      patient_age,
       start_date,
-      time,
       days_week,
-      hospital_location,
-      pickup_type,
+      general_specialized,
+      patient_location,
       requirements,
     } = JSON.parse(request.body.data);
     const documents = request.files;
@@ -258,25 +256,19 @@ const addphysiotherapy = async (request, response) => {
         id: id,
       },
       data: {
-        mobility,
         patient_name,
-        patient_mobility,
-        patient_age,
-        patient_gender,
-        contact_person_name,
         patient_contact_no,
-        assist_type,
-        hospital_name,
-        patient_location,
-        medication_records,
+        patient_mobility,
+        patient_gender,
+        patient_age,
         start_date,
-        time,
         days_week,
-        hospital_location,
-        pickup_type,
+        general_specialized,
+        patient_location,
         requirements,
+        created_date: datetime,
         medical_documents: medical_documents,
-        status:"requested",
+        status: "requested",
       },
     });
 
@@ -301,7 +293,7 @@ const addphysiotherapy = async (request, response) => {
 
 const getphysiotherapyreqs = async (request, response) => {
   try {
-    const allrequests = await prisma.hospitalAssist_service.findMany({
+    const allrequests = await prisma.physiotherapist_service.findMany({
       where: {
         status: "requested",
       },
@@ -314,7 +306,7 @@ const getphysiotherapyreqs = async (request, response) => {
     }
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in  hospitalassistant- getrequests API`
+      `Internal server error: ${error.message} in  getphysiotherapyreqs- getrequests API`
     );
     response.status(500).json({
       error: true,
@@ -325,17 +317,16 @@ const getphysiotherapyreqs = async (request, response) => {
   }
 };
 
-
 //////home service///////
 const addhomeServiceenquiry = async (request, response) => {
   try {
-    const { patient_name, patient_contact_no } = request.body;
+    const { customer_id,patient_name, patient_contact_no } = request.body;
     const datetime = getCurrentDateInIST();
     const find = await prisma.homeCare_Service.findFirst({
       where: {
         patient_name,
         patient_contact_no,
-        created_date: datetime,
+        customer_id
       },
       select: {
         id: true,
@@ -349,6 +340,7 @@ const addhomeServiceenquiry = async (request, response) => {
           patient_name,
           patient_contact_no,
           status: "enquired",
+          customer_id,
           created_date: datetime,
         },
       });
@@ -396,7 +388,6 @@ const addhomeservice = async (request, response) => {
       days_week,
       requirements,
       general_specialized,
-      
     } = JSON.parse(request.body.data);
     // } = (request.body)
 
@@ -427,7 +418,7 @@ const addhomeservice = async (request, response) => {
         patient_mobility,
         patient_age,
         patient_gender,
-        status:"requested",
+        status: "requested",
         general_specialized,
         // contact_person_name,
         patient_contact_no,
@@ -464,7 +455,31 @@ const addhomeservice = async (request, response) => {
   }
 };
 
-
+const gethomeservicereqs = async (request, response) => {
+  try {
+    const allrequests = await prisma.homeCare_Service.findMany({
+      where: {
+        status: "requested",
+      },
+    });
+    if (allrequests.length > 0) {
+      return response.status(200).json({
+        data: allrequests,
+        success: true,
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in  gethomeservicereqs- getrequests API`
+    );
+    response.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  } finally {
+    //await prisma.$disconnect();
+  }
+};
 
 module.exports = {
   addhospitalassistenquiry,
@@ -474,5 +489,6 @@ module.exports = {
   addphysiotherapy,
   getphysiotherapyreqs,
   addhomeServiceenquiry,
-  addhomeservice
+  addhomeservice,
+  gethomeservicereqs,
 };

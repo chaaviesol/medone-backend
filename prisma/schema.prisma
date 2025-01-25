@@ -11,31 +11,34 @@ datasource db {
 }
 
 model user_details{
-    id                      Int @id @default(autoincrement())
-    name                    String?  
-    phone_no                String?  
-    email                   String?  
-    password                String?
-    datetime                DateTime
-    pincode                 String?
-    ageGroup                String?
-    gender                  String?
-    updatedDate             DateTime?
-    last_active             DateTime?
-    status                  String?
-    image                   String? 
-    health_condition        Json?
-    height                  String?
-    weight                  String?
-    googleId                String?   
-    token                   String?  
-    notificationTime        String?               
-    customer_cart           customer_cart[]
-    sales_order             sales_order[]
-    daily_routine           dailyRoutine[]
-    medicine_timetable      medicine_timetable[]
-    labtest_cart            labtest_cart[]
-    labtest_order           labtest_order[]    
+  id                      Int @id @default(autoincrement())
+  name                    String?  
+  phone_no                String?  
+  email                   String?  
+  password                String?
+  datetime                DateTime
+  pincode                 String?
+  ageGroup                String?
+  gender                  String?
+  updatedDate             DateTime?
+  last_active             DateTime?
+  status                  String?
+  image                   String? 
+  health_condition        Json?
+  height                  String?
+  weight                  String?
+  googleId                String?   
+  token                   String?  
+  notificationTime        String?               
+  customer_cart           customer_cart[]
+  sales_order             sales_order[]
+  daily_routine           dailyRoutine[]
+  medicine_timetable      medicine_timetable[]
+  labtest_cart            labtest_cart[]
+  labtest_order           labtest_order[]
+  hospitalAssist_service    hospitalAssist_service[]
+  homeCare_Service          homeCare_Service[]
+  physiotherapist_service   physiotherapist_service[]    
 }
 
 model generic_product {
@@ -181,9 +184,7 @@ model hospital_details{
   last_active                DateTime?  
   status                     String?  
   featured_partner           Boolean?                                                        
-  // doctor_hospital_id         doctor_hospital[]
-  // interacteduser             hospital_interacteduser[]
-  // feedback                   hospital_feedback[]
+  
 }
 
 
@@ -221,14 +222,14 @@ model pharmacy_details{
   }
 
 model pharmacy_assign{
-    id                       Int @id @default(autoincrement())
-    pharmacy_id              Int
-    sales_id                 Int
-    status                   String?
-    created_date             DateTime?
-    Stmodified_date          DateTime?
-    pharm_id                 pharmacy_details? @relation(fields: [pharmacy_id],references: [id])    
-    salesorderid             sales_order? @relation(fields: [sales_id],references: [sales_id])
+  id                       Int @id @default(autoincrement())
+  pharmacy_id              Int
+  sales_id                 Int
+  status                   String?
+  created_date             DateTime?
+  Stmodified_date          DateTime?
+  pharm_id                 pharmacy_details? @relation(fields: [pharmacy_id],references: [id])    
+  salesorderid             sales_order? @relation(fields: [sales_id],references: [sales_id])
 
 
   }
@@ -469,6 +470,8 @@ model homeCare_Service{
   created_date         DateTime?
   assigned_date        DateTime?
   status               String?
+  customer_id          Int?
+  users                user_details? @relation(fields: [customer_id],references: [id])
   assist_details       assist_details?  @relation(fields: [assist_id], references: [id])  
 }
 
@@ -490,6 +493,8 @@ model physiotherapist_service{
   created_date         DateTime?
   assigned_date        DateTime?
   status               String?
+  customer_id          Int?
+  users                user_details? @relation(fields: [customer_id],references: [id])
   assist_details       assist_details?  @relation(fields: [assist_id], references: [id])
 }
 
@@ -517,6 +522,7 @@ model hospitalAssist_service{
   vehicle_type         String?
   vehicle_id           String?
   status               String?
+  customer_id          Int?
+  users                user_details? @relation(fields: [customer_id],references: [id])
   assist_details       assist_details?  @relation(fields: [assist_id], references: [id])
-
 }
