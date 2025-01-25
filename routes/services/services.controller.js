@@ -89,7 +89,6 @@ const addhospitalassistenquiry = async (request, response) => {
       where: {
         patient_name,
         patient_contact_no,
-        customer_id,
         status: {
           not: "placed",
         },
@@ -284,7 +283,6 @@ const physiotherapyenquiry = async (request, response) => {
       where: {
         patient_name,
         patient_contact_no,
-        customer_id,
         status: {
           not: "placed",
         },
@@ -526,7 +524,6 @@ const addhomeServiceenquiry = async (request, response) => {
       where: {
         patient_name,
         patient_contact_no,
-        customer_id,
         status: {
           not: "placed",
         },
