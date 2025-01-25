@@ -1,15 +1,101 @@
 const { getCurrentDateInIST, istDate, logger, prisma } = require("../../utils");
 require("dotenv").config();
 
+// const addhospitalassistenquiry = async (request, response) => {
+//   try {
+//     const { customer_id, patient_name, patient_contact_no } = request.body;
+//     const datetime = getCurrentDateInIST();
+//     const find = await prisma.hospitalAssist_service.findFirst({
+//       where: {
+//         patient_name,
+//         patient_contact_no,
+//         customer_id,
+//       },
+//       select: {
+//         id: true,
+//         created_date: true,
+//         status: true,
+//       },
+//     });
+//     if (!find) {
+//       const add = await prisma.hospitalAssist_service.create({
+//         data: {
+//           patient_name,
+//           customer_id,
+//           patient_contact_no,
+//           status: "enquired",
+//           created_date: datetime,
+//         },
+//       });
+//       if (add) {
+//         const adddata = {
+//           id: add.id,
+//         };
+//         return response.status(200).json({
+//           success: true,
+//           error: false,
+//           data: adddata,
+//           message: "enquiry created successfully.",
+//         });
+//       }
+//     } else {
+//       return response.status(200).json({
+//         success: true,
+//         error: false,
+//         data: find,
+//         message: "enquiry created successfully.",
+//       });
+//     }
+//   } catch (error) {
+//     logger.error(
+//       `Internal server error: ${error.message} in services-addhospitalassistenquiry API`
+//     );
+//     console.error(error);
+//     response.status(500).json({ error: "Internal Server Error" });
+//   } finally {
+//     await prisma.$disconnect();
+//   }
+// };
+
 const addhospitalassistenquiry = async (request, response) => {
   try {
     const { customer_id, patient_name, patient_contact_no } = request.body;
+
+    if (!patient_name || !patient_contact_no) {
+      return response.status(400).json({
+        success: false,
+        error: true,
+        message:
+          "Missing required fields: patient_name, or patient_contact_no.",
+      });
+    }
+
     const datetime = getCurrentDateInIST();
+
+    const createEnquiry = async () => {
+      const newEnquiry = await prisma.hospitalAssist_service.create({
+        data: {
+          patient_name,
+          patient_contact_no,
+          customer_id,
+          status: "enquired",
+          created_date: datetime,
+        },
+      });
+      return newEnquiry;
+    };
+
     const find = await prisma.hospitalAssist_service.findFirst({
       where: {
         patient_name,
         patient_contact_no,
         customer_id,
+        status: {
+          not: "placed",
+        },
+      },
+      orderBy: {
+        created_date: "desc",
       },
       select: {
         id: true,
@@ -17,41 +103,42 @@ const addhospitalassistenquiry = async (request, response) => {
         status: true,
       },
     });
+
     if (!find) {
-      const add = await prisma.hospitalAssist_service.create({
-        data: {
-          patient_name,
-          customer_id,
-          patient_contact_no,
-          status: "enquired",
-          created_date: datetime,
-        },
+      const newEnquiry = await createEnquiry();
+      return response.status(200).json({
+        success: true,
+        error: false,
+        data: { id: newEnquiry.id },
+        message: "Enquiry created successfully.",
       });
-      if (add) {
-        const adddata = {
-          id: add.id,
-        };
-        return response.status(200).json({
-          success: true,
-          error: false,
-          data: adddata,
-          message: "enquiry created successfully.",
-        });
-      }
-    } else {
+    }
+
+    const today = new Date().toISOString().split("T")[0];
+    const createdDate = new Date(find.created_date).toISOString().split("T")[0];
+
+    if (createdDate === today) {
       return response.status(200).json({
         success: true,
         error: false,
         data: find,
-        message: "enquiry created successfully.",
+        message: "An enquiry already exists for today.",
       });
     }
+
+    const newEnquiry = await createEnquiry();
+    return response.status(200).json({
+      success: true,
+      error: false,
+      data: { id: newEnquiry.id },
+      message: "Enquiry created successfully.",
+    });
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in services-addhospitalassistenquiry API`
+      `Internal server error: ${error.message} in addhospitalassistenquiry API`
     );
     console.error(error);
-    response.status(500).json({ error: "Internal Server Error" });
+    return response.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
   }
@@ -69,7 +156,6 @@ const addhospitalassist = async (request, response) => {
       patient_contact_no,
       patient_location,
       assist_type,
-      location,
       start_date,
       time,
       days_week,
@@ -103,7 +189,7 @@ const addhospitalassist = async (request, response) => {
         patient_mobility,
         patient_age,
         patient_gender,
-        status: "requested",
+        status: "placed",
         contact_person_name,
         patient_contact_no,
         assist_type,
@@ -124,7 +210,7 @@ const addhospitalassist = async (request, response) => {
       return response.status(200).json({
         success: true,
         error: false,
-        message: "Requested successfully.",
+        message: "Placed successfully.",
       });
     }
   } catch (error) {
@@ -142,7 +228,7 @@ const gethospitalassistantreqs = async (request, response) => {
   try {
     const allrequests = await prisma.hospitalAssist_service.findMany({
       where: {
-        status: "requested",
+        status: "placed",
       },
     });
     if (allrequests.length > 0) {
@@ -164,24 +250,25 @@ const gethospitalassistantreqs = async (request, response) => {
   }
 };
 
+////////physiotherapy//////////
+
 const physiotherapyenquiry = async (request, response) => {
   try {
     const { customer_id, patient_name, patient_contact_no } = request.body;
+
+    if (!patient_name || !patient_contact_no) {
+      return response.status(400).json({
+        success: false,
+        error: true,
+        message:
+          "Missing required fields: patient_name, or patient_contact_no.",
+      });
+    }
+
     const datetime = getCurrentDateInIST();
-    const find = await prisma.physiotherapist_service.findFirst({
-      where: {
-        patient_name,
-        patient_contact_no,
-        customer_id,
-      },
-      select: {
-        id: true,
-        created_date: true,
-        status: true,
-      },
-    });
-    if (!find) {
-      const add = await prisma.physiotherapist_service.create({
+
+    const createEnquiry = async () => {
+      const newEnquiry = await prisma.physiotherapist_service.create({
         data: {
           patient_name,
           patient_contact_no,
@@ -190,31 +277,63 @@ const physiotherapyenquiry = async (request, response) => {
           created_date: datetime,
         },
       });
-      if (add) {
-        const adddata = {
-          id: add.id,
-        };
-        return response.status(200).json({
-          success: true,
-          error: false,
-          data: adddata,
-          message: "enquiry created successfully.",
-        });
-      }
-    } else {
+      return newEnquiry;
+    };
+
+    const find = await prisma.physiotherapist_service.findFirst({
+      where: {
+        patient_name,
+        patient_contact_no,
+        customer_id,
+        status: {
+          not: "placed",
+        },
+      },
+      orderBy: {
+        created_date: "desc",
+      },
+      select: {
+        id: true,
+        created_date: true,
+        status: true,
+      },
+    });
+
+    if (!find) {
+      const newEnquiry = await createEnquiry();
+      return response.status(200).json({
+        success: true,
+        error: false,
+        data: { id: newEnquiry.id },
+        message: "Enquiry created successfully.",
+      });
+    }
+
+    const today = new Date().toISOString().split("T")[0];
+    const createdDate = new Date(find.created_date).toISOString().split("T")[0];
+
+    if (createdDate === today) {
       return response.status(200).json({
         success: true,
         error: false,
         data: find,
-        message: "enquiry created successfully.",
+        message: "An enquiry already exists for today.",
       });
     }
+
+    const newEnquiry = await createEnquiry();
+    return response.status(200).json({
+      success: true,
+      error: false,
+      data: { id: newEnquiry.id },
+      message: "Enquiry created successfully.",
+    });
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in services-addhospitalassistenquiry API`
+      `Internal server error: ${error.message} in physiotherapyenquiry API`
     );
     console.error(error);
-    response.status(500).json({ error: "Internal Server Error" });
+    return response.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
   }
@@ -268,7 +387,7 @@ const addphysiotherapy = async (request, response) => {
         requirements,
         created_date: datetime,
         medical_documents: medical_documents,
-        status: "requested",
+        status: "placed",
       },
     });
 
@@ -276,7 +395,7 @@ const addphysiotherapy = async (request, response) => {
       return response.status(200).json({
         success: true,
         error: false,
-        message: "Requested successfully.",
+        message: "placed successfully.",
       });
     }
   } catch (error) {
@@ -295,7 +414,7 @@ const getphysiotherapyreqs = async (request, response) => {
   try {
     const allrequests = await prisma.physiotherapist_service.findMany({
       where: {
-        status: "requested",
+        status: "placed",
       },
     });
     if (allrequests.length > 0) {
@@ -318,15 +437,102 @@ const getphysiotherapyreqs = async (request, response) => {
 };
 
 //////home service///////
+
+// const addhomeServiceenquiry = async (request, response) => {
+//   try {
+//     const { customer_id, patient_name, patient_contact_no } = request.body;
+//     const datetime = getCurrentDateInIST();
+//     const find = await prisma.homeCare_Service.findFirst({
+//       where: {
+//         patient_name,
+//         patient_contact_no,
+//         customer_id,
+//       },
+//       select: {
+//         id: true,
+//         created_date: true,
+//         status: true,
+//       },
+//     });
+//     if (!find) {
+//       const add = await prisma.homeCare_Service.create({
+//         data: {
+//           patient_name,
+//           patient_contact_no,
+//           status: "enquired",
+//           customer_id,
+//           created_date: datetime,
+//         },
+//       });
+//       if (add) {
+//         const adddata = {
+//           id: add.id,
+//         };
+//         return response.status(200).json({
+//           success: true,
+//           error: false,
+//           data: adddata,
+//           message: "enquiry created successfully.",
+//         });
+//       }
+//     } else {
+//       return response.status(200).json({
+//         success: true,
+//         error: false,
+//         data: find,
+//         message: "enquiry created successfully.",
+//       });
+//     }
+//   } catch (error) {
+//     logger.error(
+//       `Internal server error: ${error.message} in services-addhomeServiceenquiry API`
+//     );
+//     console.error(error);
+//     response.status(500).json({ error: "Internal Server Error" });
+//   } finally {
+//     await prisma.$disconnect();
+//   }
+// };
+
 const addhomeServiceenquiry = async (request, response) => {
   try {
-    const { customer_id,patient_name, patient_contact_no } = request.body;
+    const { customer_id, patient_name, patient_contact_no } = request.body;
+
+    if (!patient_name || !patient_contact_no) {
+      return response.status(400).json({
+        success: false,
+        error: true,
+        message:
+          "Missing required fields: patient_name, or patient_contact_no.",
+      });
+    }
+
     const datetime = getCurrentDateInIST();
+
+    const createEnquiry = async () => {
+      const newEnquiry = await prisma.homeCare_Service.create({
+        data: {
+          patient_name,
+          patient_contact_no,
+          customer_id,
+          status: "enquired",
+          created_date: datetime,
+        },
+      });
+      return newEnquiry;
+    };
+
     const find = await prisma.homeCare_Service.findFirst({
       where: {
         patient_name,
         patient_contact_no,
-        customer_id
+        customer_id,
+        status: {
+          not: "placed",
+        },
+      },
+      orderBy: {
+        created_date: "desc",
       },
       select: {
         id: true,
@@ -334,41 +540,42 @@ const addhomeServiceenquiry = async (request, response) => {
         status: true,
       },
     });
+
     if (!find) {
-      const add = await prisma.homeCare_Service.create({
-        data: {
-          patient_name,
-          patient_contact_no,
-          status: "enquired",
-          customer_id,
-          created_date: datetime,
-        },
+      const newEnquiry = await createEnquiry();
+      return response.status(200).json({
+        success: true,
+        error: false,
+        data: { id: newEnquiry.id },
+        message: "Enquiry created successfully.",
       });
-      if (add) {
-        const adddata = {
-          id: add.id,
-        };
-        return response.status(200).json({
-          success: true,
-          error: false,
-          data: adddata,
-          message: "enquiry created successfully.",
-        });
-      }
-    } else {
+    }
+
+    const today = new Date().toISOString().split("T")[0];
+    const createdDate = new Date(find.created_date).toISOString().split("T")[0];
+
+    if (createdDate === today) {
       return response.status(200).json({
         success: true,
         error: false,
         data: find,
-        message: "enquiry created successfully.",
+        message: "An enquiry already exists for today.",
       });
     }
+
+    const newEnquiry = await createEnquiry();
+    return response.status(200).json({
+      success: true,
+      error: false,
+      data: { id: newEnquiry.id },
+      message: "Enquiry created successfully.",
+    });
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in services-addhomeServiceenquiry API`
+      `Internal server error: ${error.message} in addhomeServiceenquiry API`
     );
     console.error(error);
-    response.status(500).json({ error: "Internal Server Error" });
+    return response.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
   }
@@ -412,26 +619,16 @@ const addhomeservice = async (request, response) => {
         id: id,
       },
       data: {
-        // type,
-        // mobility,
         patient_name,
         patient_mobility,
         patient_age,
         patient_gender,
-        status: "requested",
+        status: "placed",
         general_specialized,
-        // contact_person_name,
         patient_contact_no,
-        // assist_type,
-        // location,
-        // hospital_name,
         patient_location,
-        // medication_records,
         start_date,
-        // time,
         days_week,
-        // hospital_location,
-        // pickup_type,
         requirements,
         medical_documents: medical_documents,
       },
@@ -441,12 +638,12 @@ const addhomeservice = async (request, response) => {
       return response.status(200).json({
         success: true,
         error: false,
-        message: "Requested successfully.",
+        message: "Placed successfully.",
       });
     }
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in services-addhsopitalassistance API`
+      `Internal server error: ${error.message} in services-addhomeservice API`
     );
     console.error(error);
     response.status(500).json({ error: "Internal Server Error" });
@@ -459,7 +656,7 @@ const gethomeservicereqs = async (request, response) => {
   try {
     const allrequests = await prisma.homeCare_Service.findMany({
       where: {
-        status: "requested",
+        status: "placed",
       },
     });
     if (allrequests.length > 0) {
