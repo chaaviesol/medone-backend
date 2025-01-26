@@ -1,4 +1,10 @@
-const { getCurrentDateInIST, istDate, logger, prisma } = require("../../utils");
+const {
+  getCurrentDateInIST,
+  istDate,
+  logger,
+  prisma,
+  decrypt,
+} = require("../../utils");
 require("dotenv").config();
 
 // const addhospitalassistenquiry = async (request, response) => {
@@ -223,6 +229,8 @@ const addhospitalassist = async (request, response) => {
   }
 };
 
+////////////service-admin///////////
+
 const gethospitalassistantreqs = async (request, response) => {
   try {
     const allrequests = await prisma.hospitalAssist_service.findMany({
@@ -246,6 +254,80 @@ const gethospitalassistantreqs = async (request, response) => {
     });
   } finally {
     //await prisma.$disconnect();
+  }
+};
+
+const updatehospitalassistservice = async (request, response) => {
+  const {
+    id,
+    patient_mobility,
+    patient_name,
+    patient_age,
+    patient_gender,
+    hospital_name,
+    patient_location,
+    assist_type,
+    start_date,
+    time,
+    days_week,
+    hospital_location,
+    pickup_type,
+    requirements,
+  } = request.body;
+
+  try {
+    if (!id) {
+      logger.error("id  is undefined in updatehospitalassistservice API");
+      return response.status(400).json({
+        error: true,
+        message: "id  is required",
+      });
+    }
+
+    const details = await prisma.hospitalAssist_service.update({
+      where: {
+        id: id,
+      },
+      data: {
+        patient_name,
+        patient_mobility,
+        patient_gender,
+        patient_age,
+        assist_type,
+        pickup_type,
+        hospital_name,
+        hospital_location,
+        time,
+        start_date,
+        days_week,
+        patient_location,
+        requirements,
+        medical_documents,
+        price,
+      },
+    });
+    if (!details) {
+      response.status(400).json({
+        success: false,
+        message: "No data",
+      });
+    } else {
+      response.status(200).json({
+        success: true,
+        message: "successfully updated",
+        data: details,
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in services-updatehospitalassistservice API`
+    );
+    response.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  } finally {
+    await prisma.$disconnect();
   }
 };
 
@@ -408,6 +490,8 @@ const addphysiotherapy = async (request, response) => {
   }
 };
 
+////////service-admin/////////////
+
 const getphysiotherapyreqs = async (request, response) => {
   try {
     const allrequests = await prisma.physiotherapist_service.findMany({
@@ -431,6 +515,70 @@ const getphysiotherapyreqs = async (request, response) => {
     });
   } finally {
     //await prisma.$disconnect();
+  }
+};
+
+const updatephysiotherapy = async (request, response) => {
+  const {
+    id,
+    patient_name,
+    patient_mobility,
+    patient_gender,
+    patient_age,
+    start_date,
+    days_week,
+    general_specialized,
+    patient_location,
+    requirements,
+  } = request.body;
+
+  try {
+    if (!id) {
+      logger.error("id  is undefined in updatephysiotherapy API");
+      return response.status(400).json({
+        error: true,
+        message: "id  is required",
+      });
+    }
+
+    const details = await prisma.physiotherapist_service.update({
+      where: {
+        id: id,
+      },
+      data: {
+        patient_name,
+        patient_mobility,
+        patient_gender,
+        patient_age,
+        start_date,
+        days_week,
+        general_specialized,
+        patient_location,
+        requirements,
+      },
+    });
+    if (!details) {
+      response.status(400).json({
+        success: false,
+        message: "No data",
+      });
+    } else {
+      response.status(200).json({
+        success: true,
+        data: details,
+        message: "successfully updated",
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in services-updatephysiotherapy API`
+    );
+    response.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  } finally {
+    await prisma.$disconnect();
   }
 };
 
@@ -648,6 +796,7 @@ const addhomeservice = async (request, response) => {
     //await prisma.$disconnect();
   }
 };
+//////////service-admin////////
 
 const gethomeservicereqs = async (request, response) => {
   try {
@@ -675,6 +824,371 @@ const gethomeservicereqs = async (request, response) => {
   }
 };
 
+const updatehomeservice = async (request, response) => {
+  const {
+    id,
+    patient_mobility,
+    patient_name,
+    patient_age,
+    patient_gender,
+    patient_location,
+    start_date,
+    days_week,
+    requirements,
+    general_specialized,
+  } = request.body;
+
+  try {
+    if (!id) {
+      logger.error("id  is undefined in updatehomeservice API");
+      return response.status(400).json({
+        error: true,
+        message: "id  is required",
+      });
+    }
+
+    const details = await prisma.homeCare_Service.update({
+      where: {
+        id: id,
+      },
+      data: {
+        id,
+        patient_mobility,
+        patient_name,
+        patient_age,
+        patient_gender,
+        patient_location,
+        start_date,
+        days_week,
+        requirements,
+        general_specialized,
+      },
+    });
+    if (!details) {
+      response.status(400).json({
+        success: false,
+        message: "No data",
+      });
+    } else {
+      response.status(200).json({
+        message: "successfully updated",
+        success: true,
+        data: details,
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in services-updatehomeservice API`
+    );
+    response.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+////////services-admin-common///////////////////////
+
+const assistadd = async (request, response) => {
+  const datetime = getCurrentDateInIST();
+
+  try {
+    const {
+      name,
+      phone_no,
+      address,
+      type,
+      location,
+      gender,
+      dob,
+      qualification,
+      shift,
+      password,
+    } = request.body;
+
+    if (!name || !phone_no || !address || !qualification || !gender) {
+      return response.status(400).json({
+        message: "Required fields can't be null",
+        error: true,
+      });
+    }
+
+    // Check if phone number already exists
+    const checkPhoneNumber = await prisma.assist_details.findFirst({
+      where: { phone_no },
+    });
+
+    if (checkPhoneNumber) {
+      return response.status(400).json({
+        message: "Phone number already exists",
+        error: true,
+      });
+    }
+
+    // Create a new pharmacy record
+    const create = await prisma.assist_details.create({
+      data: {
+        name,
+        phone_no,
+        address,
+        type,
+        location,
+        gender,
+        dob,
+        qualification,
+        shift,
+        password,
+        created_date: datetime,
+      },
+    });
+
+    if (create) {
+      return response.status(200).json({
+        message: "Successfully created",
+        error: false,
+        success: true,
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in service-assistadd API`
+    );
+    response.status(500).json({ message: "An error occurred", error: true });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+//get assists based on type//////////////
+const getassists = async (request, response) => {
+  const { type } = request.body;
+  try {
+    const allrequests = await prisma.assist_details.findMany({
+      where: {
+        type: type.toLowerCase(),
+      },
+    });
+    if (allrequests.length > 0) {
+      return response.status(200).json({
+        data: allrequests,
+        success: true,
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in  services- getassists API`
+    );
+    response.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  } finally {
+    //await prisma.$disconnect();
+  }
+};
+
+///////////get order dsetails based on type///////////
+const getorderdetails = async (request, response) => {
+  const { id, type } = request.body;
+  const secretKey = process.env.ENCRYPTION_KEY;
+  try {
+    if (!id || !type) {
+      logger.error("id and type is undefined in getCart API");
+      return response.status(400).json({
+        error: true,
+        message: "id and type is required",
+      });
+    }
+    if (type === "homecare_service") {
+      const details = await prisma.homeCare_Service.findFirst({
+        where: {
+          id: id,
+        },
+        select: {
+          patient_name: true,
+          patient_contact_no: true,
+          patient_mobility: true,
+          patient_gender: true,
+          patient_age: true,
+          start_date: true,
+          days_week: true,
+          general_specialized: true,
+          patient_location: true,
+          requirements: true,
+          medical_documents: true,
+          price: true,
+          created_date: true,
+          assigned_date: true,
+          status: true,
+          users: {
+            select: {
+              name: true,
+            },
+          },
+          assist_details: {
+            select: {
+              id: true,
+              type: true,
+              name: true,
+              phone_no: true,
+            },
+          },
+        },
+      });
+      if (!details) {
+        response.status(400).json({
+          success: false,
+          message: "No data",
+        });
+      } else {
+        const userName = details.users?.name
+          ? decrypt(details.users.name, secretKey)
+          : null;
+
+        const responseBody = {
+          ...details,
+          users: {
+            name: userName,
+          },
+        };
+        response.status(200).json({
+          success: true,
+          data: responseBody,
+        });
+      }
+    } else if (type === "physiotherapist_service") {
+      const details = await prisma.physiotherapist_service.findFirst({
+        where: {
+          id: id,
+        },
+        select: {
+          patient_name: true,
+          patient_contact_no: true,
+          patient_mobility: true,
+          patient_gender: true,
+          patient_age: true,
+          start_date: true,
+          days_week: true,
+          general_specialized: true,
+          patient_location: true,
+          requirements: true,
+          medical_documents: true,
+          price: true,
+          created_date: true,
+          assigned_date: true,
+          status: true,
+          users: {
+            select: {
+              name: true,
+            },
+          },
+          assist_details: {
+            select: {
+              id: true,
+              type: true,
+              name: true,
+              phone_no: true,
+            },
+          },
+        },
+      });
+      if (!details) {
+        response.status(400).json({
+          success: false,
+          message: "No data",
+        });
+      } else {
+        const userName = details.users?.name
+          ? decrypt(details.users.name, secretKey)
+          : null;
+
+        const responseBody = {
+          ...details,
+          users: {
+            name: userName,
+          },
+        };
+        response.status(200).json({
+          success: true,
+          data: responseBody,
+        });
+      }
+    } else if (type === "hospitalassist_service") {
+      const details = await prisma.hospitalAssist_service.findFirst({
+        where: {
+          id: id,
+        },
+        select: {
+          patient_name: true,
+          patient_contact_no: true,
+          patient_mobility: true,
+          patient_gender: true,
+          patient_age: true,
+          assist_type: true,
+          pickup_type: true,
+          hospital_name: true,
+          hospital_location: true,
+          time: true,
+          start_date: true,
+          days_week: true,
+          patient_location: true,
+          requirements: true,
+          medical_documents: true,
+          price: true,
+          created_date: true,
+          assigned_date: true,
+          status: true,
+          users: {
+            select: {
+              name: true,
+            },
+          },
+          assist_details: {
+            select: {
+              id: true,
+              type: true,
+              name: true,
+              phone_no: true,
+            },
+          },
+        },
+      });
+      if (!details) {
+        response.status(400).json({
+          success: false,
+          message: "No data",
+        });
+      } else {
+        const userName = details.users?.name
+          ? decrypt(details.users.name, secretKey)
+          : null;
+
+        const responseBody = {
+          ...details,
+          users: {
+            name: userName,
+          },
+        };
+        response.status(200).json({
+          success: true,
+          data: responseBody,
+        });
+      }
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in services-getorderdetails API`
+    );
+    response.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
 module.exports = {
   addhospitalassistenquiry,
   addhospitalassist,
@@ -685,4 +1199,10 @@ module.exports = {
   addhomeServiceenquiry,
   addhomeservice,
   gethomeservicereqs,
+  assistadd,
+  getassists,
+  getorderdetails,
+  updatehomeservice,
+  updatephysiotherapy,
+  updatehospitalassistservice,
 };

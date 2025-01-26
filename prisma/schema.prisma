@@ -289,7 +289,7 @@ model delivery_partner{
   name                     String?
   vehicle_id               String?
   is_active                Boolean?
-  pharmacy_ids              Json?
+  pharmacy_ids             Json?
   created_date             DateTime?
   otp                      String?
   wallet                   Int?

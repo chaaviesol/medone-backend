@@ -8,10 +8,15 @@ const {
   getphysiotherapyreqs,
   addhomeServiceenquiry,
   addhomeservice,
-  gethomeservicereqs
+  gethomeservicereqs,
+  assistadd,
+  getassists,
+  getorderdetails,
+  updatehomeservice,
+  updatephysiotherapy,
+  updatehospitalassistservice,
 } = require("./services.controller");
 const { upload } = require("../../middleware/Uploadimage");
-const auth = require("../../middleware/Auth/auth");
 
 const servicesRouter = express.Router();
 
@@ -21,17 +26,27 @@ servicesRouter.post(
   upload.array("images"),
   addhospitalassist
 );
-servicesRouter.get("/gethospitalassistantreqs", gethospitalassistantreqs);
 servicesRouter.post("/physiotherapyenquiry", physiotherapyenquiry);
-
 servicesRouter.post(
   "/addphysiotherapy",
   upload.array("images"),
   addphysiotherapy
 );
+servicesRouter.post("/addhomeServiceenquiry", addhomeServiceenquiry);
+servicesRouter.post("/addhomeservice", upload.array("images"), addhomeservice);
+
+////////////service-admin apis///////////
+servicesRouter.post("/assistadd", assistadd);
+servicesRouter.post("/getassists", getassists);
+servicesRouter.post("/getorderdetails", getorderdetails);
+servicesRouter.get("/gethospitalassistantreqs", gethospitalassistantreqs);
 servicesRouter.get("/getphysiotherapyreqs", getphysiotherapyreqs);
-servicesRouter.post('/addhomeServiceenquiry',addhomeServiceenquiry)
-servicesRouter.post('/addhomeservice',upload.array("images"),addhomeservice)
-servicesRouter.get('/gethomeservicereqs',gethomeservicereqs)
+servicesRouter.get("/gethomeservicereqs", gethomeservicereqs);
+servicesRouter.post("/updatehomeservice", updatehomeservice);
+servicesRouter.post("/updatephysiotherapy", updatephysiotherapy);
+servicesRouter.post(
+  "/updatehospitalassistservice",
+  updatehospitalassistservice
+);
 
 module.exports = servicesRouter;

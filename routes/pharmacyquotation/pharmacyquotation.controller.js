@@ -960,21 +960,94 @@ const assigndeliverypartner = async (request, response) => {
   }
 };
 
+// const getdeliverypartners = async (request, response) => {
+//   try {
+//     const get = await prisma.delivery_partner.findMany();
+
+//     if (get.length > 0) {
+//       let finalresponse;
+//       for(const data of get){
+//         const pharmacy_id=data?.pharmacy_ids[0]
+//         const name=await prisma.pharmacy_details.findFirst({
+//           where:{
+//             id:pharmacy_id
+//           },
+//           select:{
+//             name:true
+//           }
+//         })
+//         finalresponse={
+//           ...get,
+//           pharmacy_name:name
+//         }
+//       }
+      
+//       return response.status(200).json({
+//         data: finalresponse,
+//         success: true,
+//       });
+//     }else{
+//       return response.status(400).json({
+//         message: "No data",
+//         success: true,
+//       });
+
+//     }
+//   } catch (error) {
+//     logger.error(
+//       `Internal server error: ${error.message} in productquotation-getdeliverypartners API`
+//     );
+//     console.error(error);
+//     response.status(500).json({ error: "Internal Server Error" });
+//   }
+//   // finally {
+//   //   //await prisma.$disconnect();
+//   // }
+// };
+
 const getdeliverypartners = async (request, response) => {
   try {
-    const get = await prisma.delivery_partner.findMany();
+    const deliveryPartners = await prisma.delivery_partner.findMany({
+      select:{
+        id:true,
+        name:true,
+        wallet:true,
+        pharmacy_ids:true,
+        phone:true,
+        created_date: true
+      }
+    });
 
-    if (get.length > 0) {
+    if (deliveryPartners.length > 0) {
+      const finalResponse = await Promise.all(
+        deliveryPartners.map(async (partner) => {
+          const pharmacyId = partner?.pharmacy_ids?.[0];
+          let pharmacyName = null;
+
+          if (pharmacyId) {
+            const pharmacyDetails = await prisma.pharmacy_details.findFirst({
+              where: { id: pharmacyId },
+              select: { name: true },
+            });
+            pharmacyName = pharmacyDetails?.name || null;
+          }
+
+          return {
+            ...partner,
+            pharmacy_name: pharmacyName,
+          };
+        })
+      );
+
       return response.status(200).json({
-        data: get,
+        data: finalResponse,
         success: true,
       });
-    }else{
+    } else {
       return response.status(400).json({
         message: "No data",
-        success: true,
+        success: false,
       });
-
     }
   } catch (error) {
     logger.error(
@@ -983,10 +1056,8 @@ const getdeliverypartners = async (request, response) => {
     console.error(error);
     response.status(500).json({ error: "Internal Server Error" });
   }
-  // finally {
-  //   //await prisma.$disconnect();
-  // }
 };
+
 
 module.exports = {
   assignpharmacy,
