@@ -233,11 +233,7 @@ const addhospitalassist = async (request, response) => {
 
 const gethospitalassistantreqs = async (request, response) => {
   try {
-    const allrequests = await prisma.hospitalAssist_service.findMany({
-      where: {
-        status: "placed",
-      },
-    });
+    const allrequests = await prisma.hospitalAssist_service.findMany();
     if (allrequests.length > 0) {
       return response.status(200).json({
         data: allrequests,
@@ -487,11 +483,7 @@ const addphysiotherapy = async (request, response) => {
 
 const getphysiotherapyreqs = async (request, response) => {
   try {
-    const allrequests = await prisma.physiotherapist_service.findMany({
-      where: {
-        status: "placed",
-      },
-    });
+    const allrequests = await prisma.physiotherapist_service.findMany();
     if (allrequests.length > 0) {
       return response.status(200).json({
         data: allrequests,
@@ -787,11 +779,7 @@ const addhomeservice = async (request, response) => {
 
 const gethomeservicereqs = async (request, response) => {
   try {
-    const allrequests = await prisma.homeCare_Service.findMany({
-      where: {
-        status: "placed",
-      },
-    });
+    const allrequests = await prisma.homeCare_Service.findMany();
     if (allrequests.length > 0) {
       return response.status(200).json({
         data: allrequests,
