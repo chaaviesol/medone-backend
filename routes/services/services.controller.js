@@ -425,29 +425,26 @@ const addphysiotherapy = async (request, response) => {
       id,
       patient_name,
       patient_contact_no,
-      patient_mobility,
       patient_gender,
       patient_age,
       start_date,
-      days_week,
-      general_specialized,
+      prefered_time,
       patient_location,
-      requirements,
-    } = JSON.parse(request.body.data);
-    const documents = request.files;
-    let medical_documents = {};
+    } = request.body;
+    // const documents = request.files;
+    // let medical_documents = {};
 
-    if (!documents || documents.length === 0) {
-      return response.status(400).json({
-        message: "Please attach at least one report",
-        error: true,
-      });
-    }
+    // if (!documents || documents.length === 0) {
+    //   return response.status(400).json({
+    //     message: "Please attach at least one report",
+    //     error: true,
+    //   });
+    // }
 
-    for (i = 0; i < documents?.length; i++) {
-      let keyName = `image${i + 1}`;
-      medical_documents[keyName] = documents[i].location;
-    }
+    // for (i = 0; i < documents?.length; i++) {
+    //   let keyName = `image${i + 1}`;
+    //   medical_documents[keyName] = documents[i].location;
+    // }
     const datetime = getCurrentDateInIST();
 
     const updatedata = await prisma.physiotherapist_service.update({
@@ -457,16 +454,12 @@ const addphysiotherapy = async (request, response) => {
       data: {
         patient_name,
         patient_contact_no,
-        patient_mobility,
         patient_gender,
+        prefered_time,
         patient_age,
         start_date,
-        days_week,
-        general_specialized,
         patient_location,
-        requirements,
         created_date: datetime,
-        medical_documents: medical_documents,
         status: "placed",
       },
     });
@@ -522,14 +515,11 @@ const updatephysiotherapy = async (request, response) => {
   const {
     id,
     patient_name,
-    patient_mobility,
     patient_gender,
     patient_age,
     start_date,
-    days_week,
-    general_specialized,
     patient_location,
-    requirements,
+    prefered_time,
   } = request.body;
 
   try {
@@ -547,14 +537,11 @@ const updatephysiotherapy = async (request, response) => {
       },
       data: {
         patient_name,
-        patient_mobility,
         patient_gender,
         patient_age,
+        prefered_time,
         start_date,
-        days_week,
-        general_specialized,
         patient_location,
-        requirements,
       },
     });
     if (!details) {

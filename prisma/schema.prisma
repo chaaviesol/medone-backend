@@ -479,17 +479,13 @@ model physiotherapist_service{
   id                   Int               @id @default(autoincrement())
   patient_name         String?
   patient_contact_no   String?
-  patient_mobility     String?
   patient_gender       String?
   patient_age          String?
   start_date           DateTime?
-  days_week            String?
-  general_specialized  String?
   patient_location     Json?
-  requirements         String?
-  medical_documents    Json?
   price                Int?
   assist_id            Int?
+  prefered_time        String?
   created_date         DateTime?
   assigned_date        DateTime?
   status               String?

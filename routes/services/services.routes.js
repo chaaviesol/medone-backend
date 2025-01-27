@@ -27,11 +27,7 @@ servicesRouter.post(
   addhospitalassist
 );
 servicesRouter.post("/physiotherapyenquiry", physiotherapyenquiry);
-servicesRouter.post(
-  "/addphysiotherapy",
-  upload.array("images"),
-  addphysiotherapy
-);
+servicesRouter.post("/addphysiotherapy", addphysiotherapy);
 servicesRouter.post("/addhomeServiceenquiry", addhomeServiceenquiry);
 servicesRouter.post("/addhomeservice", upload.array("images"), addhomeservice);
 
