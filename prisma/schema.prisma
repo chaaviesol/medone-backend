@@ -483,6 +483,7 @@ model physiotherapist_service{
   patient_age          String?
   start_date           DateTime?
   patient_location     Json?
+  therapy_type         String?
   price                Int?
   assist_id            Int?
   prefered_time        String?

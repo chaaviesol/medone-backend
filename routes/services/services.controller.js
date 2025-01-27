@@ -426,21 +426,9 @@ const addphysiotherapy = async (request, response) => {
       start_date,
       prefered_time,
       patient_location,
+      therapy_type
     } = request.body;
-    // const documents = request.files;
-    // let medical_documents = {};
-
-    // if (!documents || documents.length === 0) {
-    //   return response.status(400).json({
-    //     message: "Please attach at least one report",
-    //     error: true,
-    //   });
-    // }
-
-    // for (i = 0; i < documents?.length; i++) {
-    //   let keyName = `image${i + 1}`;
-    //   medical_documents[keyName] = documents[i].location;
-    // }
+    
     const datetime = getCurrentDateInIST();
 
     const updatedata = await prisma.physiotherapist_service.update({
@@ -454,6 +442,7 @@ const addphysiotherapy = async (request, response) => {
         prefered_time,
         patient_age,
         start_date,
+        therapy_type,
         patient_location,
         created_date: datetime,
         status: "placed",
@@ -512,6 +501,7 @@ const updatephysiotherapy = async (request, response) => {
     start_date,
     patient_location,
     prefered_time,
+    therapy_type
   } = request.body;
 
   try {
@@ -533,6 +523,7 @@ const updatephysiotherapy = async (request, response) => {
         patient_age,
         prefered_time,
         start_date,
+        therapy_type,
         patient_location,
       },
     });
