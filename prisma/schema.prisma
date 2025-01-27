@@ -293,6 +293,7 @@ model delivery_partner{
   created_date             DateTime?
   otp                      String?
   wallet                   Int?
+  wallet_date              String?
   phone                    String?
   delivery_assign          delivery_assign[]
 }

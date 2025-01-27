@@ -150,10 +150,10 @@ const getDriver_profile = async(req,res)=>{
 }
 
 ////get order///////
-const getorder = async(req,res)=>{
-  try{
+const getorder = async (req, res) => {
+  try {
     const secretKey = process.env.ENCRYPTION_KEY;
-    
+
     const safeDecrypt = (text, key) => {
       try {
         return decrypt(text, key);
@@ -161,129 +161,150 @@ const getorder = async(req,res)=>{
         return text;
       }
     };
-    
-    const {driverId} = req.body
-   
-    if(!driverId){
+
+    const { driverId } = req.body;
+    const date = new Date();
+    const formattedDate = date.toISOString().split("T")[0];
+    console.log({ formattedDate });
+
+    if (!driverId) {
       return res.status(404).json({
-        error:true,
-        success:false,
-        message:"driver id is required.........."
-      })
+        error: true,
+        success: false,
+        message: "Driver ID is required..........",
+      });
     }
-    const findOrders = await prisma.delivery_assign.findMany({
-      where:{
-        deliverypartner_id:driverId,
-        status:"assigned"
+
+    // Fetch wallet details for the delivery partner
+    const checkWallet = await prisma.delivery_partner.findFirst({
+      where: {
+        id: driverId,
       },
-      select:{
-        id:true,
-        sales_id:true,
-        deliverypartner_id:true,
-        status:true,
-        assigned_date:true
-      }
-    })
-    console.log({findOrders})
-    const pharmAddress = []
-    for(let i=0;i<findOrders.length;i++){
+      select: {
+        wallet: true,
+        wallet_date: true,
+      },
+    });
+
+    if (!checkWallet) {
+      return res.status(404).json({
+        error: true,
+        success: false,
+        message: "Driver not found.",
+      });
+    }
+
+    const walletBalance = checkWallet.wallet;
+    console.log("walletBalance------>",walletBalance)
+    const walletDate = checkWallet.wallet_date
+      ? new Date(checkWallet.wallet_date).toISOString().split("T")[0]
+      : null;
+    console.log({ walletBalance, walletDate });
+
+    // Check wallet conditions
+    if (walletBalance > 0 && walletDate !== formattedDate) {
+      return res.status(400).json({
+        error: true,
+        success: false,
+        message: "You have balance in the wallet. Orders cannot be retrieved.",
+      });
+    }
+
+    // Fetch assigned orders
+    const findOrders = await prisma.delivery_assign.findMany({
+      where: {
+        deliverypartner_id: driverId,
+        status: "assigned",
+      },
+      select: {
+        id: true,
+        sales_id: true,
+        deliverypartner_id: true,
+        status: true,
+        assigned_date: true,
+      },
+    });
+    console.log({ findOrders });
+
+    if (findOrders.length === 0) {
+      return res.status(404).json({
+        error: true,
+        success: false,
+        message: "No orders found..........",
+      });
+    }
+
+    // Process order details
+    const pharmAddress = [];
+    for (let i = 0; i < findOrders.length; i++) {
       const findpharmId = await prisma.sales_order.findMany({
-        where:{
-          sales_id:findOrders[i].sales_id
+        where: {
+          sales_id: findOrders[i].sales_id,
         },
-        select:{
-          pharmacy_id:true,
-          patient_name:true,
-          customer_id:true
-        }
-      })
-      console.log({findpharmId})
-      const customer = findpharmId[0].customer_id
-      console.log({customer})
-      
-      //find customer////
+        select: {
+          pharmacy_id: true,
+          patient_name: true,
+          customer_id: true,
+        },
+      });
+      console.log({ findpharmId });
 
+      const customer = findpharmId[0].customer_id;
+      console.log({ customer });
+
+      // Find customer details
       const findCustomer = await prisma.user_details.findFirst({
-        where:{
-          id:customer
-        }
-      })
-      // console.log({findCustomer})
-
-      const decryptedname = safeDecrypt(findCustomer.name, secretKey);
-      findCustomer.name = decryptedname;
-      console.log({decryptedname})
-
-      ////find pharmacy address
-      const find_phAddress = await prisma.pharmacy_details.findFirst({
-        where:{
-          id:findpharmId[0].pharmacy_id
+        where: {
+          id: customer,
         },
-        select:{
-          id:true,
-          address:true,
-          name:true
-        }
-      })
-      console.log({find_phAddress})
-      const addressData = find_phAddress.address
-      const pharmName = find_phAddress.name
+      });
+
+      const decryptedName = safeDecrypt(findCustomer.name, secretKey);
+      findCustomer.name = decryptedName;
+      console.log({ decryptedName });
+
+      // Find pharmacy address
+      const find_phAddress = await prisma.pharmacy_details.findFirst({
+        where: {
+          id: findpharmId[0].pharmacy_id,
+        },
+        select: {
+          id: true,
+          address: true,
+          name: true,
+        },
+      });
+      console.log({ find_phAddress });
+
+      const addressData = find_phAddress.address;
+      const pharmName = find_phAddress.name;
+
       pharmAddress.push({
         ...findOrders[i],
-        address:addressData,
-        pharmacyName:pharmName,
-        patient:decryptedname
-      })
-    }
-    if(findOrders.length === 0){
-      return res.status(404).json({
-        error:true,
-        success:false,
-        message:"no order found.........."
-      })
-    }
-
-    const checkWallet = await prisma.delivery_partner.findMany({
-      where:{
-        id:driverId
-      },
-      select:{
-        wallet:true
-      }
-    })
-    console.log({checkWallet})
-
-    const hasBalance = checkWallet.some((wallet) => wallet.wallet > 0);
-    console.log({hasBalance})
-
-
-    const walletBalance =[]
-
-    if(hasBalance){
-    const walletMess = "Balance in wallet........."
-    walletBalance.push(walletMess)
+        address: addressData,
+        pharmacyName: pharmName,
+        patient: decryptedName,
+      });
     }
 
     return res.status(200).json({
-      error:false,
-      success:true,
-      message:"Successfull......",
-      data:pharmAddress,
-      message:walletBalance
-    })
-
-
+      error: false,
+      success: true,
+      message: "Successful......",
+      data: pharmAddress,
+    });
   } catch (err) {
-        logger.error(
-          `Internal server error: ${err.message} in getorder api`,
-          console.log({err})
-        );
-        res.status(400).json({
-          error: true,
-          message: "internal server error",
-        });
-      }
-}
+    logger.error(
+      `Internal server error: ${err.message} in getorder API`,
+      console.log({ err })
+    );
+    res.status(400).json({
+      error: true,
+      message: "Internal server error",
+    });
+  }
+};
+
 
 
 ///////add pickedUp status/////
@@ -671,16 +692,65 @@ const wallet = async (req, res) => {
           { credited_payment: { not: "yes" } },
           { credited_payment: null },
         ],
-      },
+      },  
       select: {
         id: true,
         sales_id: true,
-       
+       delivered_date:true
       },
     });
     console.log({ orderDetails });
 
-    // To store aggregated data
+     if(!orderDetails.length){
+     
+      const updateDeliveryPartner = await prisma.delivery_partner.update({
+        where:{
+          id:driverId,
+         
+        },
+        data:{
+          wallet:0
+        }
+      })
+      console.log({updateDeliveryPartner})
+        return res.status(404).json({
+        error:true,
+        success:false,
+        message:"walet is empty........."
+      })
+     }   
+
+     const latestDeliveredDate = orderDetails
+     .map(order => new Date(order.delivered_date))
+     .sort((a, b) => b - a)[0]; 
+
+   console.log({ latestDeliveredDate });
+
+   if (!latestDeliveredDate) {
+     return res.status(404).json({
+       error: true,
+       success: false,
+       message: "No valid delivered_date found.",
+     });
+   }
+
+   const formattedLatestDate = latestDeliveredDate.toISOString().split("T")[0]; 
+   console.log({ formattedLatestDate });
+
+
+   const updateWalletDate = await prisma.delivery_partner.update({
+     where: {
+       id: driverId,
+     },
+     data: {
+       wallet_date: formattedLatestDate,
+     },
+   });
+
+   console.log({ updateWalletDate });
+
+
+
     const walletMap = new Map();
 
     for (let i = 0; i < orderDetails.length; i++) {
@@ -714,7 +784,7 @@ const wallet = async (req, res) => {
 
       console.log({ findPharmacyName });
       const pharmacyName = findPharmacyName.name;
-      const amounts = parseFloat(findPharmacy.total_amount); // Ensure it's a number
+      const amounts = parseFloat(findPharmacy.total_amount); 
       if (!walletMap.has(findPharmacyName.id)) {
         walletMap.set(findPharmacyName.id, {
           // userName:userName,
@@ -726,9 +796,9 @@ const wallet = async (req, res) => {
 
      
   const walletEntry = walletMap.get(findPharmacy.pharmacy_id);
-  walletEntry.amount += amounts; // Perform arithmetic
+  walletEntry.amount += amounts; 
   walletEntry.orders.push({...orderDetails[i],
-    userName: userName,        // Add userName
+    userName: userName,        
     totalAmount: amounts, 
 
     });
