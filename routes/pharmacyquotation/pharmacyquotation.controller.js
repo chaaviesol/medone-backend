@@ -146,43 +146,6 @@ const getpharmacies = async (request, response) => {
 
     let pharmacies = await prisma.pharmacy_details.findMany({});
 
-    // let range = 1; // Initialize search range
-    // while (pharmacies.length < 3) {
-    //   const incrementPincode = pincode + range;
-    //   const decrementPincode = pincode - range;
-
-    //   console.log(
-    //     `Searching pincodes: ${incrementPincode} and ${decrementPincode}`
-    //   );
-
-    //   const nearestPharmacies = await prisma.pharmacy_details.findMany({
-    //     where: {
-    //       OR: [{ pincode: incrementPincode }, { pincode: decrementPincode }],
-    //     },
-    //     select: {
-    //       id: true,
-    //       name: true,
-    //       address: true,
-    //       pincode: true,
-    //     },
-    //   });
-
-    //   // Add unique pharmacies to the list
-    //   pharmacies = [
-    //     ...new Map(
-    //       [...pharmacies, ...nearestPharmacies].map((p) => [p.id, p])
-    //     ).values(),
-    //   ];
-    //   if (nearestPharmacies.length === 0) {
-    //     // console.log(
-    //     //   `No pharmacies found for range ${range}. Expanding search.`
-    //     // );
-    //   }
-    //   range++;
-    //   // if (range > 100) break;
-    // }
-    // // Limit to 3 pharmacies
-    // pharmacies = pharmacies.slice(0, 3);
     const givenPincode = pincode;
     function findNearestPinCodes(pharmacies, givenPincode, count = 3) {
       pharmacies.sort(
@@ -196,12 +159,7 @@ const getpharmacies = async (request, response) => {
 
     const nearestPharmacies = findNearestPinCodes(pharmacies, givenPincode);
 
-    // // Check product availability and add count
-    // for (let pharmacy of pharmacies) {
-    //   const products = await prisma.pharmacy_medicines.findFirst({
-    //     where: { pharmacy_id: pharmacy.id },
-    //     select: { product_ids: true },
-    //   });
+  
     const productDetails = await Promise.all(
       nearestPharmacies.map(async (pharmacy) => {
         const products = await prisma.pharmacy_medicines.findFirst({
@@ -981,7 +939,7 @@ const assigndeliverypartner = async (request, response) => {
 //           pharmacy_name:name
 //         }
 //       }
-      
+
 //       return response.status(200).json({
 //         data: finalresponse,
 //         success: true,
@@ -1008,14 +966,14 @@ const assigndeliverypartner = async (request, response) => {
 const getdeliverypartners = async (request, response) => {
   try {
     const deliveryPartners = await prisma.delivery_partner.findMany({
-      select:{
-        id:true,
-        name:true,
-        wallet:true,
-        pharmacy_ids:true,
-        phone:true,
-        created_date: true
-      }
+      select: {
+        id: true,
+        name: true,
+        wallet: true,
+        pharmacy_ids: true,
+        phone: true,
+        created_date: true,
+      },
     });
 
     if (deliveryPartners.length > 0) {
@@ -1057,7 +1015,6 @@ const getdeliverypartners = async (request, response) => {
     response.status(500).json({ error: "Internal Server Error" });
   }
 };
-
 
 module.exports = {
   assignpharmacy,

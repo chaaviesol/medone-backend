@@ -447,6 +447,8 @@ model assist_details{
   phone_no                  String?
   location                  String?
   password                  String?
+  pincode                   Int?
+  general_specialized       String?
   created_date              DateTime?
   hospitalAssist_service    hospitalAssist_service[]
   homeCare_Service          homeCare_Service[]
@@ -461,12 +463,14 @@ model homeCare_Service{
   patient_gender       String?
   patient_age          String?
   start_date           String?
+  end_date             String?
   days_week            String?
   general_specialized  String?
   patient_location     Json?
   requirements         String?
   medical_documents    Json?
   price                Int?
+  pincode              Int?
   assist_id            Int?
   created_date         DateTime?
   assigned_date        DateTime?
@@ -486,6 +490,7 @@ model physiotherapist_service{
   patient_location     Json?
   therapy_type         String?
   price                Int?
+  pincode              Int?
   assist_id            Int?
   prefered_time        String?
   created_date         DateTime?
@@ -507,7 +512,9 @@ model hospitalAssist_service{
   pickup_type          String?
   hospital_name        String?
   hospital_location    Json?
+  pincode              Int?
   start_date           String?
+  end_date             String?
   time                 String?
   days_week            String?
   patient_location    Json?

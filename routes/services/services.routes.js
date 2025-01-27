@@ -15,7 +15,10 @@ const {
   updatehomeservice,
   updatephysiotherapy,
   updatehospitalassistservice,
-  assignassist
+  assignassist,
+  gethomecareassists,
+  allassists,
+  priceadd
 } = require("./services.controller");
 const { upload } = require("../../middleware/Uploadimage");
 
@@ -46,5 +49,7 @@ servicesRouter.post(
   updatehospitalassistservice
 );
 servicesRouter.post("/assignassist",assignassist)
-
+servicesRouter.post("/gethomecareassists",gethomecareassists)
+servicesRouter.post("/allassists",allassists)
+servicesRouter.post("/priceadd",priceadd)
 module.exports = servicesRouter;
