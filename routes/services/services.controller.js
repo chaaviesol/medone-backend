@@ -426,9 +426,9 @@ const addphysiotherapy = async (request, response) => {
       start_date,
       prefered_time,
       patient_location,
-      therapy_type
+      therapy_type,
     } = request.body;
-    
+
     const datetime = getCurrentDateInIST();
 
     const updatedata = await prisma.physiotherapist_service.update({
@@ -501,7 +501,7 @@ const updatephysiotherapy = async (request, response) => {
     start_date,
     patient_location,
     prefered_time,
-    therapy_type
+    therapy_type,
   } = request.body;
 
   try {
@@ -1155,6 +1155,90 @@ const getorderdetails = async (request, response) => {
   }
 };
 
+const assignassist = async (request, response) => {
+  try {
+    const { type, assist_id, id } = request.body;
+    const datetime = getCurrentDateInIST();
+    if (!type || !id) {
+      return response.status(400).json({
+        error: true,
+        message: "type and id can't be null or empty.",
+      });
+    }
+    if (type === "homecare_service") {
+      const details = await prisma.homeCare_Service.update({
+        where: {
+          id: id,
+        },
+        data: {
+          assist_id: assist_id,
+          assigned_date: datetime,
+        },
+      });
+      if (!details) {
+        response.status(400).json({
+          success: false,
+          message: "Failed ",
+        });
+      } else {
+        response.status(200).json({
+          success: false,
+          message: "Assigned Successfully!!",
+        });
+      }
+    } else if (type === "physiotherapist_service") {
+      const details = await prisma.physiotherapist_service.update({
+        where: {
+          id: id,
+        },
+        data: {
+          assist_id: assist_id,
+          assigned_date: datetime,
+        },
+      });
+      if (!details) {
+        response.status(400).json({
+          success: false,
+          message: "Failed ",
+        });
+      } else {
+        response.status(200).json({
+          success: false,
+          message: "Assigned Successfully!!",
+        });
+      }
+    } else if (type === "hospitalassist_service") {
+      const details = await prisma.hospitalAssist_service.update({
+        where: {
+          id: id,
+        },
+        data: {
+          assist_id: assist_id,
+          assigned_date: datetime,
+        },
+      });
+      if (!details) {
+        response.status(400).json({
+          success: false,
+          message: "Failed ",
+        });
+      } else {
+        response.status(200).json({
+          success: false,
+          message: "Assigned Successfully!!",
+        });
+      }
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in services-assit_assign API`
+    );
+    response.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    //await prisma.$disconnect();
+  }
+};
+
 module.exports = {
   addhospitalassistenquiry,
   addhospitalassist,
@@ -1171,4 +1255,5 @@ module.exports = {
   updatehomeservice,
   updatephysiotherapy,
   updatehospitalassistservice,
+  assignassist
 };

@@ -15,6 +15,7 @@ const {
   updatehomeservice,
   updatephysiotherapy,
   updatehospitalassistservice,
+  assignassist
 } = require("./services.controller");
 const { upload } = require("../../middleware/Uploadimage");
 
@@ -44,5 +45,6 @@ servicesRouter.post(
   "/updatehospitalassistservice",
   updatehospitalassistservice
 );
+servicesRouter.post("/assignassist",assignassist)
 
 module.exports = servicesRouter;

@@ -459,7 +459,7 @@ model homeCare_Service{
   patient_mobility     String?
   patient_gender       String?
   patient_age          String?
-  start_date           DateTime?
+  start_date           String?
   days_week            String?
   general_specialized  String?
   patient_location     Json?
@@ -481,7 +481,7 @@ model physiotherapist_service{
   patient_contact_no   String?
   patient_gender       String?
   patient_age          String?
-  start_date           DateTime?
+  start_date           String?
   patient_location     Json?
   therapy_type         String?
   price                Int?
@@ -506,7 +506,7 @@ model hospitalAssist_service{
   pickup_type          String?
   hospital_name        String?
   hospital_location    Json?
-  start_date           DateTime?
+  start_date           String?
   time                 String?
   days_week            String?
   patient_location    Json?
