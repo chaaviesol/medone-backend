@@ -323,6 +323,7 @@ const updatehospitalassistservice = async (request, response) => {
     logger.error(
       `Internal server error: ${error.message} in services-updatehospitalassistservice API`
     );
+
     response.status(500).json({
       error: true,
       message: "Internal server error",
@@ -804,6 +805,7 @@ const gethomeservicereqs = async (request, response) => {
 };
 
 const updatehomeservice = async (request, response) => {
+  console.log(request.body);
   const {
     id,
     patient_mobility,
@@ -812,7 +814,9 @@ const updatehomeservice = async (request, response) => {
     patient_gender,
     patient_location,
     start_date,
+    end_date,
     days_week,
+    pincode,
     requirements,
     general_specialized,
   } = request.body;
@@ -831,13 +835,14 @@ const updatehomeservice = async (request, response) => {
         id: id,
       },
       data: {
-        id,
         patient_mobility,
         patient_name,
         patient_age,
         patient_gender,
         patient_location,
         start_date,
+        end_date,
+        pincode:parseInt(pincode),
         days_week,
         requirements,
         general_specialized,
@@ -859,6 +864,7 @@ const updatehomeservice = async (request, response) => {
     logger.error(
       `Internal server error: ${error.message} in services-updatehomeservice API`
     );
+    console.log(error);
     response.status(500).json({
       error: true,
       message: "Internal server error",
@@ -1628,11 +1634,17 @@ const allassists = async (request, response) => {
         },
       },
     });
+    console.log({find})
+    let general_special;
+    general_special = find.general_specialized
+      ? find.general_specialized
+      : "general";
+      console.log(general_special)
     const type = "nurse";
     const allassists = await prisma.assist_details.findMany({
       where: {
         type: type,
-        general_specialized: find.general_specialized,
+        general_specialized: general_special,
       },
       select: {
         id: true,
@@ -1656,6 +1668,7 @@ const allassists = async (request, response) => {
         success: true,
       });
     } else {
+      console.log({allassists})
       if (allassists.length > 0) {
         allassists.forEach((element) => {
           element.button_status = "assign";
@@ -1679,7 +1692,7 @@ const allassists = async (request, response) => {
 const priceadd = async (request, response) => {
   console.log("rrrrrrrrrrrrrrrr", request.body);
   try {
-    const { type, id,price } = request.body;
+    const { type, id, price } = request.body;
     const datetime = getCurrentDateInIST();
     if (!type || !id) {
       return response.status(400).json({
@@ -1699,8 +1712,8 @@ const priceadd = async (request, response) => {
       });
 
       response.status(200).json({
-        success: false,
-        message: "Assigned Successfully!!",
+        success: true,
+        message: "Price added Successfully!!",
       });
     } else if (type === "physiotherapist_service") {
       const details = await prisma.physiotherapist_service.update({
@@ -1713,8 +1726,8 @@ const priceadd = async (request, response) => {
       });
 
       response.status(200).json({
-        success: false,
-        message: "Assigned Successfully!!",
+        success: true,
+        message: "Price added Successfully!!",
       });
     } else if (type === "hospitalassist_service") {
       const details = await prisma.hospitalAssist_service.update({
@@ -1727,8 +1740,8 @@ const priceadd = async (request, response) => {
       });
 
       response.status(200).json({
-        success: false,
-        message: "Assigned Successfully!!",
+        success: true,
+        message: "Price added Successfully!!",
       });
     }
   } catch (error) {
@@ -1761,5 +1774,5 @@ module.exports = {
   assignassist,
   gethomecareassists,
   allassists,
-  priceadd
+  priceadd,
 };
