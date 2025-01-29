@@ -252,10 +252,10 @@ const getcategorywise = async (request, response) => {
             );
           })
           .map((product) => {
-            const sellingPrice =
-              product.selling_price !== null
-                ? product.selling_price
-                : parseInt(product.mrp) - parseInt(product.mrp) * 0.1;
+            // const sellingPrice =
+            //   product.selling_price !== null
+            //     ? product.selling_price
+            //     : parseInt(product.mrp) - parseInt(product.mrp) * 0.1;
             return {
               ...product,
               quantity: 0,

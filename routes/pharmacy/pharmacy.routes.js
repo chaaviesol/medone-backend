@@ -48,7 +48,7 @@ PharmacyRouter.get("/prescriptionlist", presciptionsaleorders);
 PharmacyRouter.get("/allsalelist", allsalelistorders);
 PharmacyRouter.post("/checkaddress", auth, checkaddress);
 PharmacyRouter.post("/medicineadd", medicineadd);
-PharmacyRouter.get("/myorders", myorders);
+PharmacyRouter.post("/myorders", myorders);
 ///////////////invoice///////////////////////////
 PharmacyRouter.post("/createinvoice", createinvoice);
 PharmacyRouter.post("/prescriptioninvoice", prescriptioninvoice);
