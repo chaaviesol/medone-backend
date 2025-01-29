@@ -25,6 +25,7 @@ const axios = require("axios");
 const driverRouter = require("./routes/driverApp/driverApp.routes");
 const LabtestRouter = require("./routes/labtest/labtest.routes");
 const servicesRouter = require("./routes/services/services.routes");
+const timekeepingRouter = require("./routes/timeKeeping/timekeeping.routes");
 
 server.use(
   cors({
@@ -49,6 +50,13 @@ server.use("/googlemap", googleMapRouter);
 server.use("/driver", driverRouter);
 server.use("/labtest", LabtestRouter);
 server.use("/services", servicesRouter);
+server.use('/timekeeping',timekeepingRouter)
+
+
+
+
+
+
 
 if (process.env.NODE_ENV === "development") {
   server.listen(PORT, () => {
