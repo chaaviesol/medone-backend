@@ -259,7 +259,7 @@ const getcategorywise = async (request, response) => {
             return {
               ...product,
               quantity: 0,
-              selling_price: sellingPrice, // Send calculated selling_price
+              // selling_price: sellingPrice, // Send calculated selling_price
             };
           });
 
