@@ -1105,18 +1105,21 @@ const getorderdetails = async (request, response) => {
           id: id,
         },
         select: {
+          id:true,
           patient_name: true,
           patient_contact_no: true,
           patient_mobility: true,
           patient_gender: true,
           patient_age: true,
           start_date: true,
+          end_date:true,
           days_week: true,
           general_specialized: true,
           patient_location: true,
           requirements: true,
           medical_documents: true,
           price: true,
+          pincode:true,
           created_date: true,
           assigned_date: true,
           status: true,
@@ -1171,6 +1174,7 @@ const getorderdetails = async (request, response) => {
           patient_location: true,
           prefered_time: true,
           price: true,
+          pincode:true,
           created_date: true,
           therapy_type:true,
           assigned_date: true,
@@ -1217,6 +1221,7 @@ const getorderdetails = async (request, response) => {
           id: id,
         },
         select: {
+          id:true,
           patient_name: true,
           patient_contact_no: true,
           patient_mobility: true,
@@ -1233,6 +1238,7 @@ const getorderdetails = async (request, response) => {
           requirements: true,
           medical_documents: true,
           price: true,
+          pincode:true,
           created_date: true,
           assigned_date: true,
           status: true,
@@ -1678,12 +1684,12 @@ const allassists = async (request, response) => {
         },
       },
     });
-    console.log({ find });
+    // console.log({ find });
     let general_special;
     general_special = find.general_specialized
       ? find.general_specialized
       : "general";
-    console.log(general_special);
+    // console.log(general_special);
     const type = "nurse";
     const allassists = await prisma.assist_details.findMany({
       where: {

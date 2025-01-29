@@ -41,14 +41,14 @@ PharmacyRouter.post("/getCart", getCart);
 PharmacyRouter.post("/updatedchat", updatedchat);
 
 ////salesorder//////////////////////////
-PharmacyRouter.post("/salesorder", upload.array("images"), auth, salesorder);
+PharmacyRouter.post("/salesorder", upload.array("images"), salesorder);
 PharmacyRouter.post("/getasalesorder", getasalesorder);
 PharmacyRouter.post("/updatesalesorder", updatesalesorder);
 PharmacyRouter.get("/prescriptionlist", presciptionsaleorders);
 PharmacyRouter.get("/allsalelist", allsalelistorders);
 PharmacyRouter.post("/checkaddress", auth, checkaddress);
 PharmacyRouter.post("/medicineadd", medicineadd);
-PharmacyRouter.get("/myorders", auth, myorders);
+PharmacyRouter.get("/myorders", myorders);
 ///////////////invoice///////////////////////////
 PharmacyRouter.post("/createinvoice", createinvoice);
 PharmacyRouter.post("/prescriptioninvoice", prescriptioninvoice);

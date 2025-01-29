@@ -1586,21 +1586,21 @@ const getainvoice = async (request, response) => {
 
 const myorders = async (request, response) => {
   try {
-    const user_id = request.user.userId;
-    const usertype = request.user.userType;
-    console.log("userrrrrrrrr", request.user);
+    const user_id = request.body.userId;
+    // const usertype = request.user.userType;
+    // console.log("userrrrrrrrr", request.user);
     if (!user_id) {
       return response.status(400).json({
         error: true,
         message: "user_id is required",
       });
     }
-    if (!usertype || usertype != "customer") {
-      return response.status(400).json({
-        error: true,
-        message: "Please login as a customer",
-      });
-    }
+    // if (!usertype || usertype != "customer") {
+    //   return response.status(400).json({
+    //     error: true,
+    //     message: "Please login as a customer",
+    //   });
+    // }
     const salesordersdata = await prisma.sales_order.findMany({
       where: {
         customer_id: user_id,
