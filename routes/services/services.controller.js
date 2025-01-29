@@ -259,6 +259,7 @@ const gethospitalassistantreqs = async (request, response) => {
 };
 
 const updatehospitalassistservice = async (request, response) => {
+  console.log("nhhhhhhhhhhhh");
   const {
     id,
     patient_mobility,
@@ -303,8 +304,8 @@ const updatehospitalassistservice = async (request, response) => {
         days_week,
         patient_location,
         requirements,
-        medical_documents,
-        price,
+        // medical_documents,
+        // price,
       },
     });
     if (!details) {
@@ -320,10 +321,10 @@ const updatehospitalassistservice = async (request, response) => {
       });
     }
   } catch (error) {
+    console.log("error-----", error);
     logger.error(
       `Internal server error: ${error.message} in services-updatehospitalassistservice API`
     );
-
     response.status(500).json({
       error: true,
       message: "Internal server error",
@@ -842,7 +843,7 @@ const updatehomeservice = async (request, response) => {
         patient_location,
         start_date,
         end_date,
-        pincode:parseInt(pincode),
+        pincode: parseInt(pincode),
         days_week,
         requirements,
         general_specialized,
@@ -1479,56 +1480,62 @@ const gethomecareassists = async (request, response) => {
 };
 
 const getphysioassists = async (request, response) => {
-  const { type, id } = request.body;
+  const { id } = request.body;
   try {
-    const allrequests = await prisma.assist_details.findMany({
+    if (!id) {
+      return response.status(400).json({
+        error: true,
+        message: "id can't be null or empty.",
+      });
+    }
+
+    let general_special;
+    general_special = find.general_specialized
+      ? find.general_specialized
+      : "general";
+    console.log(general_special);
+    const type = "physiotherapist";
+    const allassists = await prisma.assist_details.findMany({
       where: {
-        type: type.toLowerCase(),
+        type: type,
+        general_specialized: general_special,
+      },
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        gender: true,
+        phone_no: true,
+        address: true,
+        pincode: true,
       },
     });
-
-    if (type === "physiotherapist_service") {
-      const find = await prisma.physiotherapist_service.findFirst({
-        where: {
-          id: id,
+    if (find.assist_id != null) {
+      const responseby = [
+        {
+          ...find.assist_details,
+          button_status: "assigned",
         },
-        select: {
-          assigned_date: true,
-          assist_id: true,
-          assist_details: {
-            select: {
-              name: true,
-              type: true,
-              gender: true,
-              address: true,
-            },
-          },
-        },
+      ];
+      return response.status(200).json({
+        data: responseby,
+        success: true,
       });
-      if (find.assist_id != null) {
-        const responseby = {
-          ...find,
-          status: "assigned",
-        };
+    } else {
+      console.log({ allassists });
+      if (allassists.length > 0) {
+        allassists.forEach((element) => {
+          element.button_status = "assign";
+        });
         return response.status(200).json({
-          data: responseby,
+          data: allassists,
           success: true,
         });
-      } else {
-        if (allrequests.length > 0) {
-          allrequests.forEach((element) => {
-            element.status = "assign";
-          });
-          return response.status(200).json({
-            data: allrequests,
-            success: true,
-          });
-        }
       }
     }
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in  services- getassists API`
+      `Internal server error: ${error.message} in  services- getphysioassists API`
     );
     response.status(500).json({
       error: true,
@@ -1634,12 +1641,12 @@ const allassists = async (request, response) => {
         },
       },
     });
-    console.log({find})
+    console.log({ find });
     let general_special;
     general_special = find.general_specialized
       ? find.general_specialized
       : "general";
-      console.log(general_special)
+    console.log(general_special);
     const type = "nurse";
     const allassists = await prisma.assist_details.findMany({
       where: {
@@ -1668,7 +1675,7 @@ const allassists = async (request, response) => {
         success: true,
       });
     } else {
-      console.log({allassists})
+      console.log({ allassists });
       if (allassists.length > 0) {
         allassists.forEach((element) => {
           element.button_status = "assign";
@@ -1775,4 +1782,5 @@ module.exports = {
   gethomecareassists,
   allassists,
   priceadd,
+  getphysioassists
 };

@@ -22,7 +22,7 @@ const UserRouter = express.Router();
 UserRouter.route("/addusers").post(addUsers);
 UserRouter.route("/userlogin").post(userLogin);
 UserRouter.route("/getusers").get(getusers);
-UserRouter.post("/edituser", auth, upload.array("images"), edituser);
+UserRouter.post("/edituser", upload.array("images"), edituser);
 
 UserRouter.post(
   "/completeRegistration",
@@ -36,14 +36,10 @@ UserRouter.post("/userforgotpwd", UserforgotPwd);
 UserRouter.post("/userresetpassword", userresetpassword);
 UserRouter.post("/userotpLogin", userotpLogin);
 
-
-
 UserRouter.route("/userdisable").post(userdisable);
 
-
-UserRouter.post("/getprofile", auth, getprofile);
+UserRouter.post("/getprofile", getprofile);
 UserRouter.post("/profilecompleted", auth, profilecompleted); //to check if the user has completed their profile or not
-
 
 ///testing/////////////
 // UserRouter.post("/decrypt", decryptEmails);

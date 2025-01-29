@@ -793,9 +793,10 @@ const edituser = async (request, response) => {
   const secretKey = process.env.ENCRYPTION_KEY;
 
   try {
-    const id = request.user.userId;
+    // const id = request.body.userId;
     const userimg = request?.files[0]?.location;
-    const { name, ageGroup, gender, pincode } = JSON.parse(request.body.data);
+    const {userId, name, ageGroup, gender, pincode } = JSON.parse(request.body.data);
+    const id=userId
     if (id) {
       const userdata = await prisma.user_details.findUnique({
         where: {
@@ -880,8 +881,8 @@ const getprofile = async (request, response) => {
   };
 
   try {
-    const userid = request.user.userId;
-    // const userid=request.body.userid
+    // const userid = request.user.userId;
+    const userid=request.body.userid
     console.log({ userid });
     if (!userid) {
       return response.status(404).json({
