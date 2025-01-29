@@ -504,6 +504,7 @@ const getphysiotherapyreqs = async (request, response) => {
 };
 
 const updatephysiotherapy = async (request, response) => {
+  console.log("reeeeeeeeeeee",request.body)
   const {
     id,
     patient_name,
@@ -513,6 +514,7 @@ const updatephysiotherapy = async (request, response) => {
     patient_location,
     prefered_time,
     therapy_type,
+    pincode
   } = request.body;
 
   try {
@@ -535,6 +537,7 @@ const updatephysiotherapy = async (request, response) => {
         prefered_time,
         start_date,
         therapy_type,
+        pincode:parseInt(pincode),
         patient_location,
       },
     });
@@ -1086,6 +1089,7 @@ const getassists = async (request, response) => {
 ///////////get order dsetails based on type///////////
 const getorderdetails = async (request, response) => {
   const { id, type } = request.body;
+  console.log(request.body)
   const secretKey = process.env.ENCRYPTION_KEY;
   try {
     if (!id || !type) {
@@ -1158,19 +1162,17 @@ const getorderdetails = async (request, response) => {
           id: id,
         },
         select: {
+          id:true,
           patient_name: true,
           patient_contact_no: true,
-          patient_mobility: true,
           patient_gender: true,
           patient_age: true,
           start_date: true,
-          days_week: true,
-          general_specialized: true,
           patient_location: true,
-          requirements: true,
-          medical_documents: true,
+          prefered_time: true,
           price: true,
           created_date: true,
+          therapy_type:true,
           assigned_date: true,
           status: true,
           users: {
@@ -1302,6 +1304,7 @@ const assignassist = async (request, response) => {
           id: id,
         },
         data: {
+          status:"confirmed",
           assist_id: assist_id,
           assigned_date: datetime,
         },
@@ -1317,6 +1320,7 @@ const assignassist = async (request, response) => {
           id: id,
         },
         data: {
+          status:"confirmed",
           assist_id: assist_id,
           assigned_date: datetime,
         },
@@ -1332,6 +1336,7 @@ const assignassist = async (request, response) => {
           id: id,
         },
         data: {
+          status:"confirmed",
           assist_id: assist_id,
           assigned_date: datetime,
         },
@@ -1480,6 +1485,7 @@ const gethomecareassists = async (request, response) => {
 };
 
 const getphysioassists = async (request, response) => {
+  
   const { id } = request.body;
   try {
     if (!id) {
@@ -1488,17 +1494,34 @@ const getphysioassists = async (request, response) => {
         message: "id can't be null or empty.",
       });
     }
+    const find = await prisma.physiotherapist_service.findFirst({
+      where: {
+        id: id,
+      },
+      select: {
+        id: true,
+        pincode: true,
+        assigned_date: true,
+        start_date: true,
+        assist_id: true,
+        therapy_type: true,
+        assist_details: {
+          select: {
+            name: true,
+            type: true,
+            gender: true,
+            address: true,
+            pincode: true,
+            phone_no: true,
+          },
+        },
+      },
+    });
 
-    let general_special;
-    general_special = find.general_specialized
-      ? find.general_specialized
-      : "general";
-    console.log(general_special);
     const type = "physiotherapist";
     const allassists = await prisma.assist_details.findMany({
       where: {
         type: type,
-        general_specialized: general_special,
       },
       select: {
         id: true,
@@ -1510,6 +1533,7 @@ const getphysioassists = async (request, response) => {
         pincode: true,
       },
     });
+  
     if (find.assist_id != null) {
       const responseby = [
         {
@@ -1522,11 +1546,24 @@ const getphysioassists = async (request, response) => {
         success: true,
       });
     } else {
-      console.log({ allassists });
       if (allassists.length > 0) {
         allassists.forEach((element) => {
           element.button_status = "assign";
         });
+        const givenPincode = find.pincode;
+        function findNearestPinCodes(allassists, givenPincode, count = 10) {
+          allassists.sort((a, b) => {
+            return (
+              Math.abs(a.pincode - givenPincode) -
+              Math.abs(b.pincode - givenPincode)
+            );
+          });
+
+          return allassists.slice(0, count);
+        }
+
+        const nearestPharmacies = findNearestPinCodes(allassists, givenPincode);
+        
         return response.status(200).json({
           data: allassists,
           success: true,
@@ -1782,5 +1819,5 @@ module.exports = {
   gethomecareassists,
   allassists,
   priceadd,
-  getphysioassists
+  getphysioassists,
 };

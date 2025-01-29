@@ -6,7 +6,7 @@ const multer = require("multer");
 const AccessKeyId = process.env.accessKeyId;
 const SecretAccessKey = process.env.secretAccessKey;
 const bucket = process.env.bucketname;
-// Configure AWS SDK
+
 const awsS3 = new S3({
   region: "ap-south-1",
   credentials: {
@@ -26,7 +26,7 @@ const upload = multer({
     },
   }),
 
-  // limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 5 * 1024 * 1024 },
 });
 
 module.exports = { upload };

@@ -35,9 +35,9 @@ PharmacyRouter.post("/filterpharmacy", filterpharmacy);
 PharmacyRouter.post("/productadd", upload.array("images"), productadd);
 PharmacyRouter.post("/disableproduct", disableproduct);
 PharmacyRouter.get("/getproducts", getproducts);
-PharmacyRouter.post("/addToCart", auth, addToCart);
-PharmacyRouter.post("/removeFromCart", auth, removeFromCart);
-PharmacyRouter.get("/getCart", auth, getCart);
+PharmacyRouter.post("/addToCart", addToCart);
+PharmacyRouter.post("/removeFromCart", removeFromCart);
+PharmacyRouter.post("/getCart", getCart);
 PharmacyRouter.post("/updatedchat", updatedchat);
 
 ////salesorder//////////////////////////

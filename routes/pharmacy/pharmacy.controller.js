@@ -381,11 +381,11 @@ const getproducts = async (request, response) => {
       },
     });
 
-    allproducts.forEach((product) => {
-      if (product.selling_price === null && product.mrp) {
-        product.selling_price = product.mrp - product.mrp * 0.1;
-      }
-    });
+    // allproducts.forEach((product) => {
+    //   if (product.selling_price === null && product.mrp) {
+    //     product.selling_price = product.mrp - product.mrp * 0.1;
+    //   }
+    // });
 
     if (allproducts.length > 0) {
       return response.status(200).json({
@@ -408,7 +408,7 @@ const getproducts = async (request, response) => {
 
 const addToCart = async (request, response) => {
   const { prod_id, quantity } = request.body;
-  const user_id = request.user.userId;
+  const user_id = request.body.userId;
   const datetime = getCurrentDateInIST();
   try {
     if (!user_id || !prod_id || !quantity) {
@@ -476,7 +476,7 @@ const addToCart = async (request, response) => {
 };
 
 const getCart = async (request, response) => {
-  const user_id = request.user.userId;
+  const user_id = request.body.userId;
 
   try {
     if (!user_id) {
@@ -534,7 +534,7 @@ const getCart = async (request, response) => {
 
 const removeFromCart = async (request, response) => {
   const { prod_id } = request.body;
-  const user_id = request.user.userId;
+  const user_id = request.body.userId;
   if (!user_id || !prod_id) {
     logger.error("user_id or prod_id is undefined in removeFromCart API");
     return response.status(400).json({
