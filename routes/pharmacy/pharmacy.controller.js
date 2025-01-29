@@ -314,6 +314,33 @@ const productadd = async (request, response) => {
   }
 };
 
+const getproductdetail = async (request, response) => {
+  const {id}=request.body.id
+  try {
+    const getdetail = await prisma.generic_product.findFirst({
+      where:{
+        id:id
+      }
+    });
+    if (getdetail) {
+      return response.status(200).json({
+        data: getdetail,
+        success: true,
+      });
+    } else {
+      return response.status(400).json({
+        message: "No Data",
+        error: true,
+      });
+    }
+  } catch (error) {
+    logger.error(`Internal server error: ${error.message} in getpharmacy API`);
+    response.status(500).json({ message: "An error occurred", error: true });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
 const disableproduct = async (request, response) => {
   console.log("objecdisssssssst", request.body);
   const datetime = getCurrentDateInIST();
@@ -1869,4 +1896,5 @@ module.exports = {
   myorders,
   getinvsalesorder,
   getprods,
+  getproductdetail
 };
