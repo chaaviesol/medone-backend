@@ -4,6 +4,7 @@ const logDirectory = "./logs";
 const winston = require("winston");
 const bcrypt = require('bcrypt');
 const moment = require('moment');
+const geolib = require('geolib')
 
 
 
@@ -201,11 +202,359 @@ const getTask = async (req, res) => {
     }
 };
 
+////apply leave////////
+const applyLeave_assist = async (req, res) => {
+    console.log("jjjjjjj")
+    try{
+        const{assist_id,
+              leave_type,
+              remarks,
+              fromdate,
+              todate
+            } = req.body
+        const date = new Date()
+
+        // if(!assist_id && !leave_type && !remarks && !fromdate && !todate){
+        //     return res.status(400).json({
+        //         error:true,
+        //         success:false,
+        //         message:"missing fields.......",
+                
+        //     })
+        // }
+        const from_dates = req.body.fromdate;
+        const to_dates = req.body.todate
+
+        const start_date = moment(from_dates, 'DD-MM-YYYY', 'en');
+        const end_date = moment(to_dates, 'DD-MM-YYYY', 'en');
+
+        if (start_date.isSame(end_date, 'day')) {
+            res.status(400).json({
+                error: true,
+                success: false,
+                message: 'The chosen dates are identical.'
+            });
+            return;
+        }
 
 
+        if (start_date.isValid() && end_date.isValid()) {
+            const totalDays = Math.abs(end_date.diff(start_date, 'days'));
+            console.log("Days:", totalDays);
+
+        const applyLeave = await prisma.assist_leave.create({
+            data:{
+                assist_id:assist_id,
+                leave_type:leave_type,
+                status:"requested",
+                created_by:assist_id,
+                remarks:remarks,
+                from_date:start_date,
+                to_date:end_date,
+                total_days:totalDays,
+                created_date:date
+            }
+        })
+        console.log({applyLeave})
+       return res.status(200).json({
+            error: false,
+            success: true,
+            message: 'Successfully applied for leave.....',
+            data:applyLeave
+        });
+    }
+    }catch (err) {
+        logger.error(`Internal server error: ${err.message} in applyLeave_assist API`);
+        console.log({ err });
+
+        res.status(400).json({
+            error: true,
+            message: "Internal server error",
+        });
+    }
+
+    
+}
 
 
+////checkin//////
+const assist_checkin = async(req,res) =>{
+    try{
+        const{assistId,taskId,type,patient_name,latitude,longitude} = req.body
+        const currentDate = new Date();
+        const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
+        const istDate = new Date(currentDate.getTime() + istOffset);
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth() + 1;
+        const day = currentDate.getDate();
+        const dateOnly = new Date(year, month - 1, day);
+        const dateOnlyString = dateOnly.toLocaleDateString('en-GB')
+        let findTask =[]
+        if(type === "nurse"){
+            const hospital = await prisma.hospitalAssist_service.findMany({
+                where:{
+                    patient_name:patient_name,
+                    id:taskId,
+                    assist_id:assistId,
+                  
+                },
+                select:{
+                    pickup_type:true,
+                    patient_location:true,
+                    hospital_location:true
+                }
+            })
+            const home = await prisma.homeCare_Service.findMany({
+                where:{
+                    patient_name:patient_name,
+                    id:taskId,
+                    assist_id:assistId,
+                },
+                select:{
+                 patient_location:true
+                 }
+            })
+            const hospitalLocation = hospital.map(task=>{
+                return{
+                    location:task.pickup_type === "door_to_door" ? task.patient_location : task.hospital_location
+                }
+            })
 
+            
+
+            findTask = [...hospitalLocation,...home]
+        }else{
+            findTask = await prisma.physiotherapist_service.findMany({
+              where:{
+                patient_name:patient_name,
+                id:taskId,
+                assist_id:assistId,
+              },
+              select:{
+              patient_location:true
+              } 
+            })
+        }
+
+        const locationData = findTask[0].location
+        console.log({locationData})
+
+        const targetlatitude = locationData[0].latitude
+        console.log({targetlatitude})
+        const targetlongitude = locationData[0].longitude
+        console.log({targetlongitude})
+
+        const maxDistance = 136000 //given in meters
+        const distance = geolib.getDistance(
+            { latitude, longitude },
+            { latitude: targetlatitude, longitude: targetlongitude }
+        )
+
+        if (distance <= maxDistance) {
+             const checkin_info = await prisma.assist_taskattendance.create({
+                data: {
+                    assist_id: assistId,
+                    date: dateOnlyString,
+                    checkin: istDate,
+                    task_id:taskId
+
+                }
+            })
+           return res.status(200).json({
+                error: false,
+                success: true,
+                message: "checkin time added",
+                data: checkin_info
+            })
+        } else {
+            return res.status(400).json({
+                error: true,
+                message: "you are not within the allowed distance"
+            })
+        }
+
+    
+    }catch (err) {
+        logger.error(`Internal server error: ${err.message} in assist_checkin API`);
+        console.log({ err });
+
+        res.status(400).json({
+            error: true,
+            message: "Internal server error",
+        });
+    }
+}
+
+/////checkout//////
+const assist_checkout = async(req,res)=>{
+    try{
+        const{assistId,taskId,type,patient_name,latitude,longitude,attendanceId} = req.body
+        const currentDate = new Date();
+        const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
+        const istDate = new Date(currentDate.getTime() + istOffset);
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth() + 1;
+        const day = currentDate.getDate();
+        const dateOnly = new Date(year, month - 1, day);
+        const dateOnlyString = dateOnly.toLocaleDateString('en-GB')
+        let findTask =[]
+        if(type === "nurse"){
+            const hospital = await prisma.hospitalAssist_service.findMany({
+                where:{
+                    patient_name:patient_name,
+                    id:taskId,
+                    assist_id:assistId,
+                  
+                },
+                select:{
+                    pickup_type:true,
+                    patient_location:true,
+                    hospital_location:true
+                }
+            })
+            const home = await prisma.homeCare_Service.findMany({
+                where:{
+                    patient_name:patient_name,
+                    id:taskId,
+                    assist_id:assistId,
+                },
+                select:{
+                 patient_location:true
+                 }
+            })
+            const hospitalLocation = hospital.map(task=>{
+                return{
+                    location:task.pickup_type === "door_to_door" ? task.patient_location : task.hospital_location
+                }
+            })
+
+            
+
+            findTask = [...hospitalLocation,...home]
+        }else{
+            findTask = await prisma.physiotherapist_service.findMany({
+              where:{
+                patient_name:patient_name,
+                id:taskId,
+                assist_id:assistId,
+              },
+              select:{
+              patient_location:true
+              } 
+            })
+        }
+
+        const locationData = findTask[0].location
+        console.log({locationData})
+
+        const targetlatitude = locationData[0].latitude
+        console.log({targetlatitude})
+        const targetlongitude = locationData[0].longitude
+        console.log({targetlongitude})
+
+        const maxDistance = 136000 //given in meters
+        const distance = geolib.getDistance(
+            { latitude, longitude },
+            { latitude: targetlatitude, longitude: targetlongitude }
+        )
+
+        if (distance <= maxDistance) {
+             const checkout_info = await prisma.assist_taskattendance.update({
+                where:{
+                   id: attendanceId
+                },
+                data: {
+             
+                    checkout: istDate,
+                 
+
+                }
+            })
+
+            console.log({checkout_info})
+
+            const checkinTime = checkout_info.checkin
+            console.log({checkinTime})
+            const checkoutTime = checkout_info.checkout
+            console.log({checkoutTime})
+
+            const time_interval = checkoutTime - checkinTime
+            const total_hours = time_interval / (1000 * 60 * 60)
+            // const total_interval = total_hours * 3600
+            console.log({total_hours})
+
+            const updateWorkingHours = await prisma.assist_taskattendance.update({
+                where:{
+                    id: attendanceId
+                 },
+                 data: {
+              
+                     total_interval: total_hours,
+                   }
+            })
+
+
+           return res.status(200).json({
+                error: false,
+                success: true,
+                message: "checkout time added",
+                data: updateWorkingHours
+            })
+        } else {
+            return res.status(400).json({
+                error: true,
+                message: "you are not within the allowed distance"
+            })
+        }
+
+    
+    }catch (err) {
+        logger.error(`Internal server error: ${err.message} in assist_checkout API`);
+        console.log({ err });
+
+        res.status(400).json({
+            error: true,
+            message: "Internal server error",
+        });
+    }
+}
+
+
+/////working hours/////
+const assistWorkingHours = async(req,res)=>{
+    try{
+        const {assistId } = req.body
+
+        if(!assistId){
+          return  res.status(200).json({
+                error: true,
+                success:false,
+                message: "Id is required",
+            });
+        }
+        const getWorkingHours = await prisma.assist_taskattendance.findMany({
+            where:{
+                assist_id:assistId
+            }
+        })
+        console.log({getWorkingHours})
+        return res.status(200).json({
+            error: false,
+            success:true,
+            message:"Successfull.....",
+            data:getWorkingHours
+        });
+
+    }catch (err) {
+        logger.error(`Internal server error: ${err.message} in assistWorkingHours API`);
+        console.log({ err });
+
+        res.status(400).json({
+            error: true,
+            message: "Internal server error",
+        });
+    }
+}
 
 
 
@@ -222,7 +571,11 @@ const getTask = async (req, res) => {
 
 module.exports = {assist_login,
     getAssist_profile,
-    getTask
+    getTask,
+    applyLeave_assist,
+    assist_checkin,
+    assist_checkout,
+    assistWorkingHours
 }
 
 

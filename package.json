@@ -25,6 +25,7 @@
     "fcm-notifications": "^1.0.4",
     "firebase-admin": "^12.7.0",
     "fs": "^0.0.1-security",
+    "geolib": "^3.3.4",
     "init": "^0.1.2",
     "jsonwebtoken": "^9.0.2",
     "moment": "^2.30.1",

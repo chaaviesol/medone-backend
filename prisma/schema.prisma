@@ -453,6 +453,8 @@ model assist_details{
   hospitalAssist_service    hospitalAssist_service[]
   homeCare_Service          homeCare_Service[]
   physiotherapist_service   physiotherapist_service[]
+  assist_leave              assist_leave[]
+  assist_attendance         assist_taskattendance[]
 }
 
 model homeCare_Service{
@@ -530,4 +532,30 @@ model hospitalAssist_service{
   customer_id          Int?
   users                user_details? @relation(fields: [customer_id],references: [id])
   assist_details       assist_details?  @relation(fields: [assist_id], references: [id])
+}
+
+
+model assist_leave{
+  id                   Int              @id @default(autoincrement())
+  assist_id            Int?
+  leave_type           String?
+  status               String?
+  created_by           Int?
+  created_date         DateTime?
+  remarks              String?
+  from_date            String?
+  to_date              String?
+  total_days           Int?
+  assistid             assist_details? @relation(fields: [assist_id], references: [id])
+}
+
+model assist_taskattendance{
+  id                  Int               @id @default(autoincrement())
+  assist_id           Int?
+  checkin             DateTime?
+  checkout            DateTime?
+  date                String?
+  total_interval      Float?
+  task_id             Int?
+  assists_id          assist_details? @relation(fields: [assist_id], references: [id])
 }
