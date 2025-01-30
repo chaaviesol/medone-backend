@@ -559,98 +559,147 @@ const assistWorkingHours = async(req,res)=>{
 
 
 ////completed task
-const completedTask = async(req,res)=>{
-  try{
-    const{assistId} = req.body
+const completedTask = async (req, res) => {
+  try {
+    const { assistId } = req.body;
 
     const assistDetails = await prisma.assist_details.findFirst({
-      where:{
-        id:assistId
+      where: {
+        id: assistId,
       },
-      select:{
-        type:true
-      }
-    })
-    console.log({assistDetails})
-    const type = assistDetails.type
-    console.log({type})
-    
-    let taskData = []
-    if(type === "nurse"){
-    const hospital = await prisma.hospitalAssist_service.findMany({
-      where:{
-        assist_id:assistId
+      select: {
+        type: true,
       },
-      select:{
-        start_date:true,
-        end_date:true,
-        id:true
-      }
-    })
-    console.log({hospital})
+    });
 
-    const home = await prisma.homeCare_Service.findMany({
-      where:{
-        assist_id:assistId
-      },
-      select:{
-        start_date:true,
-        end_date:true,
-        id:true
-      }
-    })
-    console.log({home})
-    taskData = [...hospital,...home]
-    }else{
-      taskData = await prisma.physiotherapist_service.findMany({
-        where:{
-          assist_id:assistId
+    if (!assistDetails) {
+      return res.status(404).json({
+        error: true,
+        success: false,
+        message: "Assist details not found.",
+      });
+    }
+
+    console.log({ assistDetails });
+    const type = assistDetails.type;
+    console.log({ type });
+
+    let taskData = [];
+
+    if (type === "nurse") {
+      const hospital = await prisma.hospitalAssist_service.findMany({
+        where: {
+          assist_id: assistId,
         },
-        select:{
-          start_date:true,
-          id:true
-        }
-       
-      })
-      
+        select: {
+          start_date: true,
+          end_date: true,
+          id: true,
+          patient_name: true,
+        },
+      });
+
+      const home = await prisma.homeCare_Service.findMany({
+        where: {
+          assist_id: assistId,
+        },
+        select: {
+          start_date: true,
+          end_date: true,
+          id: true,
+          patient_name: true,
+        },
+      });
+
+      taskData = [...hospital, ...home];
+    } else {
+      taskData = await prisma.physiotherapist_service.findMany({
+        where: {
+          assist_id: assistId,
+        },
+        select: {
+          start_date: true,
+          id: true,
+          patient_name: true,
+        },
+      });
     }
 
     const find_in_outDetails = await prisma.assist_taskattendance.findMany({
+      where: {
+        assist_id: assistId,
+      },
+    });
+
+    console.log({ find_in_outDetails });
+
+    // Filter records with both check-in and check-out
+    const filteredData = find_in_outDetails
+      .filter((item) => item.checkin && item.checkout)
+      .map((attendance) => {
+        // Find matching patient_name from taskData
+        const task = taskData.find((task) => task.id === attendance.task_id);
+        return {
+          ...attendance,
+          patient_name: task ? task.patient_name : "Unknown", // Assign patient name if found, otherwise "Unknown"
+        };
+      });
+
+    if (filteredData.length > 0) {
+      return res.status(200).json({
+        error: false,
+        success: true,
+        message: "Successfully retrieved records.",
+        data: filteredData,
+      });
+    } else {
+      return res.status(200).json({
+        error: false,
+        success: true,
+        message: "No records found with both check-in and check-out.",
+        data: [],
+      });
+    }
+  } catch (err) {
+    logger.error(`Internal server error: ${err.message} in completedTask API`);
+    console.log({ err });
+
+    res.status(400).json({
+      error: true,
+      message: "Internal server error",
+    });
+  }
+};
+
+
+
+//////leave history//////
+const leave_history = async(req,res)=>{
+  try{
+    const{assistId} = req.body
+    if(!assistId){
+      return res.status(400).json({
+        error: true,
+        success:false,
+        message:"assist_id is required.......",
+    
+      });
+    }
+    const history = await prisma.assist_leave.findMany({
       where:{
         assist_id:assistId
       }
-      
     })
-    console.log({find_in_outDetails})
+    console.log(history)
+    return res.status(200).json({
+      error: false,
+      success:true,
+      message:"Successfull.......",
+      data:history
+    });
 
-    for(let i=0; i<find_in_outDetails.length ;i++){
-       
-      const checkin = find_in_outDetails[i].checkin
-      console.log({checkin})
-      const checkout = find_in_outDetails[i].checkout
-      console.log({checkout})
-      
-      const filteredData = find_in_outDetails.filter(item => item.checkin && item.checkout);
-      if (filteredData.length > 0) {
-       return res.status(200).json({
-          error: false,
-          success: true,
-          message: "Successfully........",
-          data: filteredData
-        });
-      } else {
-      return res.status(200).json({
-          error: false,
-          success: true,
-          message: "No records found with both check-in and check-out.",
-          data: []
-        });
-      }
-      
-
-       }
-   }catch (err) {
-        logger.error(`Internal server error: ${err.message} in completedTask API`);
+  }catch (err) {
+        logger.error(`Internal server error: ${err.message} in leave_history API`);
         console.log({ err });
 
         res.status(400).json({
@@ -670,9 +719,6 @@ const completedTask = async(req,res)=>{
 
 
 
-
-
-
 module.exports = {assist_login,
     getAssist_profile,
     getTask,
@@ -680,7 +726,8 @@ module.exports = {assist_login,
     assist_checkin,
     assist_checkout,
     assistWorkingHours,
-    completedTask
+    completedTask,
+    leave_history
 }
 
 

@@ -6,7 +6,8 @@ const {assist_login,
     assist_checkin,
     assist_checkout,
     assistWorkingHours,
-    completedTask
+    completedTask,
+    leave_history
 } = require('./timekeeping.controller')
 const timekeepingRouter = express.Router()
 
@@ -19,8 +20,7 @@ timekeepingRouter.post('/assist_checkin',assist_checkin)
 timekeepingRouter.post('/assist_checkout',assist_checkout)
 timekeepingRouter.post('/assistWorkingHours',assistWorkingHours)
 timekeepingRouter.post('/completedTask',completedTask)
-
-
+timekeepingRouter.post('/leave_history',leave_history)
 
 
 
