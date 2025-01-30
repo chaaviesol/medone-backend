@@ -131,7 +131,9 @@ const addcategory = async (request, response) => {
 };
 
 const getcategory = async (request, response) => {
+  const startTime = Date.now();
   try {
+    logger.info("API getcategory called");
     const get = await prisma.productcategory.findMany({
       where: {
         status: true,
@@ -146,6 +148,10 @@ const getcategory = async (request, response) => {
       },
     });
     if (get.length > 0) {
+      const endTime = Date.now();
+      const executionTime = endTime - startTime;
+
+      logger.info(`Execution time for getcategory API: ${executionTime}ms`);
       return response.status(200).json({
         data: get,
         success: true,
@@ -157,10 +163,9 @@ const getcategory = async (request, response) => {
     );
     console.error(error);
     response.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    await prisma.$disconnect();
   }
-  // finally {
-  //   //await prisma.$disconnect();
-  // }
 };
 
 const deletecategory = async (request, response) => {
@@ -333,7 +338,7 @@ const getcategorywise_app = async (request, response) => {
               product.selling_price !== null
                 ? product.selling_price
                 : parseInt(product.mrp) - parseInt(product.mrp) * 0.1;
-               
+
             return {
               ...product,
               quantity: cartProductMap.get(product.id) || 0, // Set quantity from the cart or default to 0

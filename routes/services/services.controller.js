@@ -7,63 +7,8 @@ const {
 } = require("../../utils");
 require("dotenv").config();
 const bcrypt = require("bcrypt");
-const admin = require("../../firebase")
+const admin = require("../../firebase");
 
-// const addhospitalassistenquiry = async (request, response) => {
-//   try {
-//     const { customer_id, patient_name, patient_contact_no } = request.body;
-//     const datetime = getCurrentDateInIST();
-//     const find = await prisma.hospitalAssist_service.findFirst({
-//       where: {
-//         patient_name,
-//         patient_contact_no,
-//         customer_id,
-//       },
-//       select: {
-//         id: true,
-//         created_date: true,
-//         status: true,
-//       },
-//     });
-//     if (!find) {
-//       const add = await prisma.hospitalAssist_service.create({
-//         data: {
-//           patient_name,
-//           customer_id,
-//           patient_contact_no,
-//           status: "enquired",
-//           created_date: datetime,
-//         },
-//       });
-//       if (add) {
-//         const adddata = {
-//           id: add.id,
-//         };
-//         return response.status(200).json({
-//           success: true,
-//           error: false,
-//           data: adddata,
-//           message: "enquiry created successfully.",
-//         });
-//       }
-//     } else {
-//       return response.status(200).json({
-//         success: true,
-//         error: false,
-//         data: find,
-//         message: "enquiry created successfully.",
-//       });
-//     }
-//   } catch (error) {
-//     logger.error(
-//       `Internal server error: ${error.message} in services-addhospitalassistenquiry API`
-//     );
-//     console.error(error);
-//     response.status(500).json({ error: "Internal Server Error" });
-//   } finally {
-//     await prisma.$disconnect();
-//   }
-// };
 
 const addhospitalassistenquiry = async (request, response) => {
   try {
@@ -169,6 +114,7 @@ const addhospitalassist = async (request, response) => {
       hospital_location,
       pickup_type,
       requirements,
+      customer_id
     } = JSON.parse(request.body.data);
     const documents = request.files;
     let medical_documents = {};
@@ -206,6 +152,7 @@ const addhospitalassist = async (request, response) => {
         start_date,
         time,
         days_week,
+        customer_id,
         hospital_location,
         pickup_type,
         requirements,
@@ -227,7 +174,7 @@ const addhospitalassist = async (request, response) => {
     console.error(error);
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -255,7 +202,7 @@ const gethospitalassistantreqs = async (request, response) => {
       message: "Internal server error",
     });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -435,6 +382,7 @@ const addphysiotherapy = async (request, response) => {
       prefered_time,
       patient_location,
       therapy_type,
+      customer_id
     } = request.body;
 
     const datetime = getCurrentDateInIST();
@@ -454,15 +402,45 @@ const addphysiotherapy = async (request, response) => {
         patient_location,
         created_date: datetime,
         status: "placed",
+        customer_id
       },
     });
 
     if (updatedata) {
+      // const findUser = await prisma.user_details.findUnique({
+      //   where: {
+      //     id: customerId,
+      //   },
+      //   select: {
+      //     token: true,
+      //   },
+      // });
+      // console.log({ findUser });
+  
+      // const fcmToken = findUser.token;
+      // console.log({ fcmToken });
+  
+      // const message = {
+      //   notification: {
+      //     title: "order received",
+      //     body: "New order received.....❗",
+      //     // sound: "msgsound"
+      //   },
+      //   token: fcmToken,
+      // };
+      // try {
+      //   // await secondApp.messaging().send(message)
+      //   await admin.messaging().send(message);
+      //   console.log("Notification send Successfully");
+      // } catch (err) {
+      //   console.error({ err });
+      // }
       return response.status(200).json({
         success: true,
         error: false,
         message: "placed successfully.",
       });
+      
     }
   } catch (error) {
     logger.error(
@@ -505,7 +483,7 @@ const getphysiotherapyreqs = async (request, response) => {
 };
 
 const updatephysiotherapy = async (request, response) => {
-  console.log("reeeeeeeeeeee",request.body)
+  console.log("reeeeeeeeeeee", request.body);
   const {
     id,
     patient_name,
@@ -515,7 +493,7 @@ const updatephysiotherapy = async (request, response) => {
     patient_location,
     prefered_time,
     therapy_type,
-    pincode
+    pincode,
   } = request.body;
 
   try {
@@ -538,7 +516,7 @@ const updatephysiotherapy = async (request, response) => {
         prefered_time,
         start_date,
         therapy_type,
-        pincode:parseInt(pincode),
+        pincode: parseInt(pincode),
         patient_location,
       },
     });
@@ -725,6 +703,7 @@ const addhomeservice = async (request, response) => {
       days_week,
       requirements,
       general_specialized,
+      customer_id
     } = JSON.parse(request.body.data);
     // } = (request.body)
 
@@ -760,6 +739,7 @@ const addhomeservice = async (request, response) => {
         start_date,
         days_week,
         requirements,
+        customer_id,
         medical_documents: medical_documents,
       },
     });
@@ -1090,7 +1070,7 @@ const getassists = async (request, response) => {
 ///////////get order dsetails based on type///////////
 const getorderdetails = async (request, response) => {
   const { id, type } = request.body;
-  console.log(request.body)
+  console.log(request.body);
   const secretKey = process.env.ENCRYPTION_KEY;
   try {
     if (!id || !type) {
@@ -1106,21 +1086,21 @@ const getorderdetails = async (request, response) => {
           id: id,
         },
         select: {
-          id:true,
+          id: true,
           patient_name: true,
           patient_contact_no: true,
           patient_mobility: true,
           patient_gender: true,
           patient_age: true,
           start_date: true,
-          end_date:true,
+          end_date: true,
           days_week: true,
           general_specialized: true,
           patient_location: true,
           requirements: true,
           medical_documents: true,
           price: true,
-          pincode:true,
+          pincode: true,
           created_date: true,
           assigned_date: true,
           status: true,
@@ -1166,7 +1146,7 @@ const getorderdetails = async (request, response) => {
           id: id,
         },
         select: {
-          id:true,
+          id: true,
           patient_name: true,
           patient_contact_no: true,
           patient_gender: true,
@@ -1175,9 +1155,9 @@ const getorderdetails = async (request, response) => {
           patient_location: true,
           prefered_time: true,
           price: true,
-          pincode:true,
+          pincode: true,
           created_date: true,
-          therapy_type:true,
+          therapy_type: true,
           assigned_date: true,
           status: true,
           users: {
@@ -1222,7 +1202,7 @@ const getorderdetails = async (request, response) => {
           id: id,
         },
         select: {
-          id:true,
+          id: true,
           patient_name: true,
           patient_contact_no: true,
           patient_mobility: true,
@@ -1239,7 +1219,7 @@ const getorderdetails = async (request, response) => {
           requirements: true,
           medical_documents: true,
           price: true,
-          pincode:true,
+          pincode: true,
           created_date: true,
           assigned_date: true,
           status: true,
@@ -1304,47 +1284,47 @@ const assignassist = async (request, response) => {
         message: "type and id can't be null or empty.",
       });
     }
-    let details = []
+    let details = [];
     if (type === "homecare_service") {
       console.log("heyyyyyyyyyyyy");
-       details = await prisma.homeCare_Service.update({
+      details = await prisma.homeCare_Service.update({
         where: {
           id: id,
         },
         data: {
-          status:"confirmed",
+          status: "confirmed",
           assist_id: assist_id,
           assigned_date: datetime,
         },
-        select:{
-          customer_id:true
-        }
+        select: {
+          customer_id: true,
+        },
       });
 
       response.status(200).json({
         success: false,
         message: "Assigned Successfully!!",
-        data:details
+        data: details,
       });
     } else if (type === "physiotherapist_service") {
-       details = await prisma.physiotherapist_service.update({
+      details = await prisma.physiotherapist_service.update({
         where: {
           id: id,
         },
         data: {
-          status:"confirmed",
+          status: "confirmed",
           assist_id: assist_id,
           assigned_date: datetime,
         },
-        select:{
-          customer_id:true
-        }
+        select: {
+          customer_id: true,
+        },
       });
 
       response.status(200).json({
         success: false,
         message: "Assigned Successfully!!",
-        data:details
+        data: details,
       });
     } else if (type === "hospitalassist_service") {
       details = await prisma.hospitalAssist_service.update({
@@ -1352,55 +1332,53 @@ const assignassist = async (request, response) => {
           id: id,
         },
         data: {
-          status:"confirmed",
+          status: "confirmed",
           assist_id: assist_id,
           assigned_date: datetime,
         },
-        select:{
-          customer_id:true
-        }
+        select: {
+          customer_id: true,
+        },
       });
 
       response.status(200).json({
         success: false,
         message: "Assigned Successfully!!",
-        data:details
+        data: details,
       });
     }
 
-    const customerId = details.customer_id
-    console.log({customerId})
-////findUser/////
-   const findUser = await prisma.user_details.findUnique({
-    where:{
-      id:customerId
-    },
-    select:{
-      token:true
+    const customerId = details.customer_id;
+    console.log({ customerId });
+    ////findUser/////
+    const findUser = await prisma.user_details.findUnique({
+      where: {
+        id: customerId,
+      },
+      select: {
+        token: true,
+      },
+    });
+    console.log({ findUser });
+
+    const fcmToken = findUser.token;
+    console.log({ fcmToken });
+
+    const message = {
+      notification: {
+        title: "order received",
+        body: "New order received.....❗",
+        // sound: "msgsound"
+      },
+      token: fcmToken,
+    };
+    try {
+      // await secondApp.messaging().send(message)
+      await admin.messaging().send(message);
+      console.log("Notification send Successfully");
+    } catch (err) {
+      console.error({ err });
     }
-   })
-   console.log({findUser})
-
-   const fcmToken = findUser.token
-   console.log({fcmToken})
-
-   const message = {
-    notification:{
-      title:"order received",
-      body:"New order received.....❗",
-      // sound: "msgsound"
-    },
-    token:fcmToken,
-    
-  }
-   try{
-        // await secondApp.messaging().send(message)
-        await admin.messaging().send(message);
-        console.log("Notification send Successfully")
-      }catch(err){
-        console.error({err})
-      }
-
   } catch (error) {
     logger.error(
       `Internal server error: ${error.message} in services-assit_assign API`
@@ -1539,7 +1517,6 @@ const gethomecareassists = async (request, response) => {
 };
 
 const getphysioassists = async (request, response) => {
-  
   const { id } = request.body;
   try {
     if (!id) {
@@ -1587,7 +1564,7 @@ const getphysioassists = async (request, response) => {
         pincode: true,
       },
     });
-  
+
     if (find.assist_id != null) {
       const responseby = [
         {
@@ -1617,7 +1594,7 @@ const getphysioassists = async (request, response) => {
         }
 
         const nearestPharmacies = findNearestPinCodes(allassists, givenPincode);
-        
+
         return response.status(200).json({
           data: allassists,
           success: true,

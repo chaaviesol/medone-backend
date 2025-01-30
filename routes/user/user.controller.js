@@ -480,6 +480,8 @@ const completeRegistration = async (request, response) => {
 
 const userLogin = async (request, response) => {
   console.log("userloginnnn");
+  const startTime = Date.now();
+  logger.info("API userloginnnn called");
   const { email, password } = request.body;
   const safeDecrypt = (text, key) => {
     try {
@@ -608,6 +610,12 @@ const userLogin = async (request, response) => {
         where: { id: logged_id },
         data: { last_active: datetime },
       });
+      const endTime = Date.now();
+      const executionTime = endTime - startTime;
+
+      logger.info(
+        `Execution time for userlogin-success API: ${executionTime}ms`
+      );
 
       return response.status(200).json({
         success: true,
@@ -795,8 +803,10 @@ const edituser = async (request, response) => {
   try {
     // const id = request.body.userId;
     const userimg = request?.files[0]?.location;
-    const {userId, name, ageGroup, gender, pincode } = JSON.parse(request.body.data);
-    const id=userId
+    const { userId, name, ageGroup, gender, pincode } = JSON.parse(
+      request.body.data
+    );
+    const id = userId;
     if (id) {
       const userdata = await prisma.user_details.findUnique({
         where: {
@@ -871,6 +881,8 @@ const edituser = async (request, response) => {
 const getprofile = async (request, response) => {
   console.log("getprofileeeee=====");
   const secretKey = process.env.ENCRYPTION_KEY;
+  const startTime = Date.now();
+  logger.info("API getprofile called");
 
   const safeDecrypt = (text, key) => {
     try {
@@ -882,7 +894,7 @@ const getprofile = async (request, response) => {
 
   try {
     // const userid = request.user.userId;
-    const userid=request.body.userid
+    const userid = request.body.userid;
     console.log({ userid });
     if (!userid) {
       return response.status(404).json({
@@ -918,7 +930,10 @@ const getprofile = async (request, response) => {
     userDetails.email = decryptedemail;
     userDetails.ageGroup = decryptedageGroup;
     userDetails.gender = decryptgender;
-    console.log({ userDetails });
+    const endTime = Date.now();
+    const executionTime = endTime - startTime;
+
+    logger.info(`Execution time for getcategory API: ${executionTime}ms`);
     return response.status(200).json({
       error: false,
       success: true,

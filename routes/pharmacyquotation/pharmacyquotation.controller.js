@@ -973,6 +973,7 @@ const getdeliverypartners = async (request, response) => {
         pharmacy_ids: true,
         phone: true,
         created_date: true,
+        wallet_date:true
       },
     });
 

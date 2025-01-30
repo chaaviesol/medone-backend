@@ -65,7 +65,6 @@ function getCurrentDateInIST() {
   return istDate;
 }
 
-
 //Configure the Winston logger
 const logDirectory = "./logs";
 if (!fs.existsSync(logDirectory)) {
@@ -82,8 +81,22 @@ const logger = winston.createLogger({
       filename: `${logDirectory}/error.log`,
       level: "error",
     }),
-    new winston.transports.File({ filename: `${logDirectory}/combined.log` }),
+    new winston.transports.File({
+      filename: `${logDirectory}/combined.log`,
+      level: "info",
+      format: winston.format.combine(
+        winston.format((info) => (info.level === "error" ? false : info))(), 
+        winston.format.json()
+      ),
+    }),
   ],
 });
 
-module.exports = { encrypt, decrypt,getCurrentDateInIST, istDate, logger, prisma };
+module.exports = {
+  encrypt,
+  decrypt,
+  getCurrentDateInIST,
+  istDate,
+  logger,
+  prisma,
+};
