@@ -558,6 +558,110 @@ const assistWorkingHours = async(req,res)=>{
 
 
 
+////completed task
+const completedTask = async(req,res)=>{
+  try{
+    const{assistId} = req.body
+
+    const assistDetails = await prisma.assist_details.findFirst({
+      where:{
+        id:assistId
+      },
+      select:{
+        type:true
+      }
+    })
+    console.log({assistDetails})
+    const type = assistDetails.type
+    console.log({type})
+    
+    let taskData = []
+    if(type === "nurse"){
+    const hospital = await prisma.hospitalAssist_service.findMany({
+      where:{
+        assist_id:assistId
+      },
+      select:{
+        start_date:true,
+        end_date:true,
+        id:true
+      }
+    })
+    console.log({hospital})
+
+    const home = await prisma.homeCare_Service.findMany({
+      where:{
+        assist_id:assistId
+      },
+      select:{
+        start_date:true,
+        end_date:true,
+        id:true
+      }
+    })
+    console.log({home})
+    taskData = [...hospital,...home]
+    }else{
+      taskData = await prisma.physiotherapist_service.findMany({
+        where:{
+          assist_id:assistId
+        },
+        select:{
+          start_date:true,
+          id:true
+        }
+       
+      })
+      
+    }
+
+    const find_in_outDetails = await prisma.assist_taskattendance.findMany({
+      where:{
+        assist_id:assistId
+      }
+      
+    })
+    console.log({find_in_outDetails})
+
+    for(let i=0; i<find_in_outDetails.length ;i++){
+       
+      const checkin = find_in_outDetails[i].checkin
+      console.log({checkin})
+      const checkout = find_in_outDetails[i].checkout
+      console.log({checkout})
+      
+      const filteredData = find_in_outDetails.filter(item => item.checkin && item.checkout);
+      if (filteredData.length > 0) {
+       return res.status(200).json({
+          error: false,
+          success: true,
+          message: "Successfully........",
+          data: filteredData
+        });
+      } else {
+      return res.status(200).json({
+          error: false,
+          success: true,
+          message: "No records found with both check-in and check-out.",
+          data: []
+        });
+      }
+      
+
+       }
+   }catch (err) {
+        logger.error(`Internal server error: ${err.message} in completedTask API`);
+        console.log({ err });
+
+        res.status(400).json({
+            error: true,
+            message: "Internal server error",
+        });
+    }
+}
+
+
+
 
 
 
@@ -575,7 +679,8 @@ module.exports = {assist_login,
     applyLeave_assist,
     assist_checkin,
     assist_checkout,
-    assistWorkingHours
+    assistWorkingHours,
+    completedTask
 }
 
 
