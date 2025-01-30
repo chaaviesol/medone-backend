@@ -7,6 +7,7 @@ const {
 } = require("../../utils");
 require("dotenv").config();
 const bcrypt = require("bcrypt");
+const admin = require("../../firebase")
 
 // const addhospitalassistenquiry = async (request, response) => {
 //   try {
@@ -1303,9 +1304,10 @@ const assignassist = async (request, response) => {
         message: "type and id can't be null or empty.",
       });
     }
+    let details = []
     if (type === "homecare_service") {
       console.log("heyyyyyyyyyyyy");
-      const details = await prisma.homeCare_Service.update({
+       details = await prisma.homeCare_Service.update({
         where: {
           id: id,
         },
@@ -1314,14 +1316,18 @@ const assignassist = async (request, response) => {
           assist_id: assist_id,
           assigned_date: datetime,
         },
+        select:{
+          customer_id:true
+        }
       });
 
       response.status(200).json({
         success: false,
         message: "Assigned Successfully!!",
+        data:details
       });
     } else if (type === "physiotherapist_service") {
-      const details = await prisma.physiotherapist_service.update({
+       details = await prisma.physiotherapist_service.update({
         where: {
           id: id,
         },
@@ -1330,14 +1336,18 @@ const assignassist = async (request, response) => {
           assist_id: assist_id,
           assigned_date: datetime,
         },
+        select:{
+          customer_id:true
+        }
       });
 
       response.status(200).json({
         success: false,
         message: "Assigned Successfully!!",
+        data:details
       });
     } else if (type === "hospitalassist_service") {
-      const details = await prisma.hospitalAssist_service.update({
+      details = await prisma.hospitalAssist_service.update({
         where: {
           id: id,
         },
@@ -1346,13 +1356,51 @@ const assignassist = async (request, response) => {
           assist_id: assist_id,
           assigned_date: datetime,
         },
+        select:{
+          customer_id:true
+        }
       });
 
       response.status(200).json({
         success: false,
         message: "Assigned Successfully!!",
+        data:details
       });
     }
+
+    const customerId = details.customer_id
+    console.log({customerId})
+////findUser/////
+   const findUser = await prisma.user_details.findUnique({
+    where:{
+      id:customerId
+    },
+    select:{
+      token:true
+    }
+   })
+   console.log({findUser})
+
+   const fcmToken = findUser.token
+   console.log({fcmToken})
+
+   const message = {
+    notification:{
+      title:"order received",
+      body:"New order received.....❗",
+      // sound: "msgsound"
+    },
+    token:fcmToken,
+    
+  }
+   try{
+        // await secondApp.messaging().send(message)
+        await admin.messaging().send(message);
+        console.log("Notification send Successfully")
+      }catch(err){
+        console.error({err})
+      }
+
   } catch (error) {
     logger.error(
       `Internal server error: ${error.message} in services-assit_assign API`
