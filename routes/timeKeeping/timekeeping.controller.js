@@ -279,6 +279,7 @@ const applyLeave_assist = async (req, res) => {
 
 ////checkin//////
 const assist_checkin = async(req,res) =>{
+  console.log({req})
     try{
         const{assistId,taskId,type,patient_name,latitude,longitude} = req.body
         const currentDate = new Date();
@@ -289,7 +290,7 @@ const assist_checkin = async(req,res) =>{
         const day = currentDate.getDate();
         const dateOnly = new Date(year, month - 1, day);
         const dateOnlyString = dateOnly.toLocaleDateString('en-GB')
-        let findTask =[]
+        let findTask = []
         if(type === "nurse"){
             const hospital = await prisma.hospitalAssist_service.findMany({
                 where:{
@@ -304,6 +305,14 @@ const assist_checkin = async(req,res) =>{
                     hospital_location:true
                 }
             })
+            console.log({hospital})
+
+            const hospitalLocation = hospital.map(task=>{
+              return{
+                  location:task.pickup_type === "door_to_door" ? task.patient_location : task.hospital_location
+              }
+          })
+
             const home = await prisma.homeCare_Service.findMany({
                 where:{
                     patient_name:patient_name,
@@ -314,15 +323,13 @@ const assist_checkin = async(req,res) =>{
                  patient_location:true
                  }
             })
-            const hospitalLocation = hospital.map(task=>{
-                return{
-                    location:task.pickup_type === "door_to_door" ? task.patient_location : task.hospital_location
-                }
-            })
-
+            const homeLocations = home.map(task => ({
+              location: task.patient_location
+          }));
+          console.log({homeLocations})
             
 
-            findTask = [...hospitalLocation,...home]
+            findTask = [...hospitalLocation,...homeLocations]
         }else{
             findTask = await prisma.physiotherapist_service.findMany({
               where:{
@@ -334,8 +341,13 @@ const assist_checkin = async(req,res) =>{
               patient_location:true
               } 
             })
+            findTask = findTask.map(task => ({
+              location: task.patient_location
+            }));
         }
-
+        console.log({findTask})
+        
+        
         const locationData = findTask[0].location
         console.log({locationData})
 
@@ -709,6 +721,58 @@ const leave_history = async(req,res)=>{
     }
 }
 
+////upcomming task///
+const upcommingTask = async (req, res) => {
+  try {
+    const { assistId, type } = req.body;
+    let task = [];
+
+    if (type === "nurse") {
+      const hospitalTask = await prisma.hospitalAssist_service.findMany({
+        where: { assist_id: assistId, status: "placed" }
+      });
+
+      const homecareTask = await prisma.homeCare_Service.findMany({
+        where: { assist_id: assistId, status: "placed" }
+      });
+
+      task = [...homecareTask, ...hospitalTask];
+    } else {
+      task = await prisma.physiotherapist_service.findMany({
+        where: { assist_id: assistId, status: "placed" }
+      });
+    }
+
+    console.log({ task });
+
+    const tomorrowDate = moment().add(1, 'days').format('YYYY-MM-DD');
+    const filteredTasks = task.filter(t => {
+    const startDate = moment(t.start_date, 'DD-MM-YYYY', true);
+    const endDate = moment(t.end_date, 'DD-MM-YYYY', true);
+    const tomorrow = moment(tomorrowDate, 'YYYY-MM-DD', true);
+
+    return tomorrow.isBetween(startDate, endDate, null, '[]'); 
+  });
+
+  console.log("Filtered Tasks:", filteredTasks);
+
+    res.status(200).json({
+      error: false,
+      success: true,
+      message: "Successful......",
+      data: filteredTasks
+    });
+
+  } catch (err) {
+    logger.error(`Internal server error: ${err.message} in getTask API`);
+    console.log({ err });
+
+    res.status(400).json({
+      error: true,
+      message: "Internal server error",
+    });
+  }
+};
 
 
 
@@ -727,7 +791,8 @@ module.exports = {assist_login,
     assist_checkout,
     assistWorkingHours,
     completedTask,
-    leave_history
+    leave_history,
+    upcommingTask
 }
 
 
