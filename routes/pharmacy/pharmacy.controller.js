@@ -459,6 +459,7 @@ const addToCart = async (request, response) => {
     });
 
     if (existingCartItem) {
+      const existingItem=existingCartItem.quantity ? existingCartItem.quantity : 0
       const addexistingitem = await prisma.customer_cart.update({
         where: {
           id: existingCartItem?.id,
@@ -466,7 +467,7 @@ const addToCart = async (request, response) => {
           prod_id: prod_id,
         },
         data: {
-          quantity: parseInt(quantity) + existingCartItem.quantity,
+          quantity: parseInt(quantity) + existingItem,
         },
       });
       return response.status(200).json({
@@ -658,7 +659,8 @@ const salesorder = async (request, response) => {
     if (order_type != "prescription") {
       location = delivery_location;
     } else {
-      location = JSON.parse(delivery_location);
+      // location = JSON?.parse(delivery_location);//changed for flutter app
+      location = delivery_location
     }
 
     await prisma.$transaction(async (prisma) => {
@@ -789,6 +791,7 @@ const salesorder = async (request, response) => {
       }
     });
   } catch (error) {
+    console.log(error)
     logger.error(`Internal server error: ${error.message} in salesorder API`);
     response.status(500).json({
       error: true,
