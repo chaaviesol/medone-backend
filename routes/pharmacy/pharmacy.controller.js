@@ -454,6 +454,7 @@ const addToCart = async (request, response) => {
         prod_id: prod_id,
       },
       select:{
+        id:true,
         quantity:true
       }
     });
@@ -496,7 +497,7 @@ const addToCart = async (request, response) => {
     logger.error(
       `Internal server error: ${error.message} in pharmacy--> addToCart API`
     );
-
+console.log(error)
     response.status(500).json({
       error: true,
       message: "Internal server error",
