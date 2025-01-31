@@ -9,7 +9,6 @@ require("dotenv").config();
 const bcrypt = require("bcrypt");
 const admin = require("../../firebase");
 
-
 const addhospitalassistenquiry = async (request, response) => {
   try {
     const { customer_id, patient_name, patient_contact_no } = request.body;
@@ -114,7 +113,7 @@ const addhospitalassist = async (request, response) => {
       hospital_location,
       pickup_type,
       requirements,
-      customer_id
+      customer_id,
     } = JSON.parse(request.body.data);
     const documents = request.files;
     let medical_documents = {};
@@ -382,7 +381,7 @@ const addphysiotherapy = async (request, response) => {
       prefered_time,
       patient_location,
       therapy_type,
-      customer_id
+      customer_id,
     } = request.body;
 
     const datetime = getCurrentDateInIST();
@@ -402,7 +401,7 @@ const addphysiotherapy = async (request, response) => {
         patient_location,
         created_date: datetime,
         status: "placed",
-        customer_id
+        customer_id,
       },
     });
 
@@ -416,10 +415,10 @@ const addphysiotherapy = async (request, response) => {
       //   },
       // });
       // console.log({ findUser });
-  
+
       // const fcmToken = findUser.token;
       // console.log({ fcmToken });
-  
+
       // const message = {
       //   notification: {
       //     title: "order received",
@@ -440,7 +439,6 @@ const addphysiotherapy = async (request, response) => {
         error: false,
         message: "placed successfully.",
       });
-      
     }
   } catch (error) {
     logger.error(
@@ -703,7 +701,7 @@ const addhomeservice = async (request, response) => {
       days_week,
       requirements,
       general_specialized,
-      customer_id
+      customer_id,
     } = JSON.parse(request.body.data);
     // } = (request.body)
 
@@ -1414,22 +1412,15 @@ const gethomecareassists = async (request, response) => {
         },
       },
     });
-    const type = "nurse";
-    const allassists = await prisma.assist_details.findMany({
-      where: {
-        type: type,
-        general_specialized: find.general_specialized,
-      },
-      select: {
-        name: true,
-        type: true,
-        gender: true,
-        phone_no: true,
-        address: true,
-        pincode: true,
-      },
-    });
-    if (allassists.assist_id != null) {
+
+    if (!find) {
+      return response.status(404).json({
+        error: true,
+        message: "Home care service not found",
+      });
+    }
+
+    if (find.assist_id != null) {
       const responseby = {
         ...find,
         button_status: "assigned",
@@ -1439,48 +1430,88 @@ const gethomecareassists = async (request, response) => {
         success: true,
       });
     } else {
+      if (!find.start_date && !find.end_date) {
+        return response.status(404).json({
+          error: true,
+          message: "Select start_date and end_date",
+        });
+      }
+
+      const startDate = new Date(
+        find.start_date.split("-").reverse().join("-")
+      );
+      const endDate = new Date(find.end_date.split("-").reverse().join("-"));
+      const type = "nurse";
+      const allassists = await prisma.assist_details.findMany({
+        where: {
+          type: type,
+          general_specialized: find.general_specialized,
+        },
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          gender: true,
+          phone_no: true,
+          address: true,
+          pincode: true,
+        },
+      });
+
       if (allassists.length > 0) {
         allassists.forEach((element) => {
           element.button_status = "assign";
         });
+
         const availableNurses = [];
         for (const assist of allassists) {
-          const homeCareAvailability = await prisma.homeCare_Service.findFirst({
+          console.log({ assist });
+          // Check for home care availability
+          const homeCareAvailability = await prisma.homeCare_Service.findMany({
             where: {
               assist_id: assist.id,
-              start_date: { lte: new Date() },
-              end_date: { gte: new Date() },
+              start_date: { gte: new Date(endDate).toISOString() },
+              end_date: { lte: new Date(startDate).toISOString() },
             },
             select: {
               start_date: true,
               end_date: true,
             },
           });
+          console.log({ homeCareAvailability });
+          // Check for hospital assist availability
           const hospitalAssistAvailability =
-            await prisma.hospitalAssist_service.findFirst({
+            await prisma.hospitalAssist_service.findMany({
               where: {
                 assist_id: assist.id,
-                start_date: { lte: new Date() },
-                end_date: { gte: new Date() },
+                start_date: { gte: new Date(endDate).toISOString() },
+                end_date: { lte: new Date(startDate).toISOString() },
               },
               select: {
                 start_date: true,
                 end_date: true,
               },
             });
-          if (homeCareAvailability || hospitalAssistAvailability) {
+
+          console.log({ hospitalAssistAvailability });
+          if (
+            homeCareAvailability.length === 0 &&
+            hospitalAssistAvailability.length === 0
+          ) {
             availableNurses.push({
               ...assist,
               button_status: "assign",
             });
           }
         }
+        console.log({ availableNurses });
         if (availableNurses.length === 0) {
           return response.status(404).json({
             error: true,
             message: "No available nurses at the moment",
           });
         }
+
         // Sort the available nurses based on proximity to the given pincode
         function findNearestPinCodes(nurses, givenPincode, count = 8) {
           nurses.sort(
@@ -1488,7 +1519,7 @@ const gethomecareassists = async (request, response) => {
               Math.abs(a.pincode - givenPincode) -
               Math.abs(b.pincode - givenPincode)
           );
-          return nurses.slice(0, count); // Return top 'count' nearest nurses
+          return nurses.slice(0, count);
         }
 
         const nearestassists = findNearestPinCodes(
@@ -1504,7 +1535,7 @@ const gethomecareassists = async (request, response) => {
     }
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in  services- gethomecareassists API`
+      `Internal server error: ${error.message} in services- gethomecareassists API`
     );
     console.log(error);
     response.status(500).json({
@@ -1512,7 +1543,7 @@ const gethomecareassists = async (request, response) => {
       message: "Internal server error",
     });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -1614,64 +1645,220 @@ const getphysioassists = async (request, response) => {
   }
 };
 
+// const gethospitalassists = async (request, response) => {
+//   const { type, id } = request.body;
+//   try {
+//     const allrequests = await prisma.assist_details.findMany({
+//       where: {
+//         type: type.toLowerCase(),
+//       },
+//     });
+
+//     if (type === "hospitalassist_service") {
+//       const find = await prisma.hospitalAssist_service.findFirst({
+//         where: {
+//           id: id,
+//         },
+//         select: {
+//           assigned_date: true,
+//           assist_id: true,
+//           assist_details: {
+//             select: {
+//               name: true,
+//               type: true,
+//               gender: true,
+//               address: true,
+//             },
+//           },
+//         },
+//       });
+//       if (find.assist_id != null) {
+//         const responseby = {
+//           ...find,
+//           status: "assigned",
+//         };
+//         return response.status(200).json({
+//           data: responseby,
+//           success: true,
+//         });
+//       } else {
+//         if (allrequests.length > 0) {
+//           allrequests.forEach((element) => {
+//             element.status = "assign";
+//           });
+//           return response.status(200).json({
+//             data: allrequests,
+//             success: true,
+//           });
+//         }
+//       }
+//     }
+//   } catch (error) {
+//     logger.error(
+//       `Internal server error: ${error.message} in  services- getassists API`
+//     );
+//     response.status(500).json({
+//       error: true,
+//       message: "Internal server error",
+//     });
+//   } finally {
+//     //await prisma.$disconnect();
+//   }
+// };
+
 const gethospitalassists = async (request, response) => {
-  const { type, id } = request.body;
+  const { id } = request.body;
   try {
-    const allrequests = await prisma.assist_details.findMany({
+    const find = await prisma.hospitalAssist_service.findFirst({
       where: {
-        type: type.toLowerCase(),
+        id: id,
+      },
+      select: {
+        pincode: true,
+        assigned_date: true,
+        start_date: true,
+        end_date: true,
+        assist_id: true,
+        assist_details: {
+          select: {
+            name: true,
+            type: true,
+            gender: true,
+            address: true,
+          },
+        },
       },
     });
 
-    if (type === "hospitalassist_service") {
-      const find = await prisma.hospitalAssist_service.findFirst({
+    if (!find) {
+      return response.status(404).json({
+        error: true,
+        message: "Hospital Assist service not found",
+      });
+    }
+
+    if (find.assist_id != null) {
+      const responseby = {
+        ...find,
+        button_status: "assigned",
+      };
+      return response.status(200).json({
+        data: responseby,
+        success: true,
+      });
+    } else {
+      if (!find.start_date && !find.end_date) {
+        return response.status(404).json({
+          error: true,
+          message: "Select start_date and end_date",
+        });
+      }
+
+      const startDate = new Date(
+        find.start_date.split("-").reverse().join("-")
+      );
+      const endDate = new Date(find.end_date.split("-").reverse().join("-"));
+      const type = "nurse";
+      const general_specialized = "general";
+      const allassists = await prisma.assist_details.findMany({
         where: {
-          id: id,
+          type: type,
+          general_specialized: general_specialized,
         },
         select: {
-          assigned_date: true,
-          assist_id: true,
-          assist_details: {
-            select: {
-              name: true,
-              type: true,
-              gender: true,
-              address: true,
-            },
-          },
+          id: true,
+          name: true,
+          type: true,
+          gender: true,
+          phone_no: true,
+          address: true,
+          pincode: true,
         },
       });
-      if (find.assist_id != null) {
-        const responseby = {
-          ...find,
-          status: "assigned",
-        };
-        return response.status(200).json({
-          data: responseby,
-          success: true,
+
+      if (allassists.length > 0) {
+        allassists.forEach((element) => {
+          element.button_status = "assign";
         });
-      } else {
-        if (allrequests.length > 0) {
-          allrequests.forEach((element) => {
-            element.status = "assign";
+
+        const availableNurses = [];
+        for (const assist of allassists) {
+          const homeCareAvailability = await prisma.homeCare_Service.findMany({
+            where: {
+              assist_id: assist.id,
+              start_date: { gte: new Date(endDate).toISOString() },
+              end_date: { lte: new Date(startDate).toISOString() },
+            },
+            select: {
+              start_date: true,
+              end_date: true,
+            },
           });
-          return response.status(200).json({
-            data: allrequests,
-            success: true,
+          console.log({ homeCareAvailability });
+          // Check for hospital assist availability
+          const hospitalAssistAvailability =
+            await prisma.hospitalAssist_service.findMany({
+              where: {
+                assist_id: assist.id,
+                start_date: { gte: new Date(endDate).toISOString() },
+                end_date: { lte: new Date(startDate).toISOString() },
+              },
+              select: {
+                start_date: true,
+                end_date: true,
+              },
+            });
+
+          console.log({ hospitalAssistAvailability });
+          if (
+            homeCareAvailability.length === 0 &&
+            hospitalAssistAvailability.length === 0
+          ) {
+            availableNurses.push({
+              ...assist,
+              button_status: "assign",
+            });
+          }
+        }
+        console.log({ availableNurses });
+        if (availableNurses.length === 0) {
+          return response.status(404).json({
+            error: true,
+            message: "No available nurses at the moment",
           });
         }
+
+        function findNearestPinCodes(nurses, givenPincode, count = 8) {
+          nurses.sort(
+            (a, b) =>
+              Math.abs(a.pincode - givenPincode) -
+              Math.abs(b.pincode - givenPincode)
+          );
+          return nurses.slice(0, count);
+        }
+
+        const nearestassists = findNearestPinCodes(
+          availableNurses,
+          find.pincode
+        );
+
+        return response.status(200).json({
+          data: nearestassists,
+          success: true,
+        });
       }
     }
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in  services- getassists API`
+      `Internal server error: ${error.message} in services- gethospitalassists API`
     );
+    console.log(error);
     response.status(500).json({
       error: true,
       message: "Internal server error",
     });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
@@ -1851,4 +2038,5 @@ module.exports = {
   allassists,
   priceadd,
   getphysioassists,
+  gethospitalassists
 };

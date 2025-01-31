@@ -19,7 +19,8 @@ const {
   gethomecareassists,
   allassists,
   priceadd,
-  getphysioassists
+  getphysioassists,
+  gethospitalassists
 } = require("./services.controller");
 const { upload } = require("../../middleware/Uploadimage");
 
@@ -52,6 +53,7 @@ servicesRouter.post(
 servicesRouter.post("/assignassist",assignassist)
 servicesRouter.post("/getphysioassists",getphysioassists)
 servicesRouter.post("/gethomecareassists",gethomecareassists)
+servicesRouter.post("/gethospitalassists",gethospitalassists)
 servicesRouter.post("/allassists",allassists)
 servicesRouter.post("/priceadd",priceadd)
 module.exports = servicesRouter;

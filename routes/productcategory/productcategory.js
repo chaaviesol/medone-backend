@@ -297,8 +297,8 @@ const getcategorywise = async (request, response) => {
 ///getcategory for mobile app
 
 const getcategorywise_app = async (request, response) => {
-  // const { userId } = request.body;
-  const user_Id = request.user.userId;
+  const user_Id  = request.body.userId;
+  // const user_Id = request.user.userId;
   try {
     const categories = await prisma.productcategory.findMany({
       select: { id: true, category: true, image: true },

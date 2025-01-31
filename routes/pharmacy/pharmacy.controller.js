@@ -453,6 +453,9 @@ const addToCart = async (request, response) => {
         user_id: user_id,
         prod_id: prod_id,
       },
+      select:{
+        quantity:true
+      }
     });
 
     if (existingCartItem) {
@@ -463,7 +466,7 @@ const addToCart = async (request, response) => {
           prod_id: prod_id,
         },
         data: {
-          quantity: parseInt(quantity),
+          quantity: parseInt(quantity) + existingCartItem.quantity,
         },
       });
       return response.status(200).json({
