@@ -607,7 +607,7 @@ const removeFromCart = async (request, response) => {
 ////////////sales_order////////////
 
 const salesorder = async (request, response) => {
-  const usertype = request.user.userType;
+  // const usertype = request.user.userType;
   const {
     name, //customername
     total_amount,
@@ -623,7 +623,8 @@ const salesorder = async (request, response) => {
     contact_no,
   } = request.body;
 
-  const userId = parseInt(request.user.userId);
+  // const userId = parseInt(request.user.userId);
+  const userId = parseInt(request.body.userId)
   let sales_order;
 
   try {
@@ -634,12 +635,12 @@ const salesorder = async (request, response) => {
         message: "user_id is required",
       });
     }
-    if (usertype != "customer") {
-      return response.status(400).json({
-        error: true,
-        message: "Please login as a customer",
-      });
-    }
+    // if (usertype != "customer") {
+    //   return response.status(400).json({
+    //     error: true,
+    //     message: "Please login as a customer",
+    //   });
+    // }
     if (!delivery_address || !contact_no) {
       return response.status(400).json({
         error: true,
