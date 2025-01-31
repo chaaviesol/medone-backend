@@ -409,7 +409,7 @@ const assist_checkout = async(req,res)=>{
         const day = currentDate.getDate();
         const dateOnly = new Date(year, month - 1, day);
         const dateOnlyString = dateOnly.toLocaleDateString('en-GB')
-        let findTask =[]
+        let findTask = []
         if(type === "nurse"){
             const hospital = await prisma.hospitalAssist_service.findMany({
                 where:{
@@ -424,6 +424,14 @@ const assist_checkout = async(req,res)=>{
                     hospital_location:true
                 }
             })
+            console.log({hospital})
+
+            const hospitalLocation = hospital.map(task=>{
+              return{
+                  location:task.pickup_type === "door_to_door" ? task.patient_location : task.hospital_location
+              }
+          })
+
             const home = await prisma.homeCare_Service.findMany({
                 where:{
                     patient_name:patient_name,
@@ -434,15 +442,13 @@ const assist_checkout = async(req,res)=>{
                  patient_location:true
                  }
             })
-            const hospitalLocation = hospital.map(task=>{
-                return{
-                    location:task.pickup_type === "door_to_door" ? task.patient_location : task.hospital_location
-                }
-            })
-
+            const homeLocations = home.map(task => ({
+              location: task.patient_location
+          }));
+          console.log({homeLocations})
             
 
-            findTask = [...hospitalLocation,...home]
+            findTask = [...hospitalLocation,...homeLocations]
         }else{
             findTask = await prisma.physiotherapist_service.findMany({
               where:{
@@ -454,7 +460,11 @@ const assist_checkout = async(req,res)=>{
               patient_location:true
               } 
             })
+            findTask = findTask.map(task => ({
+              location: task.patient_location
+            }));
         }
+        console.log({findTask})
 
         const locationData = findTask[0].location
         console.log({locationData})
