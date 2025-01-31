@@ -459,6 +459,7 @@ const addToCart = async (request, response) => {
     });
 
     if (existingCartItem) {
+      const existingItem=existingCartItem.quantity ? existingCartItem.quantity : 0
       const addexistingitem = await prisma.customer_cart.update({
         where: {
           id: existingCartItem?.id,
@@ -466,7 +467,7 @@ const addToCart = async (request, response) => {
           prod_id: prod_id,
         },
         data: {
-          quantity: parseInt(quantity) + existingCartItem.quantity,
+          quantity: parseInt(quantity) + existingItem,
         },
       });
       return response.status(200).json({
@@ -607,7 +608,7 @@ const removeFromCart = async (request, response) => {
 ////////////sales_order////////////
 
 const salesorder = async (request, response) => {
-  const usertype = request.user.userType;
+  // const usertype = request.user.userType;
   const {
     name, //customername
     total_amount,
@@ -623,7 +624,8 @@ const salesorder = async (request, response) => {
     contact_no,
   } = request.body;
 
-  const userId = parseInt(request.user.userId);
+  // const userId = parseInt(request.user.userId);
+  const userId = parseInt(request.body.userId)
   let sales_order;
 
   try {
@@ -634,12 +636,12 @@ const salesorder = async (request, response) => {
         message: "user_id is required",
       });
     }
-    if (usertype != "customer") {
-      return response.status(400).json({
-        error: true,
-        message: "Please login as a customer",
-      });
-    }
+    // if (usertype != "customer") {
+    //   return response.status(400).json({
+    //     error: true,
+    //     message: "Please login as a customer",
+    //   });
+    // }
     if (!delivery_address || !contact_no) {
       return response.status(400).json({
         error: true,
@@ -657,7 +659,8 @@ const salesorder = async (request, response) => {
     if (order_type != "prescription") {
       location = delivery_location;
     } else {
-      location = JSON.parse(delivery_location);
+      // location = JSON?.parse(delivery_location);//changed for flutter app
+      location = delivery_location
     }
 
     await prisma.$transaction(async (prisma) => {
@@ -788,6 +791,7 @@ const salesorder = async (request, response) => {
       }
     });
   } catch (error) {
+    console.log(error)
     logger.error(`Internal server error: ${error.message} in salesorder API`);
     response.status(500).json({
       error: true,

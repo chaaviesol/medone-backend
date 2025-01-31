@@ -1061,14 +1061,14 @@ const getassists = async (request, response) => {
       message: "Internal server error",
     });
   } finally {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   }
 };
 
 ///////////get order dsetails based on type///////////
 const getorderdetails = async (request, response) => {
   const { id, type } = request.body;
-  console.log(request.body);
+  console.log("getorderdetailssssssssss",request.body);
   const secretKey = process.env.ENCRYPTION_KEY;
   try {
     if (!id || !type) {
@@ -1271,120 +1271,201 @@ const getorderdetails = async (request, response) => {
   }
 };
 
+// const assignassist = async (request, response) => {
+//   console.log("rrrrrrrrrrrrrrrr", request.body);
+//   try {
+//     const { type, assist_id, id } = request.body;
+//     const datetime = getCurrentDateInIST();
+//     if (!type || !id || !assist_id) {
+//       return response.status(400).json({
+//         error: true,
+//         message: "type and id can't be null or empty.",
+//       });
+//     }
+//     let details = [];
+//     if (type === "homecare_service") {
+//       console.log("heyyyyyyyyyyyy");
+//       details = await prisma.homeCare_Service.update({
+//         where: {
+//           id: id,
+//         },
+//         data: {
+//           status: "confirmed",
+//           assist_id: assist_id,
+//           assigned_date: datetime,
+//         },
+//         select: {
+//           customer_id: true,
+//         },
+//       });
+
+//       response.status(200).json({
+//         success: false,
+//         message: "Assigned Successfully!!",
+//         data: details,
+//       });
+//     } else if (type === "physiotherapist_service") {
+//       details = await prisma.physiotherapist_service.update({
+//         where: {
+//           id: id,
+//         },
+//         data: {
+//           status: "confirmed",
+//           assist_id: assist_id,
+//           assigned_date: datetime,
+//         },
+//         select: {
+//           customer_id: true,
+//         },
+//       });
+
+//       response.status(200).json({
+//         success: false,
+//         message: "Assigned Successfully!!",
+//         data: details,
+//       });
+//     } else if (type === "hospitalassist_service") {
+//       details = await prisma.hospitalAssist_service.update({
+//         where: {
+//           id: id,
+//         },
+//         data: {
+//           status: "confirmed",
+//           assist_id: assist_id,
+//           assigned_date: datetime,
+//         },
+//         select: {
+//           customer_id: true,
+//         },
+//       });
+
+//       response.status(200).json({
+//         success: false,
+//         message: "Assigned Successfully!!",
+//         data: details,
+//       });
+//     }
+
+//     const customerId = details.customer_id ? details.customer_id : 10
+//     console.log({ customerId });
+//     ////findUser/////
+//     const findUser = await prisma.user_details.findUnique({
+//       where: {
+//         id: customerId,
+//       },
+//       select: {
+//         token: true,
+//       },
+//     });
+//     console.log({ findUser });
+
+//     const fcmToken = findUser.token;
+//     console.log({ fcmToken });
+
+//     const message = {
+//       notification: {
+//         title: "order received",
+//         body: "New order received.....❗",
+//         // sound: "msgsound"
+//       },
+//       token: fcmToken,
+//     };
+//     try {
+//       // await secondApp.messaging().send(message)
+//       await admin.messaging().send(message);
+//       console.log("Notification send Successfully");
+//     } catch (err) {
+//       console.error({ err });
+//     }
+//   } catch (error) {
+//     logger.error(
+//       `Internal server error: ${error.message} in services-assit_assign API`
+//     );
+//     console.log(error);
+//     response.status(500).json({ error: "Internal Server Error" });
+//   } finally {
+//     //await prisma.$disconnect();
+//   }
+// };
+
 const assignassist = async (request, response) => {
-  console.log("rrrrrrrrrrrrrrrr", request.body);
+  console.log("Request received:", request.body);
+
   try {
     const { type, assist_id, id } = request.body;
     const datetime = getCurrentDateInIST();
+
     if (!type || !id || !assist_id) {
       return response.status(400).json({
         error: true,
-        message: "type and id can't be null or empty.",
-      });
-    }
-    let details = [];
-    if (type === "homecare_service") {
-      console.log("heyyyyyyyyyyyy");
-      details = await prisma.homeCare_Service.update({
-        where: {
-          id: id,
-        },
-        data: {
-          status: "confirmed",
-          assist_id: assist_id,
-          assigned_date: datetime,
-        },
-        select: {
-          customer_id: true,
-        },
-      });
-
-      response.status(200).json({
-        success: false,
-        message: "Assigned Successfully!!",
-        data: details,
-      });
-    } else if (type === "physiotherapist_service") {
-      details = await prisma.physiotherapist_service.update({
-        where: {
-          id: id,
-        },
-        data: {
-          status: "confirmed",
-          assist_id: assist_id,
-          assigned_date: datetime,
-        },
-        select: {
-          customer_id: true,
-        },
-      });
-
-      response.status(200).json({
-        success: false,
-        message: "Assigned Successfully!!",
-        data: details,
-      });
-    } else if (type === "hospitalassist_service") {
-      details = await prisma.hospitalAssist_service.update({
-        where: {
-          id: id,
-        },
-        data: {
-          status: "confirmed",
-          assist_id: assist_id,
-          assigned_date: datetime,
-        },
-        select: {
-          customer_id: true,
-        },
-      });
-
-      response.status(200).json({
-        success: false,
-        message: "Assigned Successfully!!",
-        data: details,
+        message: "type, id, and assist_id are required fields.",
       });
     }
 
-    const customerId = details.customer_id;
-    console.log({ customerId });
-    ////findUser/////
-    const findUser = await prisma.user_details.findUnique({
-      where: {
-        id: customerId,
-      },
-      select: {
-        token: true,
-      },
-    });
-    console.log({ findUser });
-
-    const fcmToken = findUser.token;
-    console.log({ fcmToken });
-
-    const message = {
-      notification: {
-        title: "order received",
-        body: "New order received.....❗",
-        // sound: "msgsound"
-      },
-      token: fcmToken,
+    const serviceMap = {
+      homecare_service: prisma.homeCare_Service,
+      physiotherapist_service: prisma.physiotherapist_service,
+      hospitalassist_service: prisma.hospitalAssist_service,
     };
-    try {
-      // await secondApp.messaging().send(message)
-      await admin.messaging().send(message);
-      console.log("Notification send Successfully");
-    } catch (err) {
-      console.error({ err });
+
+    const service = serviceMap[type];
+
+    if (!service) {
+      return response.status(400).json({
+        error: true,
+        message: "Invalid service type.",
+      });
     }
+
+    const details = await service.update({
+      where: { id },
+      data: {
+        status: "confirmed",
+        assist_id,
+        assigned_date: datetime,
+      },
+      select: { customer_id: true },
+    });
+
+    const customerId = details?.customer_id || 10;
+    console.log("Customer ID:", customerId);
+
+    const findUser = await prisma.user_details.findUnique({
+      where: { id: customerId },
+      select: { token: true },
+    });
+
+    if (!findUser || !findUser.token) {
+      console.warn("FCM Token not found for customer ID:", customerId);
+    } else {
+      const fcmToken = findUser.token;
+      const message = {
+        notification: {
+          title: "Order Received",
+          body: "New order received!",
+        },
+        token: fcmToken,
+      };
+
+      try {
+        await admin.messaging().send(message);
+        console.log("Notification sent successfully");
+      } catch (err) {
+        console.error("Error sending notification:", err);
+      }
+    }
+
+    response.status(200).json({
+      success: true,
+      message: "Assigned successfully!",
+      data: details,
+    });
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in services-assit_assign API`
+      `Internal server error: ${error.message} in services- assignassist API`
     );
-    console.log(error);
+    console.error("Internal server error:", error);
     response.status(500).json({ error: "Internal Server Error" });
-  } finally {
-    //await prisma.$disconnect();
   }
 };
 
@@ -1493,7 +1574,6 @@ const gethomecareassists = async (request, response) => {
               },
             });
 
-          console.log({ hospitalAssistAvailability });
           if (
             homeCareAvailability.length === 0 &&
             hospitalAssistAvailability.length === 0
@@ -1504,7 +1584,7 @@ const gethomecareassists = async (request, response) => {
             });
           }
         }
-        console.log({ availableNurses });
+
         if (availableNurses.length === 0) {
           return response.status(404).json({
             error: true,
@@ -2038,5 +2118,5 @@ module.exports = {
   allassists,
   priceadd,
   getphysioassists,
-  gethospitalassists
+  gethospitalassists,
 };
