@@ -17,7 +17,8 @@ const {driver_login,
     payment_creditedStatus,
     confirmDelivery_otp,
     verifyOtp,
-    settleFull_amt
+    settleFull_amt,
+    addToken
 } = require('./driverApp.controller')
 const driverRouter = express.Router()
 
@@ -42,5 +43,6 @@ driverRouter.post('/payment_creditedStatus',payment_creditedStatus)
 driverRouter.post('/confirmDelivery_otp',confirmDelivery_otp)
 driverRouter.post('/verifyOtp',verifyOtp)
 driverRouter.post('/settleFull_amt',settleFull_amt)
+driverRouter.post('/addToken',addToken)
 
 module.exports = driverRouter

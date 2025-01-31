@@ -351,8 +351,84 @@ const orderResponse = async(req,res)=>{
         so_status:"packed"
       }
     })
+   console.log({addPackedStatus})
 
-    console.log({addPackedStatus})
+   const findpackedOrder = await prisma.sales_order.findUnique({
+    where:{
+      sales_id:addResponse.sales_id
+    },
+    select:{
+      customer_id:true
+    }
+   })
+  console.log({findpackedOrder})
+
+   const userId = findpackedOrder.customer_id
+   console.log({userId})
+
+   //find user////
+   const findUserToken = await prisma.user_details.findFirst({
+    where:{
+      id:userId
+    },
+    select:{
+      token:true
+    }
+   })
+   const userToken = findUserToken.token
+   console.log({userToken})
+    ////delivery assign///
+    const salesData = await prisma.delivery_assign.findMany({
+      where:{
+        sales_id:addResponse.sales_id
+      },
+      select:{
+        deliverypartner_id:true
+      }
+    })
+    console.log({salesData})
+
+    const driverId = salesData[0].deliverypartner_id
+    console.log({driverId})
+
+    const findToken = await prisma.delivery_partner.findUnique({
+      where:{
+        id:driverId
+      },
+      select:{
+        fcmToken:true
+      }
+    })
+    console.log({findToken})
+   const fcmToken = findToken.fcmToken
+    if(addPackedStatus){
+      const message = {
+        notification:{
+          title:"Order Packed",
+          body:"New order packed.....❗",
+          // sound: "msgsound"
+        },
+        token:fcmToken,
+        
+      }
+      const usermessage = {
+        notification:{
+          title:"Order Status",
+          body:"Your order hasbeen packed Successfully.....❗",
+          // sound: "msgsound"
+        },
+        token:userToken,
+        
+      }
+    
+    try{
+      await secondApp.messaging().send(message)
+      await secondApp.messaging().send(usermessage)
+      console.log("Notification send Successfully")
+    }catch(err){
+      console.error({err})
+    }
+    }
     return res.status(200).json({
       error:false,
       success:true,

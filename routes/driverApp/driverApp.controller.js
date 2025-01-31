@@ -1520,6 +1520,48 @@ const settleFull_amt = async(req,res)=>{
   }
 }
 
+
+const addToken = async(request,response)=>{
+  try{
+    const{
+      id,
+      token
+    } = request.body
+    const findDriver = await prisma.delivery_partner.findFirst({
+      where:{
+        id:id
+      }
+    })
+    console.log({findDriver})
+    // const usertoken = findUser.token
+    // console.log({usertoken})
+    // if(!usertoken){
+    const addDrivertoken = await prisma.delivery_partner.updateMany({
+      where:{
+        id:id
+      },
+      data:{
+        fcmToken:token
+      }
+    })
+    console.log({addDrivertoken})
+    return response.status(200).json({
+      error:false,
+      success:true,
+      message:"successfully added token",
+      data:addDrivertoken
+    })
+  // }
+
+  }catch (error) {
+    console.log({ error });
+    response.status(500).json(error.message);
+    logger.error(`Internal server error: ${error.message} in driver-addToken api`);
+  } finally {
+    //await prisma.$disconnect();
+  }
+}
+
   module.exports = {driver_login,
     getDriver_profile,
     getorder,
@@ -1538,5 +1580,6 @@ const settleFull_amt = async(req,res)=>{
     payment_creditedStatus,
     confirmDelivery_otp,
     verifyOtp,
-    settleFull_amt
+    settleFull_amt,
+    addToken
   }

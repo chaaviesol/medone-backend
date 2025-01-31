@@ -295,6 +295,7 @@ model delivery_partner{
   wallet                   Int?
   wallet_date              String?
   phone                    String?
+  fcmToken                 String?
   delivery_assign          delivery_assign[]
 }
 
