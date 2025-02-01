@@ -315,7 +315,7 @@ const productadd = async (request, response) => {
 };
 
 const getproductdetail = async (request, response) => {
-  const { id } = request.body.id;
+  const id = request.body.id;
   try {
     const getdetail = await prisma.generic_product.findFirst({
       where: {
