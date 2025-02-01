@@ -140,67 +140,80 @@ const getAssist_profile = async(req,res)=>{
 
 /////get daily task/////////////
 const getTask = async (req, res) => {
-    try {
-        const { assistId, type } = req.body;
-        let task = [];
+  try {
+      const { assistId, type } = req.body;
+      let task = [];
 
-        if (type === "nurse") {
-            const hospitalTask = await prisma.hospitalAssist_service.findMany({
-                where: {
-                    assist_id: assistId,
-                    status: "placed"
-                }
-            });
+      if (type === "nurse") {
+          const hospitalTask = await prisma.hospitalAssist_service.findMany({
+              where: {
+                  assist_id: assistId,
+                  status: "placed"
+              }
+          });
 
-            const homecareTask = await prisma.homeCare_Service.findMany({
-                where: {
-                    assist_id: assistId,
-                    status: "placed"
-                }
-            });
+          const homecareTask = await prisma.homeCare_Service.findMany({
+              where: {
+                  assist_id: assistId,
+                  status: "placed"
+              }
+          });
 
-            task = [...homecareTask, ...hospitalTask];
-        } else {
-            task = await prisma.physiotherapist_service.findMany({
-                where: {
-                    assist_id: assistId,
-                    status: "placed"
-                }
-            });
-        }
+          task = [...homecareTask, ...hospitalTask];
+      } else {
+          task = await prisma.physiotherapist_service.findMany({
+              where: {
+                  assist_id: assistId,
+                  status: "placed"
+              }
+          });
+      }
 
-        console.log({ task });
+      console.log({ task });
 
-        const currentDate = moment().format('DD-MM-YYYY');
+      // Get today's date
+      const currentDate = moment().format('DD-MM-YYYY');
 
-        // Filtering tasks based on date range only once
-        const filteredTasks = task.filter(t => {
-            const startDate = moment(t.start_date, 'DD-MM-YYYY');
-            const endDate = moment(t.end_date, 'DD-MM-YYYY');
-            const today = moment(currentDate, 'DD-MM-YYYY');
+      // Function to generate all dates from start_date to end_date
+      const getDatesInRange = (startDate, endDate) => {
+          let dates = [];
+          let current = moment(startDate, 'DD-MM-YYYY');
+          let lastDate = moment(endDate, 'DD-MM-YYYY');
 
-            return today.isBetween(startDate, endDate, null, '[]');
-        });
+          while (current <= lastDate) {
+              dates.push(current.format('DD-MM-YYYY')); // Push formatted date
+              current.add(1, 'days'); // Increment by one day
+          }
 
-        console.log("Filtered Tasks:", filteredTasks);
+          return dates;
+      };
 
-        res.status(200).json({
-            error: false,
-            success: true,
-            message: "successful......",
-            data: filteredTasks  // Directly returning the filtered tasks instead of nesting them inside another array
-        });
+      // Filtering tasks based on whether any date in the range has a match
+      const filteredTasks = task.filter(t => {
+          const taskDates = getDatesInRange(t.start_date, t.end_date);
+          return taskDates.includes(currentDate);
+      });
 
-    } catch (err) {
-        logger.error(`Internal server error: ${err.message} in getTask API`);
-        console.log({ err });
+      console.log("Filtered Tasks:", filteredTasks);
 
-        res.status(400).json({
-            error: true,
-            message: "Internal server error",
-        });
-    }
+      res.status(200).json({
+          error: false,
+          success: true,
+          message: "successful......",
+          data: filteredTasks
+      });
+
+  } catch (err) {
+      logger.error(`Internal server error: ${err.message} in getTask API`);
+      console.log({ err });
+
+      res.status(400).json({
+          error: true,
+          message: "Internal server error",
+      });
+  }
 };
+
 
 ////apply leave////////
 const applyLeave_assist = async (req, res) => {
