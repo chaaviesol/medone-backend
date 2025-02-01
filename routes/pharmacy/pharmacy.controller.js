@@ -315,12 +315,12 @@ const productadd = async (request, response) => {
 };
 
 const getproductdetail = async (request, response) => {
-  const {id}=request.body.id
+  const { id } = request.body.id;
   try {
     const getdetail = await prisma.generic_product.findFirst({
-      where:{
-        id:id
-      }
+      where: {
+        id: id,
+      },
     });
     if (getdetail) {
       return response.status(200).json({
@@ -453,14 +453,16 @@ const addToCart = async (request, response) => {
         user_id: user_id,
         prod_id: prod_id,
       },
-      select:{
-        id:true,
-        quantity:true
-      }
+      select: {
+        id: true,
+        quantity: true,
+      },
     });
 
     if (existingCartItem) {
-      const existingItem=existingCartItem.quantity ? existingCartItem.quantity : 0
+      const existingItem = existingCartItem.quantity
+        ? existingCartItem.quantity
+        : 0;
       const addexistingitem = await prisma.customer_cart.update({
         where: {
           id: existingCartItem?.id,
@@ -497,7 +499,7 @@ const addToCart = async (request, response) => {
     logger.error(
       `Internal server error: ${error.message} in pharmacy--> addToCart API`
     );
-console.log(error)
+    console.log(error);
     response.status(500).json({
       error: true,
       message: "Internal server error",
@@ -626,7 +628,7 @@ const salesorder = async (request, response) => {
   } = request.body;
 
   // const userId = parseInt(request.user.userId);
-  const userId = parseInt(request.body.userId)
+  const userId = parseInt(request.body.userId);
   let sales_order;
 
   try {
@@ -661,7 +663,7 @@ const salesorder = async (request, response) => {
       location = delivery_location;
     } else {
       // location = JSON?.parse(delivery_location);//changed for flutter app
-      location = delivery_location
+      location = delivery_location;
     }
 
     await prisma.$transaction(async (prisma) => {
@@ -720,12 +722,11 @@ const salesorder = async (request, response) => {
           },
           select: { prod_id: true, quantity: true },
         });
-        if(!products){
+        if (!products) {
           return response.status(400).json({
             error: true,
             message: "The cart is empty. Please add products to proceed.",
           });
-
         }
         for (let product of products) {
           const net_amount = parseInt(product.quantity) * parseInt(product.mrp);
@@ -792,8 +793,319 @@ const salesorder = async (request, response) => {
       }
     });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     logger.error(`Internal server error: ${error.message} in salesorder API`);
+    response.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+const newsalesorder = async (request, response) => {
+  // const usertype = request.user.userType;
+  const {
+    name,
+    total_amount,
+    so_status,
+    remarks,
+    order_type,
+    // products,
+    delivery_address,
+    delivery_location,
+    city,
+    district,
+    pincode,
+    contact_no,
+  } = request.body;
+
+  // const userId = parseInt(request.user.userId);
+  const userId = parseInt(request.body.userId);
+  let sales_order;
+
+  try {
+    if (!userId) {
+      logger.error("user_id is undefined in newsalesorder API");
+      return response.status(400).json({
+        error: true,
+        message: "user_id is required",
+      });
+    }
+    // if (usertype != "customer") {
+    //   return response.status(400).json({
+    //     error: true,
+    //     message: "Please login as a customer",
+    //   });
+    // }
+    if (!delivery_address || !contact_no) {
+      return response.status(400).json({
+        error: true,
+        message: "Missing delivery details",
+      });
+    }
+
+    if (!order_type) {
+      return response.status(400).json({
+        error: true,
+        message: "Missing order_type field",
+      });
+    }
+    let location = delivery_location;
+
+    await prisma.$transaction(async (prisma) => {
+      const currentDate = new Date();
+      const year = currentDate.getFullYear();
+
+      const lastTwoDigits = year.toString().slice(-2);
+      const so_num = "SO";
+      const startOfYear = new Date(new Date().getFullYear(), 0, 1);
+      const endOfYear = new Date(new Date().getFullYear() + 1, 0, 1);
+      //generate otp
+      const otp = Math.floor(100000 + Math.random() * 900000);
+      const existingsalesOrders = await prisma.sales_order.findMany({
+        where: {
+          created_date: {
+            gte: startOfYear,
+            lt: endOfYear,
+          },
+        },
+      });
+      const newid = existingsalesOrders.length + 1;
+      const formattedNewId = ("0000" + newid).slice(-4);
+      const so_number = so_num + lastTwoDigits + formattedNewId;
+      let total_amount_fixed;
+
+      if (total_amount) {
+        total_amount_fixed = parseFloat(total_amount).toFixed(2);
+      }
+
+      const datetime = getCurrentDateInIST();
+
+      sales_order = await prisma.sales_order.create({
+        data: {
+          so_number: so_number,
+          total_amount: total_amount_fixed,
+          so_status: "placed",
+          remarks,
+          order_type,
+          patient_name: name,
+          created_date: datetime,
+          customer_id: userId,
+          delivery_address: delivery_address,
+          delivery_location: location,
+          city,
+          district,
+          contact_no: contact_no.toString(),
+          pincode: parseInt(pincode),
+          otp: otp,
+        },
+      });
+
+      if (order_type === "salesorder") {
+        const products = await prisma.customer_cart.findMany({
+          where: {
+            user_id: userId,
+          },
+          select: { prod_id: true, quantity: true },
+        });
+        if (!products) {
+          return response.status(400).json({
+            error: true,
+            message: "The cart is empty. Please add products to proceed.",
+          });
+        }
+        for (let product of products) {
+          const net_amount = parseInt(product.quantity) * parseInt(product.mrp);
+
+          await prisma.sales_list.create({
+            data: {
+              sales_order: {
+                connect: {
+                  sales_id: sales_order.sales_id,
+                },
+              },
+              generic_prodid: {
+                connect: {
+                  id: product.prod_id,
+                },
+              },
+              order_qty: parseInt(product.quantity),
+              net_amount: net_amount,
+              created_date: datetime,
+            },
+          });
+        }
+
+        await prisma.customer_cart.deleteMany({
+          where: {
+            user_id: userId,
+          },
+        });
+
+        return response.status(200).json({
+          success: true,
+          message: "Successfully placed your order",
+        });
+      }
+    });
+  } catch (error) {
+    console.log(error);
+    logger.error(
+      `Internal server error: ${error.message} in newsalesorder API`
+    );
+    response.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+const prescriptionorder = async (request, response) => {
+  // const usertype = request.user.userType;
+  const {
+    name, //customername
+    total_amount,
+    so_status,
+    remarks,
+    order_type,
+    // products,
+    delivery_address,
+    delivery_location,
+    city,
+    district,
+    pincode,
+    contact_no,
+  } = request.body;
+
+  // const userId = parseInt(request.user.userId);
+  const userId = parseInt(request.body.userId);
+  let sales_order;
+
+  try {
+    if (!userId) {
+      logger.error("user_id is undefined in prescriptionorder API");
+      return response.status(400).json({
+        error: true,
+        message: "user_id is required",
+      });
+    }
+    // if (usertype != "customer") {
+    //   return response.status(400).json({
+    //     error: true,
+    //     message: "Please login as a customer",
+    //   });
+    // }
+    if (!delivery_address || !contact_no) {
+      return response.status(400).json({
+        error: true,
+        message: "Missing delivery details",
+      });
+    }
+
+    if (!order_type) {
+      return response.status(400).json({
+        error: true,
+        message: "Missing order_type field",
+      });
+    }
+    let location;
+    if (order_type != "prescription") {
+      location = delivery_location;
+    } else {
+      // location = JSON?.parse(delivery_location);//changed for flutter app
+      location = delivery_location;
+    }
+
+    await prisma.$transaction(async (prisma) => {
+      const currentDate = new Date();
+      const year = currentDate.getFullYear();
+
+      const lastTwoDigits = year.toString().slice(-2);
+      const so_num = "SO";
+      const startOfYear = new Date(new Date().getFullYear(), 0, 1);
+      const endOfYear = new Date(new Date().getFullYear() + 1, 0, 1);
+      //generate otp
+      const otp = Math.floor(100000 + Math.random() * 900000);
+      const existingsalesOrders = await prisma.sales_order.findMany({
+        where: {
+          created_date: {
+            gte: startOfYear,
+            lt: endOfYear,
+          },
+        },
+      });
+      const newid = existingsalesOrders.length + 1;
+      const formattedNewId = ("0000" + newid).slice(-4);
+      const so_number = so_num + lastTwoDigits + formattedNewId;
+      let total_amount_fixed;
+
+      if (total_amount) {
+        total_amount_fixed = parseFloat(total_amount).toFixed(2);
+      }
+
+      const datetime = getCurrentDateInIST();
+
+      sales_order = await prisma.sales_order.create({
+        data: {
+          so_number: so_number,
+          total_amount: total_amount_fixed,
+          so_status: "placed",
+          remarks,
+          order_type,
+          patient_name: name,
+          created_date: datetime,
+          customer_id: userId,
+          delivery_address: delivery_address,
+          delivery_location: location,
+          city,
+          district,
+          contact_no: contact_no.toString(),
+          pincode: parseInt(pincode),
+          otp: otp,
+        },
+      });
+
+      if (order_type === "prescription") {
+        const prescription_image = request.files;
+        let imageprescription = {};
+
+        if (!prescription_image || prescription_image.length === 0) {
+          return response.status(400).json({
+            message: "Please attach at least one report",
+            error: true,
+          });
+        }
+
+        for (i = 0; i < prescription_image?.length; i++) {
+          let keyName = `image${i + 1}`;
+          imageprescription[keyName] = prescription_image[i].location;
+        }
+
+        await prisma.sales_order.update({
+          where: {
+            sales_id: sales_order.sales_id,
+          },
+          data: {
+            prescription_image: imageprescription,
+            created_date: datetime,
+          },
+        });
+
+        response.status(200).json({
+          success: true,
+          message: "Prescription submitted.",
+        });
+      }
+    });
+  } catch (error) {
+    console.log(error);
+    logger.error(
+      `Internal server error: ${error.message} in prescription-salesorder API`
+    );
     response.status(500).json({
       error: true,
       message: "Internal server error",
@@ -1904,5 +2216,7 @@ module.exports = {
   myorders,
   getinvsalesorder,
   getprods,
-  getproductdetail
+  getproductdetail,
+  newsalesorder,
+  prescriptionorder,
 };
