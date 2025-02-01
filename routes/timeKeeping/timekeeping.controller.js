@@ -169,29 +169,47 @@ const getTask = async (req, res) => {
           });
       }
 
-      console.log({ task });
+      console.log("Raw Task Data:", JSON.stringify(task, null, 2));
 
-      // Get today's date
       const currentDate = moment().format('DD-MM-YYYY');
 
-      // Function to generate all dates from start_date to end_date
+      // Function to generate all dates between start_date and end_date
       const getDatesInRange = (startDate, endDate) => {
           let dates = [];
           let current = moment(startDate, 'DD-MM-YYYY');
           let lastDate = moment(endDate, 'DD-MM-YYYY');
 
           while (current <= lastDate) {
-              dates.push(current.format('DD-MM-YYYY')); // Push formatted date
-              current.add(1, 'days'); // Increment by one day
+              dates.push(current.format('DD-MM-YYYY'));
+              current.add(1, 'days');
           }
 
           return dates;
       };
 
-      // Filtering tasks based on whether any date in the range has a match
+      // Filtering tasks based on the type condition
       const filteredTasks = task.filter(t => {
-          const taskDates = getDatesInRange(t.start_date, t.end_date);
-          return taskDates.includes(currentDate);
+          if (!t.start_date) return false; // Ignore tasks without a start_date
+
+          // Trim and validate date strings
+          const startDateStr = t.start_date.toString().trim();
+          const endDateStr = t.end_date ? t.end_date.toString().trim() : null;
+
+          const startDate = moment(startDateStr, 'DD-MM-YYYY', true);
+          const endDate = endDateStr ? moment(endDateStr, 'DD-MM-YYYY', true) : startDate;
+
+          if (!startDate.isValid() || (endDateStr && !endDate.isValid())) {
+              console.warn(`Invalid date format for task ID ${t.id}: ${startDateStr} - ${endDateStr}`);
+              return false;
+          }
+
+          if (type === "nurse") {
+              // Nurse: Check if current date falls within start_date to end_date range
+              return moment(currentDate, 'DD-MM-YYYY').isBetween(startDate, endDate, null, '[]');
+          } else {
+              // Physiotherapist: Check only the start_date
+              return startDate.format('DD-MM-YYYY') === currentDate;
+          }
       });
 
       console.log("Filtered Tasks:", filteredTasks);
@@ -199,20 +217,22 @@ const getTask = async (req, res) => {
       res.status(200).json({
           error: false,
           success: true,
-          message: "successful......",
+          message: "Successful",
           data: filteredTasks
       });
 
   } catch (err) {
       logger.error(`Internal server error: ${err.message} in getTask API`);
-      console.log({ err });
+      console.error("Error in getTask API:", err);
 
-      res.status(400).json({
+      res.status(500).json({
           error: true,
           message: "Internal server error",
       });
   }
 };
+
+
 
 
 ////apply leave////////
