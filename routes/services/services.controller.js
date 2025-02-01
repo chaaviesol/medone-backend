@@ -114,6 +114,7 @@ const addhospitalassist = async (request, response) => {
       pickup_type,
       requirements,
       customer_id,
+      pincode
     } = JSON.parse(request.body.data);
     const documents = request.files;
     let medical_documents = {};
@@ -155,6 +156,7 @@ const addhospitalassist = async (request, response) => {
         hospital_location,
         pickup_type,
         requirements,
+        pincode,
         medical_documents: medical_documents,
       },
     });
@@ -382,6 +384,7 @@ const addphysiotherapy = async (request, response) => {
       patient_location,
       therapy_type,
       customer_id,
+      pincode
     } = request.body;
 
     const datetime = getCurrentDateInIST();
@@ -399,6 +402,7 @@ const addphysiotherapy = async (request, response) => {
         start_date,
         therapy_type,
         patient_location,
+        pincode,
         created_date: datetime,
         status: "placed",
         customer_id,
@@ -702,6 +706,7 @@ const addhomeservice = async (request, response) => {
       requirements,
       general_specialized,
       customer_id,
+      pincode
     } = JSON.parse(request.body.data);
     // } = (request.body)
 
@@ -738,6 +743,7 @@ const addhomeservice = async (request, response) => {
         days_week,
         requirements,
         customer_id,
+        pincode,
         medical_documents: medical_documents,
       },
     });

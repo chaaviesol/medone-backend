@@ -411,6 +411,7 @@ const getorderdetailsss = async (request, response) => {
 };
 
 const getorderdetails = async (request, response) => {
+  console.log("heyyyyyyy")
   const secretKey = process.env.ENCRYPTION_KEY;
   try {
     const sales_id = request.body.sales_id;
