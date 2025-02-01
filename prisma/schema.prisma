@@ -450,6 +450,7 @@ model assist_details{
   password                  String?
   pincode                   Int?
   general_specialized       String?
+  token                     String?
   created_date              DateTime?
   hospitalAssist_service    hospitalAssist_service[]
   homeCare_Service          homeCare_Service[]

@@ -786,6 +786,45 @@ const upcommingTask = async (req, res) => {
 
 
 
+const addToken = async(request,response)=>{
+  try{
+    const{
+      id,
+      token
+    } = request.body
+    const findserviceUser = await prisma.assist_details.findFirst({
+      where:{
+        id:id
+      }
+    })
+    console.log({findserviceUser})
+  
+    const addServicetoken = await prisma.assist_details.update({
+      where:{
+        id:id
+      },
+      data:{
+        token:token
+      }
+    })
+    console.log({addServicetoken})
+    return response.status(200).json({
+      error:false,
+      success:true,
+      message:"successfully added token",
+      data:addServicetoken
+    })
+  
+
+  }catch (error) {
+    console.log({ error });
+    response.status(500).json(error.message);
+    logger.error(`Internal server error: ${error.message} in driver-addToken api`);
+  } finally {
+    //await prisma.$disconnect();
+  }
+}
+
 
 
 
@@ -802,7 +841,8 @@ module.exports = {assist_login,
     assistWorkingHours,
     completedTask,
     leave_history,
-    upcommingTask
+    upcommingTask,
+    addToken
 }
 
 

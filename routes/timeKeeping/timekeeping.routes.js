@@ -8,7 +8,8 @@ const {assist_login,
     assistWorkingHours,
     completedTask,
     leave_history,
-    upcommingTask
+    upcommingTask,
+    addToken
 } = require('./timekeeping.controller')
 const timekeepingRouter = express.Router()
 
@@ -23,6 +24,6 @@ timekeepingRouter.post('/assistWorkingHours',assistWorkingHours)
 timekeepingRouter.post('/completedTask',completedTask)
 timekeepingRouter.post('/leave_history',leave_history)
 timekeepingRouter.post('/upcommingTask',upcommingTask)
-
+timekeepingRouter.post('/addToken',addToken)
 
 module.exports = timekeepingRouter

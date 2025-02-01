@@ -1435,7 +1435,19 @@ const assignassist = async (request, response) => {
       select: { token: true },
     });
 
-    if (!findUser || !findUser.token) {
+    const findAssitToken = await prisma.assist_details.findUnique({
+      where:{
+        id:assist_id
+      },
+      select:{
+        id:true,
+        token:true
+      }
+    })
+    console.log({findAssitToken})
+    
+
+    if (!findUser || !findUser.token ) {
       console.warn("FCM Token not found for customer ID:", customerId);
     } else {
       const fcmToken = findUser.token;
@@ -1449,6 +1461,26 @@ const assignassist = async (request, response) => {
 
       try {
         await admin.messaging().send(message);
+        console.log("Notification sent successfully");
+      } catch (err) {
+        console.error("Error sending notification:", err);
+      }
+    }
+
+    if( !findAssitToken.token || !findAssitToken){
+      console.warn("FCM Token not found for customer ID:", assist_id);
+    }else{
+      const fcmToken = findAssitToken.token;
+      const assistmessage = {
+        notification: {
+          title: "Task assigned",
+          body: "New task assigned!",
+        },
+        token: fcmToken,
+      };
+
+      try {
+        await admin.messaging().send(assistmessage);
         console.log("Notification sent successfully");
       } catch (err) {
         console.error("Error sending notification:", err);
