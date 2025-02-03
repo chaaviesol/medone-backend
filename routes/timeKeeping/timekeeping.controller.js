@@ -1,27 +1,32 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-const logDirectory = "./logs";
+// const logDirectory = "./logs";
 const winston = require("winston");
 const bcrypt = require('bcrypt');
 const moment = require('moment');
 const geolib = require('geolib')
+const {
+  getCurrentDateInIST,
+  istDate,
+  logger,
+ decrypt,
+} = require("../../utils");
 
 
-
-const logger = winston.createLogger({
-    level: "info",
-    format: winston.format.combine(
-      winston.format.timestamp(),
-      winston.format.json()
-    ),
-    transports: [
-      new winston.transports.File({
-        filename: `${logDirectory}/error.log`,
-        level: "error",
-      }),
-      new winston.transports.File({ filename: `${logDirectory}/combined.log` }),
-    ],
-  });
+// const logger = winston.createLogger({
+//     level: "info",
+//     format: winston.format.combine(
+//       winston.format.timestamp(),
+//       winston.format.json()
+//     ),
+//     transports: [
+//       new winston.transports.File({
+//         filename: `${logDirectory}/error.log`,
+//         level: "error",
+//       }),
+//       new winston.transports.File({ filename: `${logDirectory}/combined.log` }),
+//     ],
+//   });
 
 //////api for login////////////
 const assist_login = async (req, res) => {
@@ -788,16 +793,24 @@ const upcommingTask = async (req, res) => {
 
     console.log({ task });
 
-    const tomorrowDate = moment().add(1, 'days').format('YYYY-MM-DD');
+    // Get tomorrow's date in the same format as start_date
+    const tomorrowDate = moment().add(1, "days").format("DD-MM-YYYY");
+
     const filteredTasks = task.filter(t => {
-    const startDate = moment(t.start_date, 'DD-MM-YYYY', true);
-    const endDate = moment(t.end_date, 'DD-MM-YYYY', true);
-    const tomorrow = moment(tomorrowDate, 'YYYY-MM-DD', true);
+      const startDate = moment(t.start_date, "DD-MM-YYYY", true);
+      const endDate = t.end_date ? moment(t.end_date, "DD-MM-YYYY", true) : startDate; // Handle cases where end_date is missing
+      const tomorrow = moment(tomorrowDate, "DD-MM-YYYY", true);
 
-    return tomorrow.isBetween(startDate, endDate, null, '[]'); 
-  });
+      console.log(`Checking Task ID: ${t.id}`, {
+        startDate: startDate.format("YYYY-MM-DD"),
+        endDate: endDate.format("YYYY-MM-DD"),
+        tomorrow: tomorrow.format("YYYY-MM-DD")
+      });
 
-  console.log("Filtered Tasks:", filteredTasks);
+      return tomorrow.isBetween(startDate, endDate, null, "[]");
+    });
+
+    console.log("Filtered Tasks:", filteredTasks);
 
     res.status(200).json({
       error: false,
@@ -807,8 +820,7 @@ const upcommingTask = async (req, res) => {
     });
 
   } catch (err) {
-    logger.error(`Internal server error: ${err.message} in getTask API`);
-    console.log({ err });
+    console.error(`Internal server error: ${err.message} in getTask API`);
 
     res.status(400).json({
       error: true,
