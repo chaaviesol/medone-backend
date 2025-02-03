@@ -26,6 +26,7 @@ const driverRouter = require("./routes/driverApp/driverApp.routes");
 const LabtestRouter = require("./routes/labtest/labtest.routes");
 const servicesRouter = require("./routes/services/services.routes");
 const timekeepingRouter = require("./routes/timeKeeping/timekeeping.routes");
+const { error } = require("console");
 
 server.use(
   cors({
@@ -314,3 +315,34 @@ const sendNotification = async (token, title, message) => {
 //     throw new Error('Failed to create meeting');
 //   }
 // };
+
+
+
+server.post('/hiring',async(req,res) =>{
+  const{name,contact_no,experience,stream} = req.body
+  try{
+    const response = await prisma.hiring_form.create({
+      data:{
+        name:name,
+        contact_number:contact_no,
+        year_of_experience:experience,
+        stream:stream,
+        status:"enquired"
+      }
+    })
+    console.log({response})
+    res.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull",
+      data:response
+    })
+
+  }catch (error) {
+    console.error("Error-------->", error);
+    return res.status(500).json({
+      error: true,
+      message: "Failed to process notifications",
+    });
+  }
+})

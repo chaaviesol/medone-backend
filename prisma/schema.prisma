@@ -561,3 +561,12 @@ model assist_taskattendance{
   task_id             Int?
   assists_id          assist_details? @relation(fields: [assist_id], references: [id])
 }
+
+model hiring_form{
+  id                 Int              @id @default(autoincrement())
+  name               String?
+  contact_number     String?
+  year_of_experience String?
+  stream             String?
+  status             String?
+}
