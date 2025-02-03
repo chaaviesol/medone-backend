@@ -114,17 +114,18 @@ const addhospitalassist = async (request, response) => {
       pickup_type,
       requirements,
       customer_id,
+      pincode
     } = JSON.parse(request.body.data);
     const documents = request.files;
     let medical_documents = {};
 
-    if (!documents || documents.length === 0) {
-      return response.status(400).json({
-        message: "Please attach at least one report",
-        error: true,
-      });
-    }
-
+    // if (!documents || documents.length === 0) {
+    //   return response.status(400).json({
+    //     message: "Please attach at least one report",
+    //     error: true,
+    //   });
+    // }
+    
     for (i = 0; i < documents?.length; i++) {
       let keyName = `image${i + 1}`;
       medical_documents[keyName] = documents[i].location;
@@ -155,6 +156,7 @@ const addhospitalassist = async (request, response) => {
         hospital_location,
         pickup_type,
         requirements,
+        pincode,
         medical_documents: medical_documents,
       },
     });
@@ -181,12 +183,17 @@ const addhospitalassist = async (request, response) => {
 
 const gethospitalassistantreqs = async (request, response) => {
   try {
+    logger.info("API gethospitalassistantreqs called")
     const allrequests = await prisma.hospitalAssist_service.findMany({
       orderBy: {
         created_date: "asc",
       },
     });
     if (allrequests.length > 0) {
+      const endTime = Date.now();
+      const executionTime = endTime - startTime;
+
+      logger.info(`Execution time for gethospitalassistantreqs API: ${executionTime}ms`);
       return response.status(200).json({
         data: allrequests,
         success: true,
@@ -217,6 +224,7 @@ const updatehospitalassistservice = async (request, response) => {
     patient_location,
     assist_type,
     start_date,
+    end_date,
     time,
     days_week,
     hospital_location,
@@ -248,6 +256,7 @@ const updatehospitalassistservice = async (request, response) => {
         hospital_location,
         time,
         start_date,
+        end_date,
         days_week,
         patient_location,
         requirements,
@@ -382,6 +391,7 @@ const addphysiotherapy = async (request, response) => {
       patient_location,
       therapy_type,
       customer_id,
+      pincode
     } = request.body;
 
     const datetime = getCurrentDateInIST();
@@ -399,6 +409,7 @@ const addphysiotherapy = async (request, response) => {
         start_date,
         therapy_type,
         patient_location,
+        pincode,
         created_date: datetime,
         status: "placed",
         customer_id,
@@ -456,12 +467,17 @@ const addphysiotherapy = async (request, response) => {
 
 const getphysiotherapyreqs = async (request, response) => {
   try {
+    logger.info("API getphysiotherapyreqs called")
     const allrequests = await prisma.physiotherapist_service.findMany({
       orderBy: {
         created_date: "asc",
       },
     });
     if (allrequests.length > 0) {
+      const endTime = Date.now();
+      const executionTime = endTime - startTime;
+
+      logger.info(`Execution time for getphysiotherapyreqs API: ${executionTime}ms`);
       return response.status(200).json({
         data: allrequests,
         success: true,
@@ -702,18 +718,19 @@ const addhomeservice = async (request, response) => {
       requirements,
       general_specialized,
       customer_id,
+      pincode
     } = JSON.parse(request.body.data);
     // } = (request.body)
 
     const documents = request.files;
     let medical_documents = {};
 
-    if (!documents || documents.length === 0) {
-      return response.status(400).json({
-        message: "Please attach at least one report",
-        error: true,
-      });
-    }
+    // if (!documents || documents.length === 0) {
+    //   return response.status(400).json({
+    //     message: "Please attach at least one report",
+    //     error: true,
+    //   });
+    // }
 
     for (i = 0; i < documents?.length; i++) {
       let keyName = `image${i + 1}`;
@@ -738,6 +755,7 @@ const addhomeservice = async (request, response) => {
         days_week,
         requirements,
         customer_id,
+        pincode,
         medical_documents: medical_documents,
       },
     });
@@ -763,12 +781,17 @@ const addhomeservice = async (request, response) => {
 
 const gethomeservicereqs = async (request, response) => {
   try {
+    logger.info("API gethomeservicereqs called")
     const allrequests = await prisma.homeCare_Service.findMany({
       orderBy: {
         created_date: "asc",
       },
     });
     if (allrequests.length > 0) {
+      const endTime = Date.now();
+      const executionTime = endTime - startTime;
+
+      logger.info(`Execution time for gethomeservicereqs API: ${executionTime}ms`);
       return response.status(200).json({
         data: allrequests,
         success: true,

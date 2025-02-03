@@ -801,6 +801,7 @@ const edituser = async (request, response) => {
   const secretKey = process.env.ENCRYPTION_KEY;
 
   try {
+    logger.info("API edituser called");
     // const id = request.body.userId;
     const userimg = request?.files[0]?.location;
     const { userId, name, ageGroup, gender, pincode } = JSON.parse(
@@ -858,6 +859,10 @@ const edituser = async (request, response) => {
         },
       });
       if (update) {
+        const endTime = Date.now();
+        const executionTime = endTime - startTime;
+
+        logger.info(`Execution time for edituser API: ${executionTime}ms`);
         response.status(200).json({
           message: "successfully updated",
           success: true,
