@@ -704,7 +704,11 @@ const addhomeServiceenquiry = async (request, response) => {
 };
 
 const addhomeservice = async (request, response) => {
+  console.log(request)
   try {
+    let requestData = typeof request.body.data === "string" 
+      ? JSON.parse(request.body.data) 
+      : request.body.data;
     let {
       id,
       patient_mobility,
@@ -719,9 +723,8 @@ const addhomeservice = async (request, response) => {
       general_specialized,
       customer_id,
       pincode
-    } = JSON.parse(request.body.data);
-    // } = (request.body)
-
+    } = requestData;
+    
     const documents = request.files;
     let medical_documents = {};
 

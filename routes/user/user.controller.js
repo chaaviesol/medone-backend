@@ -523,6 +523,7 @@ const userLogin = async (request, response) => {
     const users = await prisma.user_details.findMany({
       select: {
         id: true,
+        name: true,
         email: true,
         password: true,
       },
@@ -558,6 +559,15 @@ const userLogin = async (request, response) => {
     const logged_id = user.id;
     const userType = "customer";
     const hashedDbPassword = user.password;
+    let decryptedUserName = "";
+    try {
+      decryptedUserName = safeDecrypt(user.name, secretKey);
+    } catch (error) {
+      console.warn(
+        `Error decrypting user_name for user ID ${logged_id}`,
+        error
+      );
+    }
 
     // Compare the provided password with the hashed password from the database
     bcrypt.compare(password, hashedDbPassword, async (error, result) => {
@@ -625,6 +635,7 @@ const userLogin = async (request, response) => {
         accessToken,
         userId: logged_id,
         userType,
+        user_name: decryptedUserName,
       });
     });
   } catch (error) {

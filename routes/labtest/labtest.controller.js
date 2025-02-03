@@ -372,6 +372,7 @@ const gettestswithauth = async (request, response) => {
 };
 
 const testdetail = async (request, response) => {
+  console.log("heeeeeee")
   try {
     const { id } = request.body;
 
@@ -795,6 +796,7 @@ const getpackageswithauth = async (request, response) => {
 
 const packagedetail = async (request, response) => {
   try {
+    console.log(request.body)
     const { id } = request.body;
     const labPackage = await prisma.lab_packages.findFirst({
       where: { id },
@@ -819,6 +821,7 @@ const packagedetail = async (request, response) => {
           id: true,
           name: true,
           mrp: true,
+          description:true
         },
       });
 
