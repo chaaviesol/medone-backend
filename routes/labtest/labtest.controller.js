@@ -597,7 +597,7 @@ const package_add = async (request, response) => {
 };
 
 const package_update = async (request, response) => {
-  const { id, package_name, price, status, labtest_ids } = request.body;
+  const { id, package_name, price, labtest_ids } = request.body;
 
   const datetime = getCurrentDateInIST();
 
@@ -618,7 +618,6 @@ const package_update = async (request, response) => {
       data: {
         package_name,
         price,
-        status,
         labtest_ids,
       },
     });
