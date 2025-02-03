@@ -186,6 +186,7 @@ const getnearestlabs = async (request, response) => {
 };
 
 const labtestadd = async (request, response) => {
+  console.log("rrrrrrrrrrr",request.body)
   const {
     name,
     mrp,
@@ -220,7 +221,7 @@ const labtestadd = async (request, response) => {
     const adddata = await prisma.labtest_details.create({
       data: {
         name: lwrcase_name,
-        mrp,
+        mrp:parseInt(mrp),
         description: lwrcase_description,
         is_active: true,
         type: lwrcase_type,
@@ -500,7 +501,7 @@ const labtestupdate = async (request, response) => {
       where: { id },
       data: {
         name: lwrcase_name,
-        mrp,
+        mrp:parseInt(mrp),
         description: lwrcase_description,
         is_active: true,
         type: lwrcase_type,
