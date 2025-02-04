@@ -1,6 +1,7 @@
 const express = require("express");
 require("dotenv").config();
 const cron = require("node-cron");
+const { logger } = require("./utils");
 const bodyParser = require("body-parser");
 const PORT = process.env.PORT;
 const HOST = process.env.HOST;
@@ -51,13 +52,7 @@ server.use("/googlemap", googleMapRouter);
 server.use("/driver", driverRouter);
 server.use("/labtest", LabtestRouter);
 server.use("/services", servicesRouter);
-server.use('/timekeeping',timekeepingRouter)
-
-
-
-
-
-
+server.use("/timekeeping", timekeepingRouter);
 
 if (process.env.NODE_ENV === "development") {
   server.listen(PORT, () => {
@@ -316,41 +311,39 @@ const sendNotification = async (token, title, message) => {
 //   }
 // };
 
-
-
-server.post('/hiring',async(req,res) =>{
+server.post("/hiring", async (req, res) => {
   const startTime = Date.now();
   logger.info("API hiring called");
-  const{name,contact_no,experience,stream} = req.body
-  try{
+  const { name, contact_no, experience, stream } = req.body;
+  try {
     const response = await prisma.hiring_form.create({
-      data:{
-        name:name,
-        contact_number:contact_no,
-        year_of_experience:experience,
-        stream:stream,
-        status:"enquired"
-      }
-    })
-    console.log({response})
+      data: {
+        name: name,
+        contact_number: contact_no,
+        year_of_experience: experience,
+        stream: stream,
+        status: "enquired",
+      },
+    });
+    console.log({ response });
     const endTime = Date.now();
-      const executionTime = endTime - startTime;
+    const executionTime = endTime - startTime;
 
-      logger.info(
-        `Execution time for hiring-success API: ${executionTime}ms`
-      );
+    logger.info(`Execution time for hiring-success API: ${executionTime}ms`);
     res.status(200).json({
-      error:false,
-      success:true,
-      message:"Successfull",
-      data:response
-    })
-
-  }catch (error) {
+      error: false,
+      success: true,
+      message: "Successfull",
+      data: response,
+    });
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in hiring API`
+    );
     console.error("Error-------->", error);
     return res.status(500).json({
       error: true,
       message: "Failed to process notifications",
     });
   }
-})
+});
