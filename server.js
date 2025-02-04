@@ -319,6 +319,8 @@ const sendNotification = async (token, title, message) => {
 
 
 server.post('/hiring',async(req,res) =>{
+  const startTime = Date.now();
+  logger.info("API hiring called");
   const{name,contact_no,experience,stream} = req.body
   try{
     const response = await prisma.hiring_form.create({
@@ -331,6 +333,12 @@ server.post('/hiring',async(req,res) =>{
       }
     })
     console.log({response})
+    const endTime = Date.now();
+      const executionTime = endTime - startTime;
+
+      logger.info(
+        `Execution time for hiring-success API: ${executionTime}ms`
+      );
     res.status(200).json({
       error:false,
       success:true,

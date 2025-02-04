@@ -183,6 +183,7 @@ const addhospitalassist = async (request, response) => {
 
 const gethospitalassistantreqs = async (request, response) => {
   try {
+    const startTime = Date.now();
     logger.info("API gethospitalassistantreqs called")
     const allrequests = await prisma.hospitalAssist_service.findMany({
       orderBy: {
@@ -467,6 +468,7 @@ const addphysiotherapy = async (request, response) => {
 
 const getphysiotherapyreqs = async (request, response) => {
   try {
+    const startTime = Date.now();
     logger.info("API getphysiotherapyreqs called")
     const allrequests = await prisma.physiotherapist_service.findMany({
       orderBy: {
@@ -784,6 +786,7 @@ const addhomeservice = async (request, response) => {
 
 const gethomeservicereqs = async (request, response) => {
   try {
+    const startTime = Date.now();
     logger.info("API gethomeservicereqs called")
     const allrequests = await prisma.homeCare_Service.findMany({
       orderBy: {

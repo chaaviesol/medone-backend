@@ -812,6 +812,7 @@ const edituser = async (request, response) => {
   const secretKey = process.env.ENCRYPTION_KEY;
 
   try {
+    const startTime = Date.now();
     logger.info("API edituser called");
     // const id = request.body.userId;
     const userimg = request?.files[0]?.location;

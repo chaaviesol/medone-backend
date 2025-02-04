@@ -125,10 +125,45 @@ const lab_profile = async (request, response) => {
       },
     });
 
+    const labTestIds = finddetails?.test_ids || [];
+    const packageIds=finddetails?.package_id || [];
+
+      const labtestDetails = await prisma.labtest_details.findMany({
+        where: {
+          id: { in: labTestIds },
+        },
+        select: {
+          id: true,
+          name: true,
+          mrp: true,
+          description:true,
+          home_collection:true
+        },
+      });
+      const packageDetails = await prisma.lab_packages.findMany({
+        where: {
+          id: { in: packageIds },
+        },
+        select: {
+          id: true,
+          package_name: true,
+          price: true,
+          about:true,
+          home_collection:true,
+          health_concern:true
+        },
+      });
+
+      const packageWithTests = {
+        ...finddetails,
+        tests: labtestDetails,
+        packages:packageDetails
+      };
+
     return response.status(200).json({
       error: false,
       success: true,
-      data: finddetails,
+      data: packageWithTests,
     });
   } catch (error) {
     logger.error(`Internal server error: ${error.message} in lab_profile api`);
@@ -1429,6 +1464,7 @@ const alltestlistorders = async (request, response) => {
   try {
     const all = await prisma.labtest_order.findMany({
       select: {
+        order_id:true,
         order_number: true,
         total_amount: true,
         status: true,
@@ -1436,9 +1472,11 @@ const alltestlistorders = async (request, response) => {
         delivery_details: true,
         delivery_location: true,
         patient_details: true,
+        created_date:true,
         pincode: true,
         doctor_name: true,
-
+        test_collection:true,
+        contact_no:true,
         users: {
           select: {
             name: true,
