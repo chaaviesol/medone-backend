@@ -1009,7 +1009,7 @@ const assignlab = async (request, response) => {
 
 const testToCart = async (request, response) => {
   const { test_number } = request.body;
-  const user_id = request.user.userId;
+  const user_id = request.body.userId;
   const datetime = getCurrentDateInIST();
   try {
     if (!user_id || !test_number) {
@@ -1064,7 +1064,7 @@ const testToCart = async (request, response) => {
 };
 
 const gettestCart = async (request, response) => {
-  const user_id = request.user.userId;
+  const user_id = request.body.userId;
   try {
     if (!user_id) {
       logger.error("user_id is undefined in labtest-getCart API");
@@ -1162,7 +1162,7 @@ const gettestCart = async (request, response) => {
 
 const removeTestFromCart = async (request, response) => {
   const { test_number } = request.body;
-  const user_id = request.user.userId;
+  const user_id = request.body.userId;
   if (!user_id || !test_number) {
     logger.error(
       "user_id or test_number is undefined in removeTestFromCart API"
@@ -1206,7 +1206,7 @@ const removeTestFromCart = async (request, response) => {
 };
 
 const checkout = async (request, response) => {
-  const usertype = request.user.userType;
+  
   const {
     total_amount,
     status,
@@ -1220,7 +1220,7 @@ const checkout = async (request, response) => {
     delivery_details,
   } = request.body;
 
-  const userId = parseInt(request.user.userId);
+  const userId = request.body.userId;
   let test_order;
 
   try {
@@ -1416,8 +1416,7 @@ const checkout = async (request, response) => {
 
 const myorders = async (request, response) => {
   try {
-    const user_id = request.user.userId;
-    const usertype = request.user.userType;
+    const user_id = request.body.userId;
 
     if (!user_id) {
       return response.status(400).json({
@@ -1425,12 +1424,7 @@ const myorders = async (request, response) => {
         message: "user_id is required",
       });
     }
-    if (!usertype || usertype != "customer") {
-      return response.status(400).json({
-        error: true,
-        message: "Please login as a customer",
-      });
-    }
+    
     const labtestsordersdata = await prisma.labtest_order.findMany({
       where: {
         customer_id: user_id,
