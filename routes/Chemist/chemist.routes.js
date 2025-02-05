@@ -14,7 +14,8 @@ const {chemist_login,
     addSeenStatus,
     orderSummery,
     verifyOtp,
-    trackOrder
+    trackOrder,
+    request_delivery
 } = require('./chemist.controller')
 
 const chemistRouter = express.Router()
@@ -37,7 +38,7 @@ chemistRouter.post('/addSeenStatus',addSeenStatus)
 chemistRouter.post('/orderSummery',orderSummery)
 chemistRouter.post('/verifyOtp',verifyOtp)
 chemistRouter.post('/trackOrder',trackOrder)
-
+chemistRouter.post('/request_delivery',request_delivery)
 
 
 

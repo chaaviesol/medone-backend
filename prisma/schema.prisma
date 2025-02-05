@@ -256,7 +256,8 @@ model sales_order {
   patient_name           String?
   doctor_name            String? 
   pharmacy_id            Int?
-  otp                    Int?        
+  otp                    Int? 
+  payment_type           String?       
   sales_list             sales_list[]
   users                  user_details? @relation(fields: [customer_id],references: [id])
   pharmacy               pharmacy_details? @relation(fields: [pharmacy_id],references: [id])

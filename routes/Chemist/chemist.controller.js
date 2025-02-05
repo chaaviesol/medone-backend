@@ -8,7 +8,7 @@ const secondApp = require('../../firebase')
 const bcrypt = require("bcrypt");
 const { messaging } = require("firebase-admin");
 const nodemailer = require('nodemailer')
-const {getCurrentDateInIST,decrypt} = require('../../utils');
+const {getCurrentDateInIST,decrypt,encrypt} = require('../../utils');
 const { getLogger } = require("nodemailer/lib/shared");
 // const pharmacy_otp = require('../../views')
 
@@ -586,9 +586,6 @@ const getConfirmedOrder = async (req, res) => {
     });
   }
 };
-
-
-
 
 const getproductspharmacy = async (request, response) => {
   console.log({request})
@@ -1539,10 +1536,6 @@ const orderSummery = async (req, res) => {
   }
 };
 
-
-
-
-
 /////track order
 const trackOrder = async(req,res)=>{
   try{
@@ -1555,6 +1548,190 @@ const trackOrder = async(req,res)=>{
     //await prisma.$disconnect();
   }
 }
+
+const request_delivery = async(req,res)=>{
+  const secretKey = process.env.ENCRYPTION_KEY;
+  const safeDecrypt = (text, key) => {
+    try {
+      return decrypt(text, key);
+    } catch (err) {
+      return text;
+    }
+  };
+  try{
+    const{
+      name,
+      deliverAddress,
+      phone_no,
+      prescription = null,
+      payment_type,
+      total_amount,
+      remarks,
+      pincode,
+      pharmacy_id
+    } = req.body
+
+    function generateEmailAndPassword(name) {
+      const domain = "gmail.com"; // Change to your required domain
+    
+      // Format name for email
+      const formattedName = name.trim().toLowerCase().replace(/\s+/g, "");
+      const randomNum = Math.floor(1000 + Math.random() * 9000); // 4-digit random number
+      const email = `${formattedName}${randomNum}@${domain}`;
+    
+      // Generate a password
+      const specialChars = "@";
+      const randomChar = specialChars[Math.floor(Math.random() * specialChars.length)];
+      const password = `${formattedName.charAt(0).toUpperCase()}${randomNum}${randomChar}`;
+    
+      return { email, password };
+    }
+    
+    const userName = req.body.name || "Default Name";
+    const { email, password } = generateEmailAndPassword(userName);
+    console.log("Generated Email:", email);
+    console.log("Generated Password:", password);
+
+    const users = await prisma.user_details.findMany();
+    const emaillowercase = email.toLowerCase();
+    for (const user of users) {
+      const decryptedEmail = safeDecrypt(user.email, secretKey);
+      const decryptedPhone = safeDecrypt(user.phone_no, secretKey);
+
+      if (decryptedEmail === email || decryptedEmail === emaillowercase) {
+        return response.status(400).json({
+          error: true,
+          message: "Email address already exists",
+          success: false,
+        });
+      } else if (decryptedPhone === phone_no) {
+        return res.status(400).json({
+          error: true,
+          message: "Phone number already exists",
+          success: false,
+        });
+      }
+    }
+
+     const date_time = getCurrentDateInIST();
+     const hashedPass = await bcrypt.hash(password, 5);
+     const emailencrypted = encrypt(String(emaillowercase || ""), secretKey);
+     const phoneencrypted = encrypt(String(phone_no || ""), secretKey);
+     
+     const year = new Date().getFullYear();
+     const lastTwoDigits = year.toString().slice(-2);
+    const so_num = "SO";
+    const startOfYear = new Date(new Date().getFullYear(), 0, 1);
+    const endOfYear = new Date(new Date().getFullYear() + 1, 0, 1);
+
+    const existingsalesOrders = await prisma.sales_order.findMany({
+      where: {
+        created_date: {
+          gte: startOfYear, // Greater than or equal to Jan 1st
+          lt: endOfYear,    // Less than Jan 1st of the next year
+        },
+      },
+    });
+    const newid = existingsalesOrders.length + 1;
+    const formattedNewId = ("0000" + newid).slice(-4);
+    const so_number = so_num + lastTwoDigits + formattedNewId;
+
+    
+    const datetime = getCurrentDateInIST();
+    const otp = Math.floor(100000 + Math.random() * 900000);
+
+    // add userDetails////
+    const addUser = await prisma.user_details.create({
+      data:{
+        name:encrypt(name, secretKey),
+        phone_no:phoneencrypted,
+        email:emailencrypted,
+        password:hashedPass,
+        datetime:date_time,
+        status:"Y"
+      }
+      
+    })
+    console.log({addUser})
+    const userId = addUser.id
+    console.log({userId})
+    const requestData = await prisma.sales_order.create({
+      data:{
+        so_number:so_number,
+        total_amount, 
+        so_status:"placed",
+        order_type:"request_delivery",
+        remarks,
+        created_date:datetime,
+        contact_no:phone_no,
+        pincode,
+        prescription_image:prescription,
+        delivery_location:deliverAddress,
+        otp:otp,
+        payment_type:payment_type,
+        customer_id:userId,
+        pharmacy_id,
+        patient_name:name,
+        doctor_name:"RequestDelivery"
+      }
+    })
+
+    console.log({requestData})
+    const salesId = requestData.sales_id
+    console.log({salesId})
+
+    const findDriver = await prisma.delivery_partner.findMany({
+      where:{
+        pharmacy_ids:{
+          array_contains: [pharmacy_id], 
+        }
+      }
+    })
+    console.log({findDriver})
+    const driverId = findDriver[0].id
+    console.log({driverId})
+
+    const deliveryAssign = await prisma.delivery_assign.create({
+      data:{
+       sales_id:salesId,
+       deliverypartner_id:driverId,
+       status:"assigned",
+       assigned_date:datetime,
+       payment_method:payment_type,
+
+      }
+    })
+    console.log({deliveryAssign})
+
+    const pharmacyAssign = await prisma.pharmacy_assign.create({
+      data:{
+      pharmacy_id:pharmacy_id,
+      sales_id:salesId,
+      status:"packed",
+      created_date:datetime
+
+      }
+    })
+    console.log({pharmacyAssign})
+
+
+
+    return res.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull......",
+      data:findDriver
+    })
+
+  }catch (error) {
+    console.log("error--------",error)
+    console.error(`Internal server error: ${error.message} in chemist-request_delivery API`);
+    return res.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    //await prisma.$disconnect();
+  }
+}
+
 
 module.exports = {
     chemist_login,
@@ -1572,5 +1749,6 @@ module.exports = {
     addSeenStatus,
     orderSummery,
     verifyOtp,
-    trackOrder
+    trackOrder,
+    request_delivery
 }
