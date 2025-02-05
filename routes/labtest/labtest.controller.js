@@ -126,39 +126,39 @@ const lab_profile = async (request, response) => {
     });
 
     const labTestIds = finddetails?.test_ids || [];
-    const packageIds=finddetails?.package_id || [];
+    const packageIds = finddetails?.package_id || [];
 
-      const labtestDetails = await prisma.labtest_details.findMany({
-        where: {
-          id: { in: labTestIds },
-        },
-        select: {
-          id: true,
-          name: true,
-          mrp: true,
-          description:true,
-          home_collection:true
-        },
-      });
-      const packageDetails = await prisma.lab_packages.findMany({
-        where: {
-          id: { in: packageIds },
-        },
-        select: {
-          id: true,
-          package_name: true,
-          price: true,
-          about:true,
-          home_collection:true,
-          health_concern:true
-        },
-      });
+    const labtestDetails = await prisma.labtest_details.findMany({
+      where: {
+        id: { in: labTestIds },
+      },
+      select: {
+        id: true,
+        name: true,
+        mrp: true,
+        description: true,
+        home_collection: true,
+      },
+    });
+    const packageDetails = await prisma.lab_packages.findMany({
+      where: {
+        id: { in: packageIds },
+      },
+      select: {
+        id: true,
+        package_name: true,
+        price: true,
+        about: true,
+        home_collection: true,
+        health_concern: true,
+      },
+    });
 
-      const packageWithTests = {
-        ...finddetails,
-        tests: labtestDetails,
-        packages:packageDetails
-      };
+    const packageWithTests = {
+      ...finddetails,
+      tests: labtestDetails,
+      packages: packageDetails,
+    };
 
     return response.status(200).json({
       error: false,
@@ -221,7 +221,7 @@ const getnearestlabs = async (request, response) => {
 };
 
 const labtestadd = async (request, response) => {
-  console.log("rrrrrrrrrrr",request.body)
+  console.log("rrrrrrrrrrr", request.body);
   const {
     name,
     mrp,
@@ -256,7 +256,7 @@ const labtestadd = async (request, response) => {
     const adddata = await prisma.labtest_details.create({
       data: {
         name: lwrcase_name,
-        mrp:parseInt(mrp),
+        mrp: parseInt(mrp),
         description: lwrcase_description,
         is_active: true,
         type: lwrcase_type,
@@ -326,8 +326,8 @@ const getalltests = async (request, response) => {
         id: true,
         name: true,
         test_number: true,
-        home_collection:true,
-        description:true,
+        home_collection: true,
+        description: true,
         mrp: true,
       },
     });
@@ -410,7 +410,7 @@ const gettestswithauth = async (request, response) => {
 };
 
 const testdetail = async (request, response) => {
-  console.log("heeeeeee")
+  console.log("heeeeeee");
   try {
     const { id } = request.body;
 
@@ -538,7 +538,7 @@ const labtestupdate = async (request, response) => {
       where: { id },
       data: {
         name: lwrcase_name,
-        mrp:parseInt(mrp),
+        mrp: parseInt(mrp),
         description: lwrcase_description,
         is_active: true,
         type: lwrcase_type,
@@ -833,7 +833,7 @@ const getpackageswithauth = async (request, response) => {
 
 const packagedetail = async (request, response) => {
   try {
-    console.log(request.body)
+    console.log(request.body);
     const { id } = request.body;
     const labPackage = await prisma.lab_packages.findFirst({
       where: { id },
@@ -858,7 +858,7 @@ const packagedetail = async (request, response) => {
           id: true,
           name: true,
           mrp: true,
-          description:true
+          description: true,
         },
       });
 
@@ -957,9 +957,9 @@ const packagedetailwithauth = async (request, response) => {
 
 const assignlab = async (request, response) => {
   try {
-    const { order_id, lab_id, status } = request.body;
+    const { order_id, lab_id } = request.body;
     const datetime = getCurrentDateInIST();
-
+    console.log("laaaaaaaaa", request.body);
     // Validate the required fields
     if (!order_id || !lab_id) {
       return response.status(400).json({
@@ -985,6 +985,8 @@ const assignlab = async (request, response) => {
       },
       data: {
         lab_id,
+        status: "confirmed",
+        updated_date: datetime,
       },
     });
 
@@ -1302,14 +1304,14 @@ const checkout = async (request, response) => {
 
       if (order_type != "prescription") {
         let findcollection = "home";
-        const tests=await prisma.labtest_cart.findMany({
-          where:{
-            user_id:userId
+        const tests = await prisma.labtest_cart.findMany({
+          where: {
+            user_id: userId,
           },
-          select:{
-            test_number:true
-          }
-        })
+          select: {
+            test_number: true,
+          },
+        });
 
         for (let test of tests) {
           let find;
@@ -1465,7 +1467,7 @@ const alltestlistorders = async (request, response) => {
   try {
     const all = await prisma.labtest_order.findMany({
       select: {
-        order_id:true,
+        order_id: true,
         order_number: true,
         total_amount: true,
         status: true,
@@ -1473,11 +1475,11 @@ const alltestlistorders = async (request, response) => {
         delivery_details: true,
         delivery_location: true,
         patient_details: true,
-        created_date:true,
+        created_date: true,
         pincode: true,
         doctor_name: true,
-        test_collection:true,
-        contact_no:true,
+        test_collection: true,
+        contact_no: true,
         users: {
           select: {
             name: true,
@@ -1548,51 +1550,118 @@ const alltestlistorders = async (request, response) => {
 };
 
 //get labs for assigning
+
 const getlaboratories = async (request, response) => {
   try {
     const { order_id } = request.body;
     const getdetails = await prisma.labtest_order.findFirst({
-      where: {
-        order_id: order_id,
-      },
+      where: { order_id },
       select: {
         order_number: true,
-        labtest_list: true,
+        labtest_list: {
+          select: { test_number: true },
+        },
+        pincode: true,
+        lab_id: true,
+        lab_details: {
+          select: {
+            name: true,
+            pincode: true,
+            address: true,
+          },
+        },
       },
     });
-    let pincode = getdetails?.pincode;
-    if (!pincode) {
-      return response.status(400).json({
-        error: true,
-        message: "pincode can't be null or empty.",
+    if (!getdetails) {
+      return response
+        .status(400)
+        .json({ error: true, message: "getdetails can't be null" });
+    }
+    if (getdetails.lab_id != null) {
+      const responseby = [
+        {
+          name: getdetails?.lab_details?.name,
+          address: getdetails?.lab_details?.address,
+          pincode: getdetails?.lab_details?.pincode,
+          button_status: "assigned",
+        },
+      ];
+      return response.status(200).json({
+        data: responseby,
+        success: true,
+      });
+    } else {
+      if (!getdetails || !getdetails.pincode) {
+        return response
+          .status(400)
+          .json({ error: true, message: "Pincode can't be null or empty." });
+      }
+
+      if (isNaN(getdetails.pincode)) {
+        return response
+          .status(400)
+          .json({ error: true, message: "Invalid pincode provided." });
+      }
+
+      const testdetails = getdetails.labtest_list;
+      let testids = [];
+      let packageids = [];
+
+      for (const test of testdetails) {
+        if (test?.test_number.includes("T")) {
+          const find = await prisma.labtest_details.findFirst({
+            where: { test_number: test?.test_number },
+            select: { id: true },
+          });
+          if (find) testids.push(find.id);
+        } else if (test?.test_number.includes("P")) {
+          const find = await prisma.lab_packages.findFirst({
+            where: { test_number: test?.test_number },
+            select: { id: true },
+          });
+          if (find) packageids.push(find.id);
+        }
+      }
+      console.log("hhhhhhhhhh", testids, "dddddddddddddd", packageids);
+      // Filter labs that contain the required test_ids and package_ids
+      let filteredLabs = await prisma.lab_details.findMany({
+        where: {
+          AND: [
+            { test_ids: { array_contains: testids } }, // Match test_ids in the lab
+            { package_id: { array_contains: packageids } }, // Match package_ids in the lab
+          ],
+        },
+      });
+      console.log({ filteredLabs });
+      if (filteredLabs.length === 0) {
+        return response
+          .status(404)
+          .json({ error: true, message: "No labs found matching criteria." });
+      }
+
+      // Sort labs based on the nearest pincode
+      function findNearestPinCodes(labs, givenPincode, count = 3) {
+        return labs
+          .sort(
+            (a, b) =>
+              Math.abs(a.pincode - givenPincode) -
+              Math.abs(b.pincode - givenPincode)
+          )
+          .slice(0, count);
+      }
+
+      let nearestLabs = findNearestPinCodes(filteredLabs, getdetails.pincode);
+      nearestLabs = nearestLabs.map((lab) => ({
+        ...lab,
+        button_status: "assign",
+      }));
+
+      return response.status(200).json({
+        data: nearestLabs,
+        success: true,
+        error: false,
       });
     }
-
-    if (isNaN(pincode)) {
-      return response.status(400).json({
-        error: true,
-        message: "Invalid pincode provided.",
-      });
-    }
-
-    let labs = await prisma.lab_details.findMany({});
-    const givenPincode = pincode;
-    function findNearestPinCodes(labs, givenPincode, count = 3) {
-      labs.sort(
-        (a, b) =>
-          Math.abs(a.pincode - givenPincode) -
-          Math.abs(b.pincode - givenPincode)
-      );
-
-      return labs.slice(0, count);
-    }
-
-    const nearestlabs = findNearestPinCodes(labs, givenPincode);
-    return response.status(200).json({
-      data: nearestlabs,
-      success: true,
-      error: false,
-    });
   } catch (error) {
     logger.error(
       `Internal server error: ${error.message} in labtest-getlaboratories API`
@@ -1602,6 +1671,61 @@ const getlaboratories = async (request, response) => {
     await prisma.$disconnect();
   }
 };
+
+// const getlaboratories = async (request, response) => {
+//   try {
+//     const { order_id } = request.body;
+//     const getdetails = await prisma.labtest_order.findFirst({
+//       where: {
+//         order_id: order_id,
+//       },
+//       select: {
+//         order_number: true,
+//         labtest_list: true,
+//       },
+//     });
+//     let pincode = getdetails?.pincode;
+//     if (!pincode) {
+//       return response.status(400).json({
+//         error: true,
+//         message: "pincode can't be null or empty.",
+//       });
+//     }
+
+//     if (isNaN(pincode)) {
+//       return response.status(400).json({
+//         error: true,
+//         message: "Invalid pincode provided.",
+//       });
+//     }
+
+//     let labs = await prisma.lab_details.findMany({});
+//     const givenPincode = pincode;
+//     function findNearestPinCodes(labs, givenPincode, count = 3) {
+//       labs.sort(
+//         (a, b) =>
+//           Math.abs(a.pincode - givenPincode) -
+//           Math.abs(b.pincode - givenPincode)
+//       );
+
+//       return labs.slice(0, count);
+//     }
+
+//     const nearestlabs = findNearestPinCodes(labs, givenPincode);
+//     return response.status(200).json({
+//       data: nearestlabs,
+//       success: true,
+//       error: false,
+//     });
+//   } catch (error) {
+//     logger.error(
+//       `Internal server error: ${error.message} in labtest-getlaboratories API`
+//     );
+//     response.status(500).json({ error: "Internal Server Error" });
+//   } finally {
+//     await prisma.$disconnect();
+//   }
+// };
 
 /////////////get order detailss//////////
 const getorderdetails = async (request, response) => {
@@ -1651,7 +1775,7 @@ const getorderdetails = async (request, response) => {
             name: true,
             mrp: true,
             description: true,
-            home_collection:true
+            home_collection: true,
           },
         });
         if (testDetail) {
@@ -1660,7 +1784,6 @@ const getorderdetails = async (request, response) => {
             type: "test",
           });
         }
-
       } else {
         testDetail = await prisma.lab_packages.findFirst({
           where: {
@@ -1671,7 +1794,7 @@ const getorderdetails = async (request, response) => {
             package_name: true,
             price: true,
             about: true,
-            home_collection:true
+            home_collection: true,
           },
         });
         if (testDetail) {
@@ -1680,12 +1803,11 @@ const getorderdetails = async (request, response) => {
             name: testDetail.package_name,
             mrp: testDetail.price,
             description: testDetail.about,
-            home_collection:testDetail.home_collection,
+            home_collection: testDetail.home_collection,
             type: "package",
           });
         }
       }
-     
     }
     const responseDetails = {
       ...getdetails,
@@ -1697,7 +1819,7 @@ const getorderdetails = async (request, response) => {
       error: false,
     });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     logger.error(
       `Internal server error: ${error.message} in labtest-getorderdetails API`
     );
