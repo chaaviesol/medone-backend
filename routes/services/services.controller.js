@@ -220,7 +220,7 @@ const gethospitalassistantreqs = async (request, response) => {
 };
 
 const updatehospitalassistservice = async (request, response) => {
-  console.log("nhhhhhhhhhhhh");
+  console.log("nhhhhhhhhhhhh",request.body);
   const {
     id,
     patient_mobility,
@@ -1252,6 +1252,7 @@ const getorderdetails = async (request, response) => {
           hospital_location: true,
           time: true,
           start_date: true,
+          end_date:true,
           days_week: true,
           patient_location: true,
           requirements: true,
@@ -1560,6 +1561,8 @@ const gethomecareassists = async (request, response) => {
             type: true,
             gender: true,
             address: true,
+            pincode:true,
+            phone_no: true,
           },
         },
       },
@@ -1573,10 +1576,15 @@ const gethomecareassists = async (request, response) => {
     }
 
     if (find.assist_id != null) {
-      const responseby = {
-        ...find,
+      const responseby = [{
+        gender:find?.assist_details?.gender,
+        address:find?.assist_details?.address,
+        pincode:find?.assist_details?.pincode,
+        phone_no:find?.assist_details?.phone_no,
+        type:find?.assist_details?.type,
+        name:find?.assist_details?.name,
         button_status: "assigned",
-      };
+      }];
       return response.status(200).json({
         data: responseby,
         success: true,
@@ -1748,12 +1756,15 @@ const getphysioassists = async (request, response) => {
     });
 
     if (find.assist_id != null) {
-      const responseby = [
-        {
-          ...find.assist_details,
-          button_status: "assigned",
-        },
-      ];
+      const responseby = [{
+        gender:find?.assist_details?.gender,
+        address:find?.assist_details?.address,
+        pincode:find?.assist_details?.pincode,
+        phone_no:find?.assist_details?.phone_no,
+        type:find?.assist_details?.type,
+        name:find?.assist_details?.name,
+        button_status: "assigned",
+      }];
       return response.status(200).json({
         data: responseby,
         success: true,
@@ -1876,6 +1887,8 @@ const gethospitalassists = async (request, response) => {
             type: true,
             gender: true,
             address: true,
+            pincode:true,
+            phone_no:true
           },
         },
       },
@@ -1889,10 +1902,15 @@ const gethospitalassists = async (request, response) => {
     }
 
     if (find.assist_id != null) {
-      const responseby = {
-        ...find,
+      const responseby = [{
+        gender:find?.assist_details?.gender,
+        address:find?.assist_details?.address,
+        pincode:find?.assist_details?.pincode,
+        phone_no:find?.assist_details?.phone_no,
+        type:find?.assist_details?.type,
+        name:find?.assist_details?.name,
         button_status: "assigned",
-      };
+      }];
       return response.status(200).json({
         data: responseby,
         success: true,
@@ -1945,7 +1963,7 @@ const gethospitalassists = async (request, response) => {
               end_date: true,
             },
           });
-          console.log({ homeCareAvailability });
+        
           // Check for hospital assist availability
           const hospitalAssistAvailability =
             await prisma.hospitalAssist_service.findMany({
@@ -1960,7 +1978,7 @@ const gethospitalassists = async (request, response) => {
               },
             });
 
-          console.log({ hospitalAssistAvailability });
+          
           if (
             homeCareAvailability.length === 0 &&
             hospitalAssistAvailability.length === 0
@@ -1971,7 +1989,7 @@ const gethospitalassists = async (request, response) => {
             });
           }
         }
-        console.log({ availableNurses });
+       
         if (availableNurses.length === 0) {
           return response.status(404).json({
             error: true,
@@ -1992,7 +2010,7 @@ const gethospitalassists = async (request, response) => {
           availableNurses,
           find.pincode
         );
-
+        console.log({ nearestassists });
         return response.status(200).json({
           data: nearestassists,
           success: true,
