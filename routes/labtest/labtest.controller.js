@@ -1635,12 +1635,12 @@ const getorderdetails = async (request, response) => {
       });
     }
 
-    const testdata = getdetails.labtest_list;
+    const testdata = getdetails?.labtest_list;
     const labtestDetails = [];
     for (const data of testdata) {
       let testDetail;
       if (data.test_number.includes("T")) {
-        testDetail = await prisma.labtest_order.findFirst({
+        testDetail = await prisma.labtest_details.findFirst({
           where: {
             test_number: data.test_number,
           },
@@ -1649,8 +1649,16 @@ const getorderdetails = async (request, response) => {
             name: true,
             mrp: true,
             description: true,
+            home_collection:true
           },
         });
+        if (testDetail) {
+          labtestDetails.push({
+            ...testDetail,
+            type: "test",
+          });
+        }
+
       } else {
         testDetail = await prisma.lab_packages.findFirst({
           where: {
@@ -1661,12 +1669,21 @@ const getorderdetails = async (request, response) => {
             package_name: true,
             price: true,
             about: true,
+            home_collection:true
           },
         });
+        if (testDetail) {
+          labtestDetails.push({
+            test_number: testDetail.test_number,
+            name: testDetail.package_name,
+            mrp: testDetail.price,
+            description: testDetail.about,
+            home_collection:testDetail.home_collection,
+            type: "package",
+          });
+        }
       }
-      if (testDetail) {
-        labtestDetails.push(testDetail);
-      }
+     
     }
     const responseDetails = {
       ...getdetails,
@@ -1678,6 +1695,7 @@ const getorderdetails = async (request, response) => {
       error: false,
     });
   } catch (error) {
+    console.log(error)
     logger.error(
       `Internal server error: ${error.message} in labtest-getorderdetails API`
     );

@@ -97,6 +97,10 @@ const addhospitalassistenquiry = async (request, response) => {
 
 const addhospitalassist = async (request, response) => {
   try {
+    let requestData =
+      typeof request.body.data === "string"
+        ? JSON.parse(request.body.data)
+        : request.body.data;
     let {
       id,
       patient_mobility,
@@ -108,14 +112,15 @@ const addhospitalassist = async (request, response) => {
       patient_location,
       assist_type,
       start_date,
+      end_date,
       time,
       days_week,
       hospital_location,
       pickup_type,
       requirements,
       customer_id,
-      pincode
-    } = JSON.parse(request.body.data);
+      pincode,
+    } = requestData;
     const documents = request.files;
     let medical_documents = {};
 
@@ -125,7 +130,7 @@ const addhospitalassist = async (request, response) => {
     //     error: true,
     //   });
     // }
-    
+
     for (i = 0; i < documents?.length; i++) {
       let keyName = `image${i + 1}`;
       medical_documents[keyName] = documents[i].location;
@@ -137,19 +142,18 @@ const addhospitalassist = async (request, response) => {
         id: id,
       },
       data: {
-        mobility,
+        patient_mobility,
         patient_name,
         patient_mobility,
         patient_age,
         patient_gender,
         status: "placed",
-        contact_person_name,
         patient_contact_no,
         assist_type,
         hospital_name,
         patient_location,
-        medication_records,
         start_date,
+        end_date,
         time,
         days_week,
         customer_id,
@@ -184,7 +188,7 @@ const addhospitalassist = async (request, response) => {
 const gethospitalassistantreqs = async (request, response) => {
   try {
     const startTime = Date.now();
-    logger.info("API gethospitalassistantreqs called")
+    logger.info("API gethospitalassistantreqs called");
     const allrequests = await prisma.hospitalAssist_service.findMany({
       orderBy: {
         created_date: "asc",
@@ -194,7 +198,9 @@ const gethospitalassistantreqs = async (request, response) => {
       const endTime = Date.now();
       const executionTime = endTime - startTime;
 
-      logger.info(`Execution time for gethospitalassistantreqs API: ${executionTime}ms`);
+      logger.info(
+        `Execution time for gethospitalassistantreqs API: ${executionTime}ms`
+      );
       return response.status(200).json({
         data: allrequests,
         success: true,
@@ -392,7 +398,7 @@ const addphysiotherapy = async (request, response) => {
       patient_location,
       therapy_type,
       customer_id,
-      pincode
+      pincode,
     } = request.body;
 
     const datetime = getCurrentDateInIST();
@@ -469,7 +475,7 @@ const addphysiotherapy = async (request, response) => {
 const getphysiotherapyreqs = async (request, response) => {
   try {
     const startTime = Date.now();
-    logger.info("API getphysiotherapyreqs called")
+    logger.info("API getphysiotherapyreqs called");
     const allrequests = await prisma.physiotherapist_service.findMany({
       orderBy: {
         created_date: "asc",
@@ -479,7 +485,9 @@ const getphysiotherapyreqs = async (request, response) => {
       const endTime = Date.now();
       const executionTime = endTime - startTime;
 
-      logger.info(`Execution time for getphysiotherapyreqs API: ${executionTime}ms`);
+      logger.info(
+        `Execution time for getphysiotherapyreqs API: ${executionTime}ms`
+      );
       return response.status(200).json({
         data: allrequests,
         success: true,
@@ -706,11 +714,12 @@ const addhomeServiceenquiry = async (request, response) => {
 };
 
 const addhomeservice = async (request, response) => {
-  console.log(request)
+  console.log(request);
   try {
-    let requestData = typeof request.body.data === "string" 
-      ? JSON.parse(request.body.data) 
-      : request.body.data;
+    let requestData =
+      typeof request.body.data === "string"
+        ? JSON.parse(request.body.data)
+        : request.body.data;
     let {
       id,
       patient_mobility,
@@ -724,9 +733,9 @@ const addhomeservice = async (request, response) => {
       requirements,
       general_specialized,
       customer_id,
-      pincode
+      pincode,
     } = requestData;
-    
+
     const documents = request.files;
     let medical_documents = {};
 
@@ -787,7 +796,7 @@ const addhomeservice = async (request, response) => {
 const gethomeservicereqs = async (request, response) => {
   try {
     const startTime = Date.now();
-    logger.info("API gethomeservicereqs called")
+    logger.info("API gethomeservicereqs called");
     const allrequests = await prisma.homeCare_Service.findMany({
       orderBy: {
         created_date: "asc",
@@ -797,7 +806,9 @@ const gethomeservicereqs = async (request, response) => {
       const endTime = Date.now();
       const executionTime = endTime - startTime;
 
-      logger.info(`Execution time for gethomeservicereqs API: ${executionTime}ms`);
+      logger.info(
+        `Execution time for gethomeservicereqs API: ${executionTime}ms`
+      );
       return response.status(200).json({
         data: allrequests,
         success: true,
@@ -1097,7 +1108,7 @@ const getassists = async (request, response) => {
 ///////////get order dsetails based on type///////////
 const getorderdetails = async (request, response) => {
   const { id, type } = request.body;
-  console.log("getorderdetailssssssssss",request.body);
+  console.log("getorderdetailssssssssss", request.body);
   const secretKey = process.env.ENCRYPTION_KEY;
   try {
     if (!id || !type) {
@@ -1465,18 +1476,17 @@ const assignassist = async (request, response) => {
     });
 
     const findAssitToken = await prisma.assist_details.findUnique({
-      where:{
-        id:assist_id
+      where: {
+        id: assist_id,
       },
-      select:{
-        id:true,
-        token:true
-      }
-    })
-    console.log({findAssitToken})
-    
+      select: {
+        id: true,
+        token: true,
+      },
+    });
+    console.log({ findAssitToken });
 
-    if (!findUser || !findUser.token ) {
+    if (!findUser || !findUser.token) {
       console.warn("FCM Token not found for customer ID:", customerId);
     } else {
       const fcmToken = findUser.token;
@@ -1496,9 +1506,9 @@ const assignassist = async (request, response) => {
       }
     }
 
-    if( !findAssitToken.token || !findAssitToken){
+    if (!findAssitToken.token || !findAssitToken) {
       console.warn("FCM Token not found for customer ID:", assist_id);
-    }else{
+    } else {
       const fcmToken = findAssitToken.token;
       const assistmessage = {
         notification: {
