@@ -18,40 +18,41 @@ const labadd = async (request, response) => {
       email,
       pincode,
       about,
-      test_id,
+      test_ids,
       package_id,
     } = request.body;
 
     // Check if required fields are present
-    if (!name || !phone_no || !address || !email || !pincode) {
+    if (!name || !address || !pincode) {
       return response.status(400).json({
         message: "Required fields can't be null",
         error: true,
       });
     }
-
-    // Check if email already exists
-    const checkEmail = await prisma.lab_details.findFirst({
-      where: { email },
-    });
-
-    // Check if phone number already exists
-    const checkPhoneNumber = await prisma.lab_details.findFirst({
-      where: { phone_no },
-    });
-
-    if (checkEmail) {
-      return response.status(400).json({
-        message: "Email ID already exists",
-        error: true,
+    if (email) {
+      // Check if email already exists
+      const checkEmail = await prisma.lab_details.findFirst({
+        where: { email },
       });
+      if (checkEmail) {
+        return response.status(400).json({
+          message: "Email ID already exists",
+          error: true,
+        });
+      }
     }
-
-    if (checkPhoneNumber) {
-      return response.status(400).json({
-        message: "Phone number already exists",
-        error: true,
+    if (phone_no) {
+      // Check if phone number already exists
+      const checkPhoneNumber = await prisma.lab_details.findFirst({
+        where: { phone_no },
       });
+
+      if (checkPhoneNumber) {
+        return response.status(400).json({
+          message: "Phone number already exists",
+          error: true,
+        });
+      }
     }
 
     // Create a new pharmacy record
@@ -60,13 +61,12 @@ const labadd = async (request, response) => {
         name,
         phone_no,
         address,
-        lisence_no,
         email,
         pincode,
         about,
-        test_id,
+        test_ids,
         package_id,
-        datetime: datetime,
+        created_date: datetime,
       },
     });
 
@@ -78,7 +78,9 @@ const labadd = async (request, response) => {
       });
     }
   } catch (error) {
+    console.log(error);
     logger.error(`Internal server error: ${error.message} in labadd API`);
+
     response.status(500).json({ message: "An error occurred", error: true });
   } finally {
     await prisma.$disconnect();
@@ -174,6 +176,85 @@ const lab_profile = async (request, response) => {
   }
 };
 
+const labupdate = async (request, response) => {
+  console.log("ooooooooooooo", request.body);
+  try {
+    const {
+      id,
+      name,
+      phone_no,
+      address,
+      email,
+      pincode,
+      about,
+      test_ids,
+      package_id,
+    } = request.body;
+
+    // Check if required fields are present
+    if (!name || !phone_no || !address || !email || !pincode) {
+      return response.status(400).json({
+        message: "Required fields can't be null",
+        error: true,
+      });
+    }
+
+    // // Check if email already exists
+    // const checkEmail = await prisma.lab_details.findFirst({
+    //   where: { email },
+    // });
+
+    // // Check if phone number already exists
+    // const checkPhoneNumber = await prisma.lab_details.findFirst({
+    //   where: { phone_no },
+    // });
+
+    // if (checkEmail) {
+    //   return response.status(400).json({
+    //     message: "Email ID already exists",
+    //     error: true,
+    //   });
+    // }
+
+    // if (checkPhoneNumber) {
+    //   return response.status(400).json({
+    //     message: "Phone number already exists",
+    //     error: true,
+    //   });
+    // }
+
+    // Create a new pharmacy record
+    const create = await prisma.lab_details.update({
+      where: {
+        id: id,
+      },
+      data: {
+        name,
+        phone_no,
+        address,
+        email,
+        pincode,
+        about,
+        test_ids,
+        package_id,
+      },
+    });
+
+    if (create) {
+      return response.status(200).json({
+        message: "Successfully updated",
+        error: false,
+        success: true,
+      });
+    }
+  } catch (error) {
+    logger.error(`Internal server error: ${error.message} in lab-update API`);
+    response.status(500).json({ message: "An error occurred", error: true });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
 const getnearestlabs = async (request, response) => {
   try {
     let { pincode } = request.body;
@@ -219,6 +300,7 @@ const getnearestlabs = async (request, response) => {
     await prisma.$disconnect();
   }
 };
+///////////////////test-lab///////////////////////
 
 const labtestadd = async (request, response) => {
   console.log("rrrrrrrrrrr", request.body);
@@ -1206,7 +1288,6 @@ const removeTestFromCart = async (request, response) => {
 };
 
 const checkout = async (request, response) => {
-  
   const {
     total_amount,
     status,
@@ -1424,7 +1505,7 @@ const myorders = async (request, response) => {
         message: "user_id is required",
       });
     }
-    
+
     const labtestsordersdata = await prisma.labtest_order.findMany({
       where: {
         customer_id: user_id,
@@ -1823,6 +1904,32 @@ const getorderdetails = async (request, response) => {
   }
 };
 
+const getallpktests = async (request, response) => {
+  try {
+    const getall = await prisma.labtest_details.findMany();
+    const getallpkg = await prisma.lab_packages.findMany();
+
+    if (getall.length > 0 && getallpkg.length > 0) {
+      return response.status(200).json({
+        data: { getall, getallpkg },
+        success: true,
+      });
+    } else {
+      return response.status(400).json({
+        message: "No Data",
+        error: true,
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in labtest-getlabtests API`
+    );
+    response.status(500).json({ message: "An error occurred", error: true });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
 module.exports = {
   labtestadd,
   getlabtests,
@@ -1851,4 +1958,6 @@ module.exports = {
   packagedetailwithauth,
   testdetailwithauth,
   getorderdetails,
+  getallpktests,
+  labupdate,
 };
