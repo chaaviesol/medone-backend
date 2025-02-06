@@ -39,9 +39,9 @@ LabtestRouter.get("/getpackagetests", getpackagetests);
 LabtestRouter.post("/labadd", labadd);
 LabtestRouter.get("/getlabs", getlabs);
 LabtestRouter.post("/lab_profile", lab_profile);
-LabtestRouter.post("/testToCart", auth, testToCart);
-LabtestRouter.get("/gettestCart", auth, gettestCart);
-LabtestRouter.post("/removeTestFromCart", auth, removeTestFromCart);
+LabtestRouter.post("/testToCart",  testToCart);
+LabtestRouter.post("/gettestCart", gettestCart);
+LabtestRouter.post("/removeTestFromCart", removeTestFromCart);
 LabtestRouter.post("/labtestupdate", labtestupdate);
 LabtestRouter.post("/package_update", package_update);
 LabtestRouter.post("/getalltests", getalltests);
@@ -50,8 +50,8 @@ LabtestRouter.post("/packagedetail", packagedetail); ///get a package with their
 LabtestRouter.post("/testdetail", testdetail); ////details of a lab test
 LabtestRouter.post("/getnearestlabs", getnearestlabs); ///////get nearest labs
 LabtestRouter.post("/assignlab", assignlab);
-LabtestRouter.get("/myorders", auth, myorders);
-LabtestRouter.post("/checkout",auth, checkout);
+LabtestRouter.post("/myorders", myorders);
+LabtestRouter.post("/checkout", checkout);
 LabtestRouter.get("/alltestlistorders", alltestlistorders);
 LabtestRouter.post("/getlaboratories", getlaboratories); ////get labs for assigning (based on tests and user pincode)
 LabtestRouter.post("/gettestswithauth", auth, gettestswithauth);
