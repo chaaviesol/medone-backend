@@ -153,14 +153,14 @@ const getTask = async (req, res) => {
           const hospitalTask = await prisma.hospitalAssist_service.findMany({
               where: {
                   assist_id: assistId,
-                  status: "placed"
+                  status: "confirmed"
               }
           });
 
           const homecareTask = await prisma.homeCare_Service.findMany({
               where: {
                   assist_id: assistId,
-                  status: "placed"
+                  status: "confirmed"
               }
           });
 
@@ -169,7 +169,7 @@ const getTask = async (req, res) => {
           task = await prisma.physiotherapist_service.findMany({
               where: {
                   assist_id: assistId,
-                  status: "placed"
+                  status: "confirmed"
               }
           });
       }
@@ -777,17 +777,17 @@ const upcommingTask = async (req, res) => {
 
     if (type === "nurse") {
       const hospitalTask = await prisma.hospitalAssist_service.findMany({
-        where: { assist_id: assistId, status: "placed" }
+        where: { assist_id: assistId, status: "confirmed" }
       });
 
       const homecareTask = await prisma.homeCare_Service.findMany({
-        where: { assist_id: assistId, status: "placed" }
+        where: { assist_id: assistId, status: "confirmed" }
       });
 
       task = [...homecareTask, ...hospitalTask];
     } else {
       task = await prisma.physiotherapist_service.findMany({
-        where: { assist_id: assistId, status: "placed" }
+        where: { assist_id: assistId, status: "confirmed" }
       });
     }
 

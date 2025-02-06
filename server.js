@@ -28,6 +28,7 @@ const LabtestRouter = require("./routes/labtest/labtest.routes");
 const servicesRouter = require("./routes/services/services.routes");
 const timekeepingRouter = require("./routes/timeKeeping/timekeeping.routes");
 const { error } = require("console");
+const phleboRouter = require("./routes/phlebo/phlebo.routes");
 
 server.use(
   cors({
@@ -53,6 +54,7 @@ server.use("/driver", driverRouter);
 server.use("/labtest", LabtestRouter);
 server.use("/services", servicesRouter);
 server.use("/timekeeping", timekeepingRouter);
+server.use("/phlebo",phleboRouter)
 
 if (process.env.NODE_ENV === "development") {
   server.listen(PORT, () => {

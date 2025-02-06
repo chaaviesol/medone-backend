@@ -390,8 +390,11 @@ model labtest_order {
   patient_details        Json?
   doctor_name            String?
   test_collection        String?
-  lab_id                 Int?          
+  lab_id                 Int?      
+  phlebo_id              Int?
+  barcode_id             Int?    
   labtest_list           labtest_list[]
+  phleboid               phlebo_details? @relation(fields: [phlebo_id],references: [id])
   users                  user_details? @relation(fields: [customer_id],references: [id])
   lab_details            lab_details? @relation(fields: [lab_id],references: [id])
 }
@@ -570,4 +573,35 @@ model hiring_form{
   year_of_experience String?
   stream             String?
   status             String?
+}
+
+
+
+model phlebo_details{
+  id                  Int              @id @default(autoincrement())
+  name                String?
+  gender              String?
+  dob                 String?
+  address             String?
+  qualification       String?
+  photo               String?
+  phone               String?
+  location            Json?
+  pincode             Int?
+  lab_id              Json?
+  password            String?
+  labid               labtest_order[]
+  
+}
+
+model phlebo_checkindetails{
+  id                 Int            @id @default(autoincrement())
+  lab_orderid        Int?
+  placed             DateTime?
+  confirmed          DateTime?
+  checkin            DateTime?
+  sample_collected   DateTime?
+  handover           DateTime?
+  result_inprogress  DateTime?
+  result_uploaded    DateTime?
 }
