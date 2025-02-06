@@ -331,6 +331,7 @@ model lab_details{
   is_active                Boolean?
   test_ids                 Json?                  
   package_id               Json?
+  password                 String?
   labtest_order            labtest_order[]
 }
 

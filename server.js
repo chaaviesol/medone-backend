@@ -29,6 +29,7 @@ const servicesRouter = require("./routes/services/services.routes");
 const timekeepingRouter = require("./routes/timeKeeping/timekeeping.routes");
 const { error } = require("console");
 const phleboRouter = require("./routes/phlebo/phlebo.routes");
+const labpartnerRouter = require("./routes/Labpartner/labpartner.routes");
 
 server.use(
   cors({
@@ -55,6 +56,7 @@ server.use("/labtest", LabtestRouter);
 server.use("/services", servicesRouter);
 server.use("/timekeeping", timekeepingRouter);
 server.use("/phlebo",phleboRouter)
+server.use('/labPartner',labpartnerRouter)
 
 if (process.env.NODE_ENV === "development") {
   server.listen(PORT, () => {
