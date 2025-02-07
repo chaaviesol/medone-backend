@@ -148,6 +148,7 @@ const getOrder = async (req, res) => {
         }
       });
       console.log({getCompleteOrder})
+
       if (getCompleteOrder.length === 0) {
         return res.status(404).json({
           error: true,
@@ -169,10 +170,31 @@ const getOrder = async (req, res) => {
        const decryptedname = safeDecrypt(getCustomerName[0].name, secretKey);
        getCustomerName[0].name = decryptedname;
         console.log({decryptedname})
-  
+
+        const find_test = await prisma.labtest_list.findMany({
+          where:{
+               order_id:getCompleteOrder[j].order_id
+          }
+        })
+        console.log({find_test})
+        const test =[]
+        for(let i=0; i<find_test.length;i++){
+        const testNumber =find_test[i].test_number
+        console.log({testNumber})
+
+        const testData = await prisma.labtest_details.findMany({
+          where:{
+            test_number:testNumber
+          }
+        })
+          console.log({testData})
+          test.push({testData})
+      }
+
         order.push({
           ...getCompleteOrder[j],
          user : decryptedname,
+         test_details:test
         });
       }
     
@@ -235,8 +257,68 @@ const orderResponse = async(req,res)=>{
   }
 }
 
+const edit_profile = async(req,res)=>{
+  try{
+    const{labId,name,phone_no,email} = req.body
+    const editData = await prisma.lab_details.update({
+      where:{
+        id:labId
+      },
+      data:{
+        name,
+        phone_no,
+        email
+      }
+    })
+    console.log({editData})
+    res.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfullyy edited",
+      data:editData
+    })
+
+  }catch (err) {
+    console.log({err})
+    // logger.error(
+    //   `Internal server error: ${err.message} in edit_profile api`
+    // );
+    res.status(400).json({
+      error: true,
+      message: "internal server error",
+    });
+  }
+}
+
+const pastOrder = async(req,res)=>{
+  try{
+    const{labId} = req.body
+    if(!labId){
+      return res.status(404).json({
+        error:true,
+        success:false,
+        message:"lab id is required......."
+      })
+    }
+    const find_pastOrder = await prisma.labtest_order.findMany({
+
+    })
+
+  }catch (err) {
+    console.log({err})
+    // logger.error(
+    //   `Internal server error: ${err.message} in edit_profile api`
+    // );
+    res.status(400).json({
+      error: true,
+      message: "internal server error",
+    });
+  }
+}
+
 module.exports ={labpartner_login,
     labpartner_profile,
     getOrder,
-    orderResponse
+    orderResponse,
+    edit_profile
 }
