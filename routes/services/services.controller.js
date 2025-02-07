@@ -714,7 +714,6 @@ const addhomeServiceenquiry = async (request, response) => {
 };
 
 const addhomeservice = async (request, response) => {
-  console.log(request);
   try {
     let requestData =
       typeof request.body.data === "string"
@@ -751,6 +750,24 @@ const addhomeservice = async (request, response) => {
       medical_documents[keyName] = documents[i].location;
     }
     const datetime = getCurrentDateInIST();
+    // Convert start_date from "DD-MM-YYYY" to a Date object
+    const [day, month, year] = start_date.split("-");
+    let startDateObj = new Date(`${year}-${month}-${day}`);
+
+    // Calculate end_date based on days_week
+    let endDateObj = new Date(startDateObj);
+    if (days_week != "days") {
+      endDateObj.setDate(endDateObj.getDate() + 6);
+    }
+
+    // Convert endDateObj back to "DD-MM-YYYY"
+    let formattedEndDate = `${String(endDateObj.getDate()).padStart(
+      2,
+      "0"
+    )}-${String(endDateObj.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}-${endDateObj.getFullYear()}`;
 
     const updatedata = await prisma.homeCare_Service.update({
       where: {
@@ -766,6 +783,7 @@ const addhomeservice = async (request, response) => {
         patient_contact_no,
         patient_location,
         start_date,
+        end_date: formattedEndDate,
         days_week,
         requirements,
         customer_id,
@@ -1604,7 +1622,7 @@ const gethomecareassists = async (request, response) => {
       const startDate = new Date(
         find.start_date.split("-").reverse().join("-")
       );
-      const endDate = new Date(find.end_date.split("-").reverse().join("-"));
+      const endDate = new Date(find?.end_date?.split("-").reverse().join("-"));
       const type = "nurse";
       const allassists = await prisma.assist_details.findMany({
         where: {
@@ -1934,7 +1952,7 @@ const gethospitalassists = async (request, response) => {
       const startDate = new Date(
         find.start_date.split("-").reverse().join("-")
       );
-      const endDate = new Date(find.end_date.split("-").reverse().join("-"));
+      const endDate = new Date(find?.end_date?.split("-").reverse().join("-"));
       const type = "nurse";
       const general_specialized = "general";
       const allassists = await prisma.assist_details.findMany({
