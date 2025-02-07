@@ -93,10 +93,14 @@ const get_worklist = async(req,res)=>{
     }
     const getWorklist = await prisma.labtest_order.findMany({
         where:{
-          phlebo_id:phlebo_id
+          phlebo_id:phlebo_id,
+          barcode_id:null
         }
     })
     console.log("getWorklist-----",getWorklist)
+    // const barcodeId = getWorklist[0].barcode_id
+    // console.log({barcodeId})
+    // if
     
     return res.status(200).json({
         error: false,
