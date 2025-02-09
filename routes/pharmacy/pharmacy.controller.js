@@ -1647,7 +1647,7 @@ const createinvoice = async (request, response) => {
           doctor_name,
           total_amount: total_amount,
           so_status: "confirmed",
-          updated_date: istDate,
+          updated_date: datetime,
         },
       });
 
@@ -1779,7 +1779,7 @@ const prescriptioninvoice = async (request, response) => {
         data: {
           doctor_name,
           so_status: "confirmed",
-          updated_date: istDate,
+          updated_date: datetime,
         },
       });
 

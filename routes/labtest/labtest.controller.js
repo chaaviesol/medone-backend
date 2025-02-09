@@ -192,7 +192,7 @@ const labupdate = async (request, response) => {
     } = request.body;
 
     // Check if required fields are present
-    if (!name || !phone_no || !address || !email || !pincode) {
+    if (!name || !address || !pincode) {
       return response.status(400).json({
         message: "Required fields can't be null",
         error: true,
@@ -1930,6 +1930,172 @@ const getallpktests = async (request, response) => {
   }
 };
 
+const assignflebo = async (request, response) => {
+  console.log("ffffffffffffffff",request.body)
+  try {
+    const { order_id, phlebo_id } = request.body;
+    const datetime = getCurrentDateInIST();
+    console.log("laaaaaaaaa", request.body);
+    // Validate the required fields
+    if (!order_id || !phlebo_id) {
+      return response.status(400).json({
+        error: true,
+        message: "phlebo_id and order_id can't be null or empty.",
+      });
+    }
+    const find = await prisma.labtest_order.findFirst({
+      where: {
+        order_id,
+      },
+    });
+    if (find.phlebo_id != null) {
+      return response.status(400).json({
+        error: true,
+        message: "phlebo already assigned",
+      });
+    }
+
+    const add = await prisma.labtest_order.update({
+      where: {
+        order_id: order_id,
+      },
+      data: {
+        phlebo_id,
+
+        updated_date: datetime,
+      },
+    });
+
+    if (add) {
+      return response.status(200).json({
+        success: true,
+        error: false,
+        message: "phlebo assigned successfully.",
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in assignflebo-labtest API`
+    );
+    response.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+const getphelboassists = async (request, response) => {
+  const { order_id } = request.body;
+  try {
+    const find = await prisma.labtest_order.findFirst({
+      where: {
+        order_id: order_id,
+      },
+      select: {
+        delivery_location: true,
+        pincode: true,
+        phlebo_id: true,
+        phleboid: {
+          select: {
+            name: true,
+            gender: true,
+            phone: true,
+            location: true,
+            pincode: true,
+          },
+        },
+      },
+    });
+console.log({find})
+    if (!find) {
+      return response.status(404).json({
+        error: true,
+        message: "Order not found",
+      });
+    }
+
+    if (find.phlebo_id != null) {
+      const responseby = [
+        {
+          gender: find?.phleboid?.gender,
+          address: find?.phleboid?.address,
+          pincode: find?.phleboid?.pincode,
+          phone: find?.phleboid?.phone,
+          name: find?.phleboid?.name,
+          button_status: "assigned",
+        },
+      ];
+      return response.status(200).json({
+        data: responseby,
+        success: true,
+      });
+    } else {
+      const allassists = await prisma.phlebo_details.findMany({
+        select: {
+          id: true,
+          name: true,
+          location: true,
+          gender: true,
+          phone: true,
+          address: true,
+          pincode: true,
+        },
+      });
+
+      if (allassists.length > 0) {
+        // Function to calculate distance using Haversine formula
+        const haversineDistance = (lat1, lon1, lat2, lon2) => {
+          const toRad = (x) => (x * Math.PI) / 180;
+          const R = 6371; // Radius of the Earth in km
+          const dLat = toRad(lat2 - lat1);
+          const dLon = toRad(lon2 - lon1);
+          const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          return R * c; // Distance in km
+        };
+
+        // Extract delivery location coordinates
+        const deliveryLocation = find.delivery_location[0] || find.delivery_location
+        console.log({deliveryLocation})
+        const deliveryLat = deliveryLocation?.lat;
+        const deliveryLng = deliveryLocation?.lng;
+
+        // Calculate distance for each phlebo and add it to the object
+        allassists.forEach((phlebo) => {
+          const phleboLocation = phlebo.location[0];
+          const phleboLat = phleboLocation.lat;
+          const phleboLng = phleboLocation.lng;
+          phlebo.distance = haversineDistance(deliveryLat, deliveryLng, phleboLat, phleboLng);
+          phlebo.button_status = "assign";
+        });
+
+        // Sort phlebos by distance (closest first)
+        const sortedAssists = allassists.sort((a, b) => a.distance - b.distance);
+
+        // Get the top 3 nearest phlebos
+        const nearestassists = sortedAssists.slice(0, 3);
+
+        return response.status(200).json({
+          data: nearestassists,
+          success: true,
+        });
+      }
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in services- getphelboassists API`
+    );
+    console.log(error);
+    response.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
 module.exports = {
   labtestadd,
   getlabtests,
@@ -1960,4 +2126,6 @@ module.exports = {
   getorderdetails,
   getallpktests,
   labupdate,
+  assignflebo,
+  getphelboassists
 };
