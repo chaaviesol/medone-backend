@@ -1550,6 +1550,7 @@ const trackOrder = async(req,res)=>{
 }
 
 const request_delivery = async(req,res)=>{
+  console.log({req})
   const secretKey = process.env.ENCRYPTION_KEY;
   const safeDecrypt = (text, key) => {
     try {
@@ -1563,13 +1564,20 @@ const request_delivery = async(req,res)=>{
       name,
       deliverAddress,
       phone_no,
-      prescription = null,
+      // prescription = null,
       payment_type,
       total_amount,
       remarks,
       pincode,
       pharmacy_id
     } = req.body
+   // Extract image file URLs from `req.files`
+   const prescriptionImages = req.files?.map((file, index) => ({
+    [`image${index + 1}`]: file.location,
+  })) || [];
+
+  // Convert array of objects into a single JSON object
+  const prescription = prescriptionImages.length > 0 ? Object.assign({}, ...prescriptionImages) : null;
 
     function generateEmailAndPassword(name) {
       const domain = "gmail.com"; // Change to your required domain
@@ -1665,7 +1673,7 @@ const request_delivery = async(req,res)=>{
         created_date:datetime,
         contact_no:phone_no,
         pincode,
-        prescription_image:prescription,
+        prescription_image: prescription ? JSON.stringify(prescription) : null,
         delivery_location:deliverAddress,
         otp:otp,
         payment_type:payment_type,

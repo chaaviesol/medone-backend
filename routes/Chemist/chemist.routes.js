@@ -18,6 +18,8 @@ const {chemist_login,
     request_delivery
 } = require('./chemist.controller')
 
+const { upload } = require("../../middleware/Uploadimage");
+
 const chemistRouter = express.Router()
 
 
@@ -38,7 +40,7 @@ chemistRouter.post('/addSeenStatus',addSeenStatus)
 chemistRouter.post('/orderSummery',orderSummery)
 chemistRouter.post('/verifyOtp',verifyOtp)
 chemistRouter.post('/trackOrder',trackOrder)
-chemistRouter.post('/request_delivery',request_delivery)
+chemistRouter.post('/request_delivery', upload.array("images"),request_delivery)
 
 
 
