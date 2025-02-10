@@ -394,7 +394,7 @@ const assist_checkin = async(req,res) =>{
         const targetlongitude = locationData[0].longitude
         console.log({targetlongitude})
 
-        const maxDistance = 136000 //given in meters
+        const maxDistance = 1360000 //given in meters
         const distance = geolib.getDistance(
             { latitude, longitude },
             { latitude: targetlatitude, longitude: targetlongitude }
