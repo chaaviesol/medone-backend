@@ -1312,12 +1312,7 @@ const checkout = async (request, response) => {
         message: "user_id is required",
       });
     }
-    if (usertype != "customer") {
-      return response.status(400).json({
-        error: true,
-        message: "Please login as a customer",
-      });
-    }
+   
     if (!delivery_details || !contact_no) {
       return response.status(400).json({
         error: true,

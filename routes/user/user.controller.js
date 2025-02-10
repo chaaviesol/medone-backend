@@ -11,15 +11,19 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const csv = require("csv-parser");
 const fs = require("fs");
+const path = require("path");
 
 ///////////csv-file/////////////////////
 const csvupload = async (req, res) => {
   try {
     const fileRows = [];
     const fileRows2 = [];
-
+    const filePath = path.resolve("C:\\Users\\dell\\Desktop\\medOneNw\\medone-backend\\routes\\user\\hospitalfullcsv.csv");
     // Open uploaded file
-    fs.createReadStream("../../Desktop/DOC1/hospitalfullcsv.csv")
+    // fs.createReadStream(filePath)
+    fs.createReadStream(filePath)
+
+
       .pipe(csv())
       .on("data", (row, index) => {
         if (!row.hospitalName) {
@@ -273,6 +277,7 @@ async function insertData(data) {
 
     await prisma.hospital_details.createMany({
       data: hospitalDetailsData,
+      // skipDuplicates: true,
     });
     console.log("Data insertion successful");
   } catch (e) {

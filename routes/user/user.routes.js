@@ -44,6 +44,6 @@ UserRouter.post("/profilecompleted", auth, profilecompleted); //to check if the 
 ///testing/////////////
 // UserRouter.post("/decrypt", decryptEmails);
 // UserRouter.route("/emailencryption").post(emailencryption);
-UserRouter.post("/csvupload", csvupload);
+// UserRouter.post("/csvupload", csvupload);
 
 module.exports = UserRouter;

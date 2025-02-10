@@ -212,17 +212,6 @@ const hospital_login = async (req, res) => {
 // to get the complete hospital list
 
 const get_hospital = async (req, res) => {
-  const secretKey = process.env.ENCRYPTION_KEY;
-
-  // Helper function to handle decryption with fallback
-  const safeDecrypt = (text, key) => {
-    try {
-      return decrypt(text, key);
-    } catch (err) {
-      return text; // Return the original text if decryption fails
-    }
-  };
-
   try {
     const complete_hospital = await prisma.hospital_details.findMany({
       where: {
@@ -234,46 +223,36 @@ const get_hospital = async (req, res) => {
         },
       },
       orderBy: {
-        // datetime: "desc",
         name: "asc",
       },
       select: {
         id: true,
         name: true,
         address: true,
-        licence_no: true,
-        rating: true,
-        feature: true,
-        datetime: true,
-        photo: true,
-        speciality: true,
         contact_no: true,
-        type: true,
         pincode: true,
-        about: true,
-        email: true,
-        last_active: true,
-        status: true,
       },
     });
 
-    const decrypted_data = complete_hospital.map((hospital) => {
-      return {
-        ...hospital,
-        email: safeDecrypt(hospital.email, secretKey),
-        // phone_no: safeDecrypt(hospital?.contact_no, secretKey),
-        licence_no: safeDecrypt(hospital?.licence_no, secretKey),
-      };
-    });
+    // const decrypted_data = complete_hospital.map((hospital) => {
+    //   return {
+    //     ...hospital,
+    //     email: safeDecrypt(hospital.email, secretKey),
+    //     // phone_no: safeDecrypt(hospital?.contact_no, secretKey),
+    //     licence_no: safeDecrypt(hospital?.licence_no, secretKey),
+    //   };
+    // });
 
     res.status(200).json({
       error: false,
       success: true,
       message: "successful",
-      data: decrypted_data,
+      data: complete_hospital,
     });
   } catch (err) {
-    logger.error(`Internal server error: ${err.message} in get_hospital api`);
+    logger.error(
+      `Internal server error: ${err.message} in hospital-get_hospital api`
+    );
     res.status(400).json({
       error: true,
       success: false,

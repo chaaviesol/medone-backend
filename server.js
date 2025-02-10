@@ -57,6 +57,11 @@ server.use("/services", servicesRouter);
 server.use("/timekeeping", timekeepingRouter);
 server.use("/phlebo",phleboRouter)
 server.use('/labPartner',labpartnerRouter)
+server.use((req,res,next)=>{
+  res.setHeader('Connection','keep-alive');
+  res.setHeader('Keep-Alive','timeout-5,max=1000');
+  next()
+})
 
 if (process.env.NODE_ENV === "development") {
   server.listen(PORT, () => {
