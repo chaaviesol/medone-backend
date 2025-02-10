@@ -4,7 +4,8 @@ const {labpartner_login,
     getOrder,
     orderResponse,
     edit_profile,
-    pastOrder
+    pastOrder,
+    product_list
 } = require('./labpartner.controller')
 
 const labpartnerRouter = express.Router()
@@ -16,7 +17,7 @@ labpartnerRouter.post('/getOrder',getOrder)
 labpartnerRouter.post('/orderResponse',orderResponse)
 labpartnerRouter.post('/edit_profile',edit_profile)
 labpartnerRouter.post('/pastOrder',pastOrder)
-
+labpartnerRouter.post('/product_list',product_list)
 
 
 module.exports = labpartnerRouter

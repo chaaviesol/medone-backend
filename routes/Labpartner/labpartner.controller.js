@@ -391,10 +391,81 @@ const order =[]
   }
 }
 
+
+const product_list = async (req, res) => {
+  try {
+    const { labId } = req.body;
+
+    if (!labId) {
+      return res.status(200).json({
+        error: true,
+        success: false,
+        message: "lab ID is required.",
+      });
+    }
+
+    const findtest = await prisma.lab_details.findFirst({
+      where: {
+        id: labId,
+      },
+    });
+
+    console.log({ findtest });
+
+    if (!findtest) {
+      return res.status(404).json({
+        error: true,
+        success: false,
+        message: "Lab not found.",
+      });
+    }
+
+    // Extract test_ids and package_id arrays
+    const { test_ids, package_id } = findtest;
+
+    console.log({ test_ids, package_id });
+
+    // Fetch tests
+    const getTests = await prisma.labtest_details.findMany({
+      where: {
+        id: { in: test_ids }, // Use 'in' operator for multiple values
+      },
+    });
+
+    console.log({ getTests });
+
+    // Fetch packages
+    const getPackage = await prisma.lab_packages.findMany({
+      where: {
+        id: { in: package_id }, // Use 'in' operator for multiple values
+      },
+    });
+
+    console.log({ getPackage });
+
+    res.status(200).json({
+      error: false,
+      success: true,
+      message: "Data fetched successfully.",
+      tests: getTests,
+      packages: getPackage,
+    });
+
+  } catch (err) {
+    console.log({ err });
+    res.status(400).json({
+      error: true,
+      message: "Internal server error",
+    });
+  }
+};
+
+
 module.exports ={labpartner_login,
     labpartner_profile,
     getOrder,
     orderResponse,
     edit_profile,
-    pastOrder
+    pastOrder,
+    product_list
 }
