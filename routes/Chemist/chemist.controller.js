@@ -1715,7 +1715,7 @@ const request_delivery = async(req,res)=>{
       data:{
       pharmacy_id:pharmacy_id,
       sales_id:salesId,
-      status:"packed",
+      status:"requested",
       created_date:datetime
 
       }
