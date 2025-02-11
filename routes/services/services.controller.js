@@ -237,6 +237,8 @@ const updatehospitalassistservice = async (request, response) => {
     hospital_location,
     pickup_type,
     requirements,
+    vehicle_type,
+    vechicle_id
   } = request.body;
 
   try {
@@ -267,6 +269,8 @@ const updatehospitalassistservice = async (request, response) => {
         days_week,
         patient_location,
         requirements,
+        vehicle_type,
+        vechicle_id
         // medical_documents,
         // price,
       },
