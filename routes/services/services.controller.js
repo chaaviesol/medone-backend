@@ -1196,6 +1196,7 @@ const getorderdetails = async (request, response) => {
           created_date: true,
           assigned_date: true,
           status: true,
+         
           users: {
             select: {
               name: true,
@@ -1315,6 +1316,8 @@ const getorderdetails = async (request, response) => {
           pincode: true,
           created_date: true,
           assigned_date: true,
+          vehicle_id:true,
+          vehicle_type:true,
           status: true,
           users: {
             select: {
