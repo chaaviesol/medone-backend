@@ -31,10 +31,12 @@ const {
   getallpktests,
   labupdate,
   assignflebo,
-  getphelboassists
+  getphelboassists,
+  prescriptionupload
 } = require("./labtest.controller");
 const LabtestRouter = express.Router();
 const auth = require("../../middleware/Auth/auth");
+const { upload } = require("../../middleware/Uploadimage");
 
 LabtestRouter.post("/labtestadd", labtestadd);
 LabtestRouter.get("/getlabtests", getlabtests);
@@ -67,4 +69,5 @@ LabtestRouter.get("/getallpktests",getallpktests)
 LabtestRouter.post("/labupdate",labupdate)
 LabtestRouter.post("/assignflebo",assignflebo)
 LabtestRouter.post("/getphelboassists",getphelboassists)
+LabtestRouter.post("/prescriptionupload", upload.array("images"), prescriptionupload);
 module.exports = LabtestRouter;

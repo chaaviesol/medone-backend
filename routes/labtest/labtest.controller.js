@@ -323,7 +323,10 @@ const labtestadd = async (request, response) => {
     const lwrcase_type = type?.trim().toLowerCase();
     const lwrcase_category = category?.trim().toLowerCase();
     const lwrcase_gender = gender?.trim().toLowerCase();
-    const lwrcase_age_group = age_group?.trim().toLowerCase();
+    // const lwrcase_age_group = age_group?.trim().toLowerCase();
+    const lwrcase_age_group = age_group
+      ?.map((group) => group.trim().toLowerCase())
+      .join(", ");
     const lastTest = await prisma.labtest_details.findFirst({
       orderBy: {
         id: "desc",
@@ -585,6 +588,7 @@ const testdetailwithauth = async (request, response) => {
 };
 
 const labtestupdate = async (request, response) => {
+  console.log("uuuuuuuuuuppppppppp", request.body);
   const {
     id,
     name,
@@ -614,7 +618,10 @@ const labtestupdate = async (request, response) => {
     const lwrcase_type = type?.trim().toLowerCase();
     const lwrcase_category = category?.trim().toLowerCase();
     const lwrcase_gender = gender?.trim().toLowerCase();
-    const lwrcase_age_group = age_group?.trim().toLowerCase();
+    // const lwrcase_age_group = age_group?.trim().toLowerCase();
+    const lwrcase_age_group = Array.isArray(age_group)
+      ? age_group.map((group) => group.trim().toLowerCase()).join(", ")
+      : age_group;
 
     const updatedLabTest = await prisma.labtest_details.update({
       where: { id },
@@ -1312,7 +1319,7 @@ const checkout = async (request, response) => {
         message: "user_id is required",
       });
     }
-   
+
     if (!delivery_details || !contact_no) {
       return response.status(400).json({
         error: true,
@@ -1926,7 +1933,7 @@ const getallpktests = async (request, response) => {
 };
 
 const assignflebo = async (request, response) => {
-  console.log("ffffffffffffffff",request.body)
+  console.log("ffffffffffffffff", request.body);
   try {
     const { order_id, phlebo_id } = request.body;
     const datetime = getCurrentDateInIST();
@@ -2000,7 +2007,7 @@ const getphelboassists = async (request, response) => {
         },
       },
     });
-console.log({find})
+    console.log({ find });
     if (!find) {
       return response.status(404).json({
         error: true,
@@ -2045,14 +2052,18 @@ console.log({find})
           const dLon = toRad(lon2 - lon1);
           const a =
             Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            Math.cos(toRad(lat1)) *
+              Math.cos(toRad(lat2)) *
+              Math.sin(dLon / 2) *
+              Math.sin(dLon / 2);
           const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
           return R * c; // Distance in km
         };
 
         // Extract delivery location coordinates
-        const deliveryLocation = find.delivery_location[0] || find.delivery_location
-        console.log({deliveryLocation})
+        const deliveryLocation =
+          find.delivery_location[0] || find.delivery_location;
+        console.log({ deliveryLocation });
         const deliveryLat = deliveryLocation?.lat;
         const deliveryLng = deliveryLocation?.lng;
 
@@ -2061,12 +2072,19 @@ console.log({find})
           const phleboLocation = phlebo.location[0];
           const phleboLat = phleboLocation.lat;
           const phleboLng = phleboLocation.lng;
-          phlebo.distance = haversineDistance(deliveryLat, deliveryLng, phleboLat, phleboLng);
+          phlebo.distance = haversineDistance(
+            deliveryLat,
+            deliveryLng,
+            phleboLat,
+            phleboLng
+          );
           phlebo.button_status = "assign";
         });
 
         // Sort phlebos by distance (closest first)
-        const sortedAssists = allassists.sort((a, b) => a.distance - b.distance);
+        const sortedAssists = allassists.sort(
+          (a, b) => a.distance - b.distance
+        );
 
         // Get the top 3 nearest phlebos
         const nearestassists = sortedAssists.slice(0, 3);
@@ -2082,6 +2100,141 @@ console.log({find})
       `Internal server error: ${error.message} in services- getphelboassists API`
     );
     console.log(error);
+    response.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+const prescriptionupload = async (request, response) => {
+  console.log("rrrrrrrrrrr", request.body);
+  let requestData;
+  requestData =
+    typeof request.body.data === "string"
+      ? JSON.parse(request.body.data)
+      : request.body.data;
+  const {
+    remarks,
+    order_type,
+    delivery_location,
+    pincode,
+    contact_no,
+    doctor_name,
+    patientDetails,
+    delivery_details,
+    userId,
+  } = requestData;
+
+  let test_order;
+
+  try {
+    if (!userId) {
+      logger.error("user_id is undefined in labtest-prescriptionupload API");
+      return response.status(400).json({
+        error: true,
+        message: "user_id is required",
+      });
+    }
+
+    if (!delivery_details || !contact_no) {
+      return response.status(400).json({
+        error: true,
+        message: "Missing delivery details",
+      });
+    }
+
+    if (!order_type) {
+      return response.status(400).json({
+        error: true,
+        message: "Missing order_type field",
+      });
+    }
+    let location;
+    if (order_type != "prescription") {
+      location = delivery_location;
+    } else {
+      // location = JSON.parse(delivery_location);
+      location = delivery_location;
+    }
+
+    await prisma.$transaction(async (prisma) => {
+      const currentDate = new Date();
+      const year = currentDate.getFullYear();
+
+      const lastTwoDigits = year.toString().slice(-2);
+      const to_num = "LO";
+      const startOfYear = new Date(new Date().getFullYear(), 0, 1);
+      const endOfYear = new Date(new Date().getFullYear() + 1, 0, 1);
+      const existingtestOrders = await prisma.labtest_order.findMany({
+        where: {
+          created_date: {
+            gte: startOfYear,
+            lt: endOfYear,
+          },
+        },
+      });
+      const newid = existingtestOrders.length + 1;
+      const formattedNewId = ("0000" + newid).slice(-4);
+      const order_number = to_num + lastTwoDigits + formattedNewId;
+
+      const datetime = getCurrentDateInIST();
+
+      test_order = await prisma.labtest_order.create({
+        data: {
+          order_number: order_number,
+          status: "placed",
+          remarks,
+          order_type,
+          patient_details: patientDetails,
+          created_date: datetime,
+          customer_id: userId,
+          delivery_details: delivery_details,
+          delivery_location: location,
+          doctor_name: doctor_name,
+          contact_no: contact_no.toString(),
+          pincode: parseInt(pincode),
+        },
+      });
+
+      if (order_type === "prescription") {
+        const prescription_image = request.files;
+        let imageprescription = {};
+
+        if (!prescription_image || prescription_image.length === 0) {
+          return response.status(400).json({
+            message: "Please attach at least one report",
+            error: true,
+          });
+        }
+
+        for (i = 0; i < prescription_image?.length; i++) {
+          let keyName = `image${i + 1}`;
+          imageprescription[keyName] = prescription_image[i].location;
+        }
+
+        await prisma.labtest_order.update({
+          where: {
+            order_id: test_order.order_id,
+          },
+          data: {
+            prescription_image: imageprescription,
+            created_date: datetime,
+          },
+        });
+
+        response.status(200).json({
+          success: true,
+          message: "Prescription submitted.",
+        });
+      }
+    });
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in labtest-prescriptionupload API`
+    );
     response.status(500).json({
       error: true,
       message: "Internal server error",
@@ -2122,5 +2275,6 @@ module.exports = {
   getallpktests,
   labupdate,
   assignflebo,
-  getphelboassists
+  getphelboassists,
+  prescriptionupload,
 };
