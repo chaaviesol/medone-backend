@@ -1,3 +1,4 @@
+const { error } = require("winston");
 const {
   getCurrentDateInIST,
   istDate,
@@ -2109,13 +2110,148 @@ const getphelboassists = async (request, response) => {
   }
 };
 
+// const prescriptionupload = async (request, response) => {
+//   console.log("rrrrrrrrrrr", request.body);
+//   let requestData;
+//   requestData =
+//     typeof request.body.data === "string"
+//       ? JSON.parse(request.body.data)
+//       : request.body.data;
+//   const {
+//     remarks,
+//     order_type,
+//     delivery_location,
+//     pincode,
+//     contact_no,
+//     doctor_name,
+//     patientDetails,
+//     delivery_details,
+//     userId,
+//   } = requestData;
+
+//   let test_order;
+
+//   try {
+//     if (!userId) {
+//       logger.error("user_id is undefined in labtest-prescriptionupload API");
+//       return response.status(400).json({
+//         error: true,
+//         message: "user_id is required",
+//       });
+//     }
+
+//     if (!delivery_details || !contact_no) {
+//       return response.status(400).json({
+//         error: true,
+//         message: "Missing delivery details",
+//       });
+//     }
+
+//     if (!order_type) {
+//       return response.status(400).json({
+//         error: true,
+//         message: "Missing order_type field",
+//       });
+//     }
+//     let location;
+//     if (order_type != "prescription") {
+//       location = delivery_location;
+//     } else {
+//       // location = JSON.parse(delivery_location);
+//       location = delivery_location;
+//     }
+
+//     await prisma.$transaction(async (prisma) => {
+//       const currentDate = new Date();
+//       const year = currentDate.getFullYear();
+
+//       const lastTwoDigits = year.toString().slice(-2);
+//       const to_num = "LO";
+//       const startOfYear = new Date(new Date().getFullYear(), 0, 1);
+//       const endOfYear = new Date(new Date().getFullYear() + 1, 0, 1);
+//       const existingtestOrders = await prisma.labtest_order.findMany({
+//         where: {
+//           created_date: {
+//             gte: startOfYear,
+//             lt: endOfYear,
+//           },
+//         },
+//       });
+//       const newid = existingtestOrders.length + 1;
+//       const formattedNewId = ("0000" + newid).slice(-4);
+//       const order_number = to_num + lastTwoDigits + formattedNewId;
+
+//       const datetime = getCurrentDateInIST();
+
+//       test_order = await prisma.labtest_order.create({
+//         data: {
+//           order_number: order_number,
+//           status: "placed",
+//           remarks,
+//           order_type,
+//           patient_details: patientDetails,
+//           created_date: datetime,
+//           customer_id: userId,
+//           delivery_details: delivery_details,
+//           delivery_location: location,
+//           doctor_name: doctor_name,
+//           contact_no: contact_no.toString(),
+//           pincode: parseInt(pincode),
+//         },
+//       });
+
+//       if (order_type === "prescription") {
+//         const prescription_image = request.files;
+//         let imageprescription = {};
+
+//         if (!prescription_image || prescription_image.length === 0) {
+//           return response.status(400).json({
+//             message: "Please attach at least one report",
+//             error: true,
+//           });
+//         }
+
+//         for (i = 0; i < prescription_image?.length; i++) {
+//           let keyName = `image${i + 1}`;
+//           imageprescription[keyName] = prescription_image[i].location;
+//         }
+
+//         await prisma.labtest_order.update({
+//           where: {
+//             order_id: test_order.order_id,
+//           },
+//           data: {
+//             prescription_image: imageprescription,
+//             created_date: datetime,
+//           },
+//         });
+
+//         response.status(200).json({
+//           success: true,
+//           message: "Prescription submitted.",
+//         });
+//       }
+//     });
+//   } catch (error) {
+//     logger.error(
+//       `Internal server error: ${error.message} in labtest-prescriptionupload API`
+//     );
+//     response.status(500).json({
+//       error: true,
+//       message: "Internal server error",
+//     });
+//   } finally {
+//     await prisma.$disconnect();
+//   }
+// };
+
 const prescriptionupload = async (request, response) => {
   console.log("rrrrrrrrrrr", request.body);
-  let requestData;
-  requestData =
+  let requestData =
     typeof request.body.data === "string"
       ? JSON.parse(request.body.data)
       : request.body.data;
+
   const {
     remarks,
     order_type,
@@ -2128,46 +2264,39 @@ const prescriptionupload = async (request, response) => {
     userId,
   } = requestData;
 
-  let test_order;
+  if (!userId) {
+    logger.error("user_id is undefined in labtest-prescriptionupload API");
+    return response.status(400).json({
+      error: true,
+      message: "user_id is required",
+    });
+  }
+
+  if (!delivery_details || !contact_no) {
+    return response.status(400).json({
+      error: true,
+      message: "Missing delivery details",
+    });
+  }
+
+  if (!order_type) {
+    return response.status(400).json({
+      error: true,
+      message: "Missing order_type field",
+    });
+  }
+
+  let location = order_type !== "prescription" ? delivery_location : delivery_location;
 
   try {
-    if (!userId) {
-      logger.error("user_id is undefined in labtest-prescriptionupload API");
-      return response.status(400).json({
-        error: true,
-        message: "user_id is required",
-      });
-    }
-
-    if (!delivery_details || !contact_no) {
-      return response.status(400).json({
-        error: true,
-        message: "Missing delivery details",
-      });
-    }
-
-    if (!order_type) {
-      return response.status(400).json({
-        error: true,
-        message: "Missing order_type field",
-      });
-    }
-    let location;
-    if (order_type != "prescription") {
-      location = delivery_location;
-    } else {
-      // location = JSON.parse(delivery_location);
-      location = delivery_location;
-    }
-
     await prisma.$transaction(async (prisma) => {
       const currentDate = new Date();
       const year = currentDate.getFullYear();
-
       const lastTwoDigits = year.toString().slice(-2);
       const to_num = "LO";
-      const startOfYear = new Date(new Date().getFullYear(), 0, 1);
-      const endOfYear = new Date(new Date().getFullYear() + 1, 0, 1);
+      const startOfYear = new Date(year, 0, 1);
+      const endOfYear = new Date(year + 1, 0, 1);
+
       const existingtestOrders = await prisma.labtest_order.findMany({
         where: {
           created_date: {
@@ -2176,13 +2305,14 @@ const prescriptionupload = async (request, response) => {
           },
         },
       });
+
       const newid = existingtestOrders.length + 1;
       const formattedNewId = ("0000" + newid).slice(-4);
       const order_number = to_num + lastTwoDigits + formattedNewId;
-
       const datetime = getCurrentDateInIST();
 
-      test_order = await prisma.labtest_order.create({
+      // Creating lab test order
+      const test_order = await prisma.labtest_order.create({
         data: {
           order_number: order_number,
           status: "placed",
@@ -2199,50 +2329,50 @@ const prescriptionupload = async (request, response) => {
         },
       });
 
+      // Handling prescription image upload
       if (order_type === "prescription") {
         const prescription_image = request.files;
         let imageprescription = {};
 
         if (!prescription_image || prescription_image.length === 0) {
-          return response.status(400).json({
+          response.status(400).json({
+            success: false,
+            error:true,
             message: "Please attach at least one report",
-            error: true,
           });
+        
         }
 
-        for (i = 0; i < prescription_image?.length; i++) {
+        for (let i = 0; i < prescription_image?.length; i++) {
           let keyName = `image${i + 1}`;
           imageprescription[keyName] = prescription_image[i].location;
         }
 
         await prisma.labtest_order.update({
-          where: {
-            order_id: test_order.order_id,
-          },
+          where: { order_id: test_order.order_id },
           data: {
             prescription_image: imageprescription,
             created_date: datetime,
           },
         });
-
-        response.status(200).json({
-          success: true,
-          message: "Prescription submitted.",
-        });
       }
+
+      response.status(200).json({
+        success: true,
+        message: "Prescription submitted.",
+      });
     });
   } catch (error) {
-    logger.error(
-      `Internal server error: ${error.message} in labtest-prescriptionupload API`
-    );
+    logger.error(`Internal server error: ${error.message} in labtest-prescriptionupload API`);
     response.status(500).json({
       error: true,
-      message: "Internal server error",
+      message: error.message || "Internal server error",
     });
   } finally {
     await prisma.$disconnect();
   }
 };
+
 
 module.exports = {
   labtestadd,

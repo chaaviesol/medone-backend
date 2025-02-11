@@ -20,7 +20,8 @@ const {
   allassists,
   priceadd,
   getphysioassists,
-  gethospitalassists
+  gethospitalassists,
+  myorders
 } = require("./services.controller");
 const { upload } = require("../../middleware/Uploadimage");
 

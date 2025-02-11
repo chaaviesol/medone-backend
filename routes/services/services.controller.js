@@ -193,6 +193,16 @@ const gethospitalassistantreqs = async (request, response) => {
       orderBy: {
         created_date: "asc",
       },
+      select: {
+        id: true,
+        patient_name: true,
+        patient_contact_no: true,
+        patient_gender: true,
+        patient_age: true,
+        patient_mobility: true,
+        assist_type: true,
+        status: true,
+      },
     });
     if (allrequests.length > 0) {
       const endTime = Date.now();
@@ -484,6 +494,17 @@ const getphysiotherapyreqs = async (request, response) => {
       orderBy: {
         created_date: "asc",
       },
+      select:{
+        id:true,
+        patient_name:true,
+        patient_contact_no:true,
+        patient_gender:true,
+        patient_age:true,
+        start_date:true,
+        therapy_type:true,
+        prefered_time:true,
+        status:true
+      }
     });
     if (allrequests.length > 0) {
       const endTime = Date.now();
@@ -823,6 +844,17 @@ const gethomeservicereqs = async (request, response) => {
       orderBy: {
         created_date: "asc",
       },
+      select:{
+        id:true,
+        patient_name:true,
+        patient_contact_no:true,
+        patient_mobility:true,
+        patient_gender:true,
+        patient_age:true,
+        start_date:true,
+        general_specialized:true,
+        status:true
+      }
     });
     if (allrequests.length > 0) {
       const endTime = Date.now();
@@ -2218,6 +2250,58 @@ const priceadd = async (request, response) => {
   }
 };
 
+const myorders = async (request, response) => {
+  try {
+    const user_id = request.body.userId;
+
+    if (!user_id) {
+      return response.status(400).json({
+        error: true,
+        message: "user_id is required",
+      });
+    }
+
+    // Fetch all orders concurrently
+    const [service_orders, homeservice_orders, physio_orders] = await Promise.all([
+      prisma.hospitalAssist_service.findMany({
+        where: { customer_id: user_id },
+        orderBy: { created_date: "desc" },
+      }),
+      prisma.homeCare_Service.findMany({
+        where: { customer_id: user_id },
+        orderBy: { created_date: "desc" },
+      }),
+      prisma.physiotherapist_service.findMany({
+        where: { customer_id: user_id },
+        orderBy: { created_date: "desc" },
+      }),
+    ]);
+
+    // Append type to each order
+    const formattedOrders = [
+      ...service_orders.map(order => ({ ...order, type: "hospital_assist" })),
+      ...homeservice_orders.map(order => ({ ...order, type: "home_nurse" })),
+      ...physio_orders.map(order => ({ ...order, type: "physiotherapist" })),
+    ];
+
+    // Sort all orders in descending order based on `created_date`
+    formattedOrders.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+
+    return response.status(200).json({
+      success: true,
+      error: false,
+      data: formattedOrders,
+    });
+
+  } catch (error) {
+    logger.error(`Internal server error: ${error.message} in myorders API`);
+    return response.status(500).json({ error: true, message: "An error occurred" });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+
 module.exports = {
   addhospitalassistenquiry,
   addhospitalassist,
@@ -2240,4 +2324,5 @@ module.exports = {
   priceadd,
   getphysioassists,
   gethospitalassists,
+  myorders
 };
