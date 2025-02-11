@@ -57,4 +57,5 @@ servicesRouter.post("/gethomecareassists",gethomecareassists)
 servicesRouter.post("/gethospitalassists",gethospitalassists)
 servicesRouter.post("/allassists",allassists)
 servicesRouter.post("/priceadd",priceadd)
+servicesRouter.post("/myorders",myorders)
 module.exports = servicesRouter;
