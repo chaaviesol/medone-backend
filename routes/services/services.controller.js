@@ -156,11 +156,11 @@ const addhospitalassist = async (request, response) => {
         end_date,
         time,
         days_week,
-        customer_id,
+        customer_id:parseInt(customer_id),
         hospital_location,
         pickup_type,
         requirements,
-        pincode,
+        pincode:parseInt(pincode),
         medical_documents: medical_documents,
       },
     });
