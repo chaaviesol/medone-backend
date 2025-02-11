@@ -147,7 +147,7 @@ const getOrder = async (req, res) => {
           order_id:"asc"
         }
       });
-      console.log({getCompleteOrder})
+      // console.log({getCompleteOrder})
 
       if (getCompleteOrder.length === 0) {
         return res.status(404).json({
@@ -159,34 +159,39 @@ const getOrder = async (req, res) => {
   const order =[]
     for (let j = 0; j < getCompleteOrder.length; j++) {
           const customer_id = getCompleteOrder[j].customer_id;
-          console.log({customer_id})
+          // console.log({customer_id})
         
        const getCustomerName = await prisma.user_details.findMany({
         where:{
           id:customer_id
         }
        })
-       console.log({getCustomerName})
+      //  console.log({getCustomerName})
        const decryptedname = safeDecrypt(getCustomerName[0].name, secretKey);
        getCustomerName[0].name = decryptedname;
-        console.log({decryptedname})
+        // console.log({decryptedname})
 
         const find_test = await prisma.labtest_list.findMany({
           where:{
                order_id:getCompleteOrder[j].order_id
           }
         })
-        console.log({find_test})
+        // console.log({find_test})
         const test =[]
         for(let i=0; i<find_test.length;i++){
         const testNumber =find_test[i].test_number
         console.log({testNumber})
 
-        const testData = await prisma.labtest_details.findMany({
-          where:{
-            test_number:testNumber
-          }
-        })
+        let testData = [];
+        if (testNumber.startsWith("t")) {
+          testData = await prisma.labtest_details.findMany({
+              where: { test_number: testNumber }
+          });
+      } else{
+          testData = await prisma.lab_packages.findMany({
+              where: { test_number: testNumber }
+          });
+      }
           console.log({testData})
           test.push({testData})
       }
