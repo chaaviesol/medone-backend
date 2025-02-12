@@ -511,6 +511,10 @@ const testdetail = async (request, response) => {
         mrp: true,
         description: true,
         home_collection: true,
+        category: true,
+        gender: true,
+        age_group: true,
+        type: true,
       },
     });
     if (labtestDetails) {
@@ -724,15 +728,83 @@ const package_add = async (request, response) => {
   }
 };
 
+// const package_update = async (request, response) => {
+//   const { id, package_name, price, labtest_ids } = request.body;
+
+//   const datetime = getCurrentDateInIST();
+
+//   try {
+//     const labPackage = await prisma.lab_packages.findUnique({
+//       where: { id },
+//     });
+
+//     if (!labPackage) {
+//       return response.status(404).json({
+//         error: true,
+//         message: "Lab package not found",
+//       });
+//     }
+//     const isHomeCollection = async (labtest_ids) => {
+//       const labtest = await prisma.labtest_details.findFirst({
+//         where: {
+//           id: { in: labtest_ids },
+//           home_collection: false,
+//         },
+//         select: {
+//           id: true,
+//         },
+//       });
+
+//       return labtest ? false : true;
+//     };
+
+//     const is_home_collection = await isHomeCollection(labtest_ids);
+//     console.log({ is_home_collection });
+
+//     const updatedLabPackage = await prisma.lab_packages.update({
+//       where: { id },
+//       data: {
+//         package_name,
+//         price,
+//         labtest_ids,
+//         home_collection:is_home_collection
+//       },
+//     });
+
+//     response.status(200).json({
+//       error: false,
+//       success: true,
+//       message: "Successfully updated",
+//     });
+//   } catch (err) {
+//     logger.error(
+//       `Internal server error: ${err.message} in labtest---package_update API`
+//     );
+//     console.log(err);
+//     response.status(400).json({
+//       error: true,
+//       message: "Internal server error",
+//     });
+//   } finally {
+//     await prisma.$disconnect();
+//   }
+// };
+
 const package_update = async (request, response) => {
   const { id, package_name, price, labtest_ids } = request.body;
+  console.log(request.body);
+
+  if (!id || !Array.isArray(labtest_ids) || labtest_ids.length === 0) {
+    return response.status(400).json({
+      error: true,
+      message: "Invalid request. ID and labtest_ids are required.",
+    });
+  }
 
   const datetime = getCurrentDateInIST();
 
   try {
-    const labPackage = await prisma.lab_packages.findUnique({
-      where: { id },
-    });
+    const labPackage = await prisma.lab_packages.findUnique({ where: { id } });
 
     if (!labPackage) {
       return response.status(404).json({
@@ -741,16 +813,33 @@ const package_update = async (request, response) => {
       });
     }
 
+    // Function to check if all tests support home collection
+    const isHomeCollection = async (labtestIds) => {
+      const nonHomeTests = await prisma.labtest_details.findMany({
+        where: {
+          id: { in: labtestIds },
+          home_collection: false,
+        },
+        select: { id: true },
+      });
+
+      return nonHomeTests.length === 0;
+    };
+
+    const is_home_collection = await isHomeCollection(labtest_ids);
+    console.log({ is_home_collection });
+
     const updatedLabPackage = await prisma.lab_packages.update({
       where: { id },
       data: {
         package_name,
         price,
         labtest_ids,
+        home_collection: is_home_collection,
       },
     });
 
-    response.status(200).json({
+    return response.status(200).json({
       error: false,
       success: true,
       message: "Successfully updated",
@@ -759,13 +848,11 @@ const package_update = async (request, response) => {
     logger.error(
       `Internal server error: ${err.message} in labtest---package_update API`
     );
-    console.log(err);
-    response.status(400).json({
+    console.error(err);
+    return response.status(500).json({
       error: true,
       message: "Internal server error",
     });
-  } finally {
-    await prisma.$disconnect();
   }
 };
 
@@ -923,7 +1010,7 @@ const getpackageswithauth = async (request, response) => {
 
 const packagedetail = async (request, response) => {
   try {
-    console.log(request.body);
+    
     const { id } = request.body;
     const labPackage = await prisma.lab_packages.findFirst({
       where: { id },
@@ -949,6 +1036,7 @@ const packagedetail = async (request, response) => {
           name: true,
           mrp: true,
           description: true,
+          home_collection:true
         },
       });
 
