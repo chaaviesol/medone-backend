@@ -319,7 +319,7 @@ const pastOrder = async(req,res)=>{
     const getCompleteOrder = await prisma.labtest_order.findMany({
       where: {
         lab_id: labId,
-        status: "placed",
+        status: "packed",
         
       },
       orderBy:{
