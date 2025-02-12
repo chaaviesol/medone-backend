@@ -8,6 +8,7 @@ const {
 require("dotenv").config();
 const bcrypt = require("bcrypt");
 const admin = require("../../firebase");
+const axios = require("axios");
 
 const addhospitalassistenquiry = async (request, response) => {
   try {
@@ -1160,6 +1161,278 @@ const getassists = async (request, response) => {
 };
 
 ///////////get order dsetails based on type///////////
+// const getorderdetails = async (request, response) => {
+//   const { id, type } = request.body;
+//   console.log("getorderdetailssssssssss", request.body);
+//   const secretKey = process.env.ENCRYPTION_KEY;
+//   try {
+//     if (!id || !type) {
+//       logger.error("id and type is undefined in getCart API");
+//       return response.status(400).json({
+//         error: true,
+//         message: "id and type is required",
+//       });
+//     }
+//     if (type === "homecare_service") {
+//       const details = await prisma.homeCare_Service.findFirst({
+//         where: {
+//           id: id,
+//         },
+//         select: {
+//           id: true,
+//           patient_name: true,
+//           patient_contact_no: true,
+//           patient_mobility: true,
+//           patient_gender: true,
+//           patient_age: true,
+//           start_date: true,
+//           end_date: true,
+//           days_week: true,
+//           general_specialized: true,
+//           patient_location: true,
+//           requirements: true,
+//           medical_documents: true,
+//           price: true,
+//           pincode: true,
+//           created_date: true,
+//           assigned_date: true,
+//           status: true,
+
+//           users: {
+//             select: {
+//               name: true,
+//             },
+//           },
+//           assist_details: {
+//             select: {
+//               id: true,
+//               type: true,
+//               name: true,
+//               phone_no: true,
+//             },
+//           },
+//         },
+//       });
+//       if (!details) {
+//         response.status(400).json({
+//           success: false,
+//           message: "No data",
+//         });
+//       } else {
+//         const userName = details.users?.name
+//           ? decrypt(details.users.name, secretKey)
+//           : null;
+
+//         const responseBody = {
+//           ...details,
+//           users: {
+//             name: userName,
+//           },
+//         };
+//         response.status(200).json({
+//           success: true,
+//           data: responseBody,
+//         });
+//       }
+//     } else if (type === "physiotherapist_service") {
+//       const details = await prisma.physiotherapist_service.findFirst({
+//         where: {
+//           id: id,
+//         },
+//         select: {
+//           id: true,
+//           patient_name: true,
+//           patient_contact_no: true,
+//           patient_gender: true,
+//           patient_age: true,
+//           start_date: true,
+//           patient_location: true,
+//           prefered_time: true,
+//           price: true,
+//           pincode: true,
+//           created_date: true,
+//           therapy_type: true,
+//           assigned_date: true,
+//           status: true,
+//           users: {
+//             select: {
+//               name: true,
+//             },
+//           },
+//           assist_details: {
+//             select: {
+//               id: true,
+//               type: true,
+//               name: true,
+//               phone_no: true,
+//             },
+//           },
+//         },
+//       });
+//       if (!details) {
+//         response.status(400).json({
+//           success: false,
+//           message: "No data",
+//         });
+//       } else {
+//         const userName = details.users?.name
+//           ? decrypt(details.users.name, secretKey)
+//           : null;
+
+//         const responseBody = {
+//           ...details,
+//           users: {
+//             name: userName,
+//           },
+//         };
+//         response.status(200).json({
+//           success: true,
+//           data: responseBody,
+//         });
+//       }
+//     } else if (type === "hospitalassist_service") {
+//       const details = await prisma.hospitalAssist_service.findFirst({
+//         where: {
+//           id: id,
+//         },
+//         select: {
+//           id: true,
+//           patient_name: true,
+//           patient_contact_no: true,
+//           patient_mobility: true,
+//           patient_gender: true,
+//           patient_age: true,
+//           assist_type: true,
+//           pickup_type: true,
+//           hospital_name: true,
+//           hospital_location: true,
+//           time: true,
+//           start_date: true,
+//           end_date: true,
+//           days_week: true,
+//           patient_location: true,
+//           requirements: true,
+//           medical_documents: true,
+//           price: true,
+//           pincode: true,
+//           created_date: true,
+//           assigned_date: true,
+//           vehicle_id:true,
+//           vehicle_type:true,
+//           status: true,
+//           users: {
+//             select: {
+//               name: true,
+//             },
+//           },
+//           assist_details: {
+//             select: {
+//               id: true,
+//               type: true,
+//               name: true,
+//               phone_no: true,
+//             },
+//           },
+//         },
+//       });
+//       if (!details) {
+//         response.status(400).json({
+//           success: false,
+//           message: "No data",
+//         });
+//       } else {
+//         const haversineDistance = (lat1, lon1, lat2, lon2) => {
+//           const toRadians = (degrees) => degrees * (Math.PI / 180);
+//           const R = 6371;
+
+//           const dLat = toRadians(lat2 - lat1);
+//           const dLon = toRadians(lon2 - lon1);
+
+//           const a =
+//             Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+//             Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
+//             Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+//           const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+//           return R * c;
+//         };
+//         const hospitalLocation = details.hospital_location[0];
+//         const patientLocation = details.patient_location[0];
+
+//         const hospitalLat = parseFloat(hospitalLocation.latitude);
+//         const hospitalLon = parseFloat(hospitalLocation.longitude);
+//         const patientLat = parseFloat(patientLocation.latitude);
+//         const patientLon = parseFloat(patientLocation.longitude);
+
+//         const oneWayDistance = haversineDistance(patientLat, patientLon, hospitalLat, hospitalLon);
+//       console.log({oneWayDistance})
+//         let totalDistance;
+//         if (details.pickup_type === "door_to_door") {
+//           totalDistance = oneWayDistance * 2;
+//         } else {
+//           totalDistance = oneWayDistance;
+//         }
+//         const userName = details.users?.name
+//           ? decrypt(details.users.name, secretKey)
+//           : null;
+
+//         const responseBody = {
+//           ...details,
+//           totalDistance:totalDistance,
+//           users: {
+//             name: userName,
+//           },
+//         };
+//         response.status(200).json({
+//           success: true,
+//           data: responseBody,
+//         });
+//       }
+//     }
+//   } catch (error) {
+//     logger.error(
+//       `Internal server error: ${error.message} in services-getorderdetails API`
+//     );
+//     response.status(500).json({
+//       error: true,
+//       message: "Internal server error",
+//     });
+//   } finally {
+//     await prisma.$disconnect();
+//   }
+// };
+const calculateDistanceWithGoogleMaps = async (
+  originLat,
+  originLon,
+  destLat,
+  destLon
+) => {
+  const origin = `${originLat},${originLon}`;
+  const destination = `${destLat},${destLon}`;
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+
+  // const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&mode=driving&key=${apiKey}`;
+  const url = `https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${origin}&destinations=${destination}&key=${apiKey}`;
+
+  try {
+    const response = await axios.get(url);
+    if (response.data.status === "OK") {
+      const distance =
+        response?.data?.rows[0]?.elements[0]?.distance?.value / 1000;
+      console.log(response.data.rows[0].elements[0]);
+      console.log("Calculated Distance (Google Maps):", distance);
+      // const distance = response.data.routes[0].legs[0].distance.value / 1000;
+      return distance;
+    } else {
+      throw new Error(`Google Maps API error: ${response.data.status}`);
+    }
+  } catch (error) {
+    console.error("Error calculating distance with Google Maps API:", error);
+    throw error;
+  }
+};
+
 const getorderdetails = async (request, response) => {
   const { id, type } = request.body;
   console.log("getorderdetailssssssssss", request.body);
@@ -1196,7 +1469,7 @@ const getorderdetails = async (request, response) => {
           created_date: true,
           assigned_date: true,
           status: true,
-         
+
           users: {
             select: {
               name: true,
@@ -1316,8 +1589,8 @@ const getorderdetails = async (request, response) => {
           pincode: true,
           created_date: true,
           assigned_date: true,
-          vehicle_id:true,
-          vehicle_type:true,
+          vehicle_id: true,
+          vehicle_type: true,
           status: true,
           users: {
             select: {
@@ -1340,12 +1613,46 @@ const getorderdetails = async (request, response) => {
           message: "No data",
         });
       } else {
+       
+        let totalDistance = null;
+        if (
+          Array.isArray(details.hospital_location) &&
+          details.hospital_location.length > 0 &&
+          Array.isArray(details.patient_location) &&
+          details.patient_location.length > 0
+        ) {
+          const hospitalLocation = details?.hospital_location[0] ;
+          const patientLocation = details?.patient_location[0];
+          const hospitalLat = parseFloat(hospitalLocation.latitude);
+          const hospitalLon = parseFloat(hospitalLocation.longitude);
+          const patientLat = parseFloat(patientLocation.latitude);
+          const patientLon = parseFloat(patientLocation.longitude);
+    
+          const oneWayDistance = await calculateDistanceWithGoogleMaps(
+            patientLat,
+            patientLon,
+            hospitalLat,
+            hospitalLon
+          );
+    
+          if (details?.pickup_type === "door_to_door") {
+            totalDistance = oneWayDistance * 2;
+          } else {
+            totalDistance = oneWayDistance;
+          }
+        }
+       
+
+        
+
+
         const userName = details.users?.name
           ? decrypt(details.users.name, secretKey)
           : null;
 
         const responseBody = {
           ...details,
+          totalDistance: totalDistance ,
           users: {
             name: userName,
           },
@@ -1357,6 +1664,7 @@ const getorderdetails = async (request, response) => {
       }
     }
   } catch (error) {
+    console.log(error)
     logger.error(
       `Internal server error: ${error.message} in services-getorderdetails API`
     );
