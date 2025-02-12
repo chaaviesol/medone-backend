@@ -323,7 +323,7 @@ const pastOrder = async(req,res)=>{
         
       },
       orderBy:{
-        order_id:"asc"
+        order_id:"desc"
       }
     });
     console.log({getCompleteOrder})
