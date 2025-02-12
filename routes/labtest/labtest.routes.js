@@ -58,7 +58,7 @@ LabtestRouter.post("/getnearestlabs", getnearestlabs); ///////get nearest labs
 LabtestRouter.post("/assignlab", assignlab);
 LabtestRouter.post("/myorders", myorders);
 LabtestRouter.post("/checkout", checkout);
-LabtestRouter.get("/alltestlistorders", alltestlistorders);
+LabtestRouter.get("/alltestlistorders", alltestlistorders);//////all normal orders not prescription
 LabtestRouter.post("/getlaboratories", getlaboratories); ////get labs for assigning (based on tests and user pincode)
 LabtestRouter.post("/gettestswithauth", auth, gettestswithauth);
 LabtestRouter.post("/getpackageswithauth", auth, getpackageswithauth);
