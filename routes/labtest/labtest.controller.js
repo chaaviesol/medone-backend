@@ -1544,6 +1544,9 @@ const alltestlistorders = async (request, response) => {
   const secretKey = process.env.ENCRYPTION_KEY;
   try {
     const all = await prisma.labtest_order.findMany({
+      where: {
+        order_type: { not: "prescription" },
+      },
       select: {
         order_id: true,
         order_number: true,
@@ -1646,6 +1649,7 @@ const getlaboratories = async (request, response) => {
             name: true,
             pincode: true,
             address: true,
+            phone_no: true,
           },
         },
       },
@@ -1661,6 +1665,7 @@ const getlaboratories = async (request, response) => {
           name: getdetails?.lab_details?.name,
           address: getdetails?.lab_details?.address,
           pincode: getdetails?.lab_details?.pincode,
+          phone_no: getdetails?.lab_details?.phone_no,
           button_status: "assigned",
         },
       ];
@@ -2286,7 +2291,8 @@ const prescriptionupload = async (request, response) => {
     });
   }
 
-  let location = order_type !== "prescription" ? delivery_location : delivery_location;
+  let location =
+    order_type !== "prescription" ? delivery_location : delivery_location;
 
   try {
     await prisma.$transaction(async (prisma) => {
@@ -2337,10 +2343,9 @@ const prescriptionupload = async (request, response) => {
         if (!prescription_image || prescription_image.length === 0) {
           response.status(400).json({
             success: false,
-            error:true,
+            error: true,
             message: "Please attach at least one report",
           });
-        
         }
 
         for (let i = 0; i < prescription_image?.length; i++) {
@@ -2363,7 +2368,9 @@ const prescriptionupload = async (request, response) => {
       });
     });
   } catch (error) {
-    logger.error(`Internal server error: ${error.message} in labtest-prescriptionupload API`);
+    logger.error(
+      `Internal server error: ${error.message} in labtest-prescriptionupload API`
+    );
     response.status(500).json({
       error: true,
       message: error.message || "Internal server error",
@@ -2372,7 +2379,6 @@ const prescriptionupload = async (request, response) => {
     await prisma.$disconnect();
   }
 };
-
 
 module.exports = {
   labtestadd,
