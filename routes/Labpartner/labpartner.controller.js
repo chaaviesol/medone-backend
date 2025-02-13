@@ -183,7 +183,7 @@ const getOrder = async (req, res) => {
         console.log({testNumber})
 
         let testData = [];
-        if (testNumber.startsWith("t")) {
+        if (testNumber.startsWith("T")) {
           testData = await prisma.labtest_details.findMany({
               where: { test_number: testNumber }
           });
