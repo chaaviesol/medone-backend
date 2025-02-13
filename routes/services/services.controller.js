@@ -1614,33 +1614,33 @@ const getorderdetails = async (request, response) => {
         });
       } else {
        
-        let totalDistance = null;
-        if (
-          Array.isArray(details.hospital_location) &&
-          details.hospital_location.length > 0 &&
-          Array.isArray(details.patient_location) &&
-          details.patient_location.length > 0
-        ) {
-          const hospitalLocation = details?.hospital_location[0] ;
-          const patientLocation = details?.patient_location[0];
-          const hospitalLat = parseFloat(hospitalLocation.latitude);
-          const hospitalLon = parseFloat(hospitalLocation.longitude);
-          const patientLat = parseFloat(patientLocation.latitude);
-          const patientLon = parseFloat(patientLocation.longitude);
+        // let totalDistance = null;
+        // if (
+        //   Array.isArray(details.hospital_location) &&
+        //   details.hospital_location.length > 0 &&
+        //   Array.isArray(details.patient_location) &&
+        //   details.patient_location.length > 0
+        // ) {
+        //   const hospitalLocation = details?.hospital_location[0] ;
+        //   const patientLocation = details?.patient_location[0];
+        //   const hospitalLat = parseFloat(hospitalLocation.latitude);
+        //   const hospitalLon = parseFloat(hospitalLocation.longitude);
+        //   const patientLat = parseFloat(patientLocation.latitude);
+        //   const patientLon = parseFloat(patientLocation.longitude);
     
-          const oneWayDistance = await calculateDistanceWithGoogleMaps(
-            patientLat,
-            patientLon,
-            hospitalLat,
-            hospitalLon
-          );
+        //   const oneWayDistance = await calculateDistanceWithGoogleMaps(
+        //     patientLat,
+        //     patientLon,
+        //     hospitalLat,
+        //     hospitalLon
+        //   );
     
-          if (details?.pickup_type === "door_to_door") {
-            totalDistance = oneWayDistance * 2;
-          } else {
-            totalDistance = oneWayDistance;
-          }
-        }
+        //   if (details?.pickup_type === "door_to_door") {
+        //     totalDistance = oneWayDistance * 2;
+        //   } else {
+        //     totalDistance = oneWayDistance;
+        //   }
+        // }
        
 
         
@@ -1652,7 +1652,7 @@ const getorderdetails = async (request, response) => {
 
         const responseBody = {
           ...details,
-          totalDistance: totalDistance ,
+          // totalDistance: totalDistance ,
           users: {
             name: userName,
           },
