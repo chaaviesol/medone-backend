@@ -483,7 +483,8 @@ const getConfirmedOrder = async (req, res) => {
         },
       },
       orderBy:{
-        Stmodified_date:"desc"
+        // Stmodified_date:"desc"
+        id:"desc"
       }
     });
    const getPharm_name = await prisma.pharmacy_details.findFirst({
