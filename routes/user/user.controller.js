@@ -18,11 +18,12 @@ const csvupload = async (req, res) => {
   try {
     const fileRows = [];
     const fileRows2 = [];
-    const filePath = path.resolve("C:\\Users\\dell\\Desktop\\medOneNw\\medone-backend\\routes\\user\\hospitalfullcsv.csv");
+    const filePath = path.resolve(
+      "C:\\Users\\dell\\Desktop\\medOneNw\\medone-backend\\routes\\user\\hospitalfullcsv.csv"
+    );
     // Open uploaded file
     // fs.createReadStream(filePath)
     fs.createReadStream(filePath)
-
 
       .pipe(csv())
       .on("data", (row, index) => {
@@ -929,6 +930,28 @@ const getprofile = async (request, response) => {
       where: {
         id: userid,
       },
+      select: {
+        id: true,
+        name: true,
+        phone_no: true,
+        email: true,
+        ageGroup: true,
+        gender: true,
+        datetime:true,
+        pincode:true,
+        last_active:true,
+        status:true,
+        image:true,
+        health_condition:true,
+        weight:true,
+        height:true,
+        token:true,
+        googleId:true,
+        token:true,
+        updatedDate:true,
+        notificationTime:true,
+        daily_routine: true,
+      },
     });
 
     if (!userDetails) {
@@ -941,17 +964,20 @@ const getprofile = async (request, response) => {
 
     const decryptedname = safeDecrypt(userDetails.name, secretKey);
     const decryptedphone = safeDecrypt(userDetails?.phone_no, secretKey);
-
     const decryptedemail = safeDecrypt(userDetails.email, secretKey);
 
     const decryptedageGroup = safeDecrypt(userDetails?.ageGroup, secretKey);
     const decryptgender = safeDecrypt(userDetails?.gender, secretKey);
+    userDetails.daily_routine =
+      Array.isArray(userDetails.daily_routine) &&
+      userDetails.daily_routine.length > 0;
 
     userDetails.name = decryptedname;
     userDetails.phone_no = decryptedphone;
     userDetails.email = decryptedemail;
     userDetails.ageGroup = decryptedageGroup;
     userDetails.gender = decryptgender;
+
     const endTime = Date.now();
     const executionTime = endTime - startTime;
 
