@@ -2903,86 +2903,116 @@ const getMedicineForSchedule = async(req,res)=>{
 }
 
 //////get complete medicine
-const getCompleteMedicine = async(req,res)=>{
-try{
-  const {userId} = req.body
-  if(!userId){
-    return res.status(404).json({
-      error:true,
-      success:false,
-      message:"userId is required.........",
-      
-    })
-  }
-  const getCompleteList = await prisma.medicine_timetable.findMany({
-    where:{
-      userId:userId,
-      app_flag:false,
-      // active_status:"true",
-      startDate:{
-        not:null
+const getCompleteMedicine = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) {
+      return res.status(404).json({
+        error: true,
+        success: false,
+        message: "userId is required.",
+      });
+    }
+
+    const getCompleteList = await prisma.medicine_timetable.findMany({
+      where: {
+        userId: userId,
+        app_flag: false,
+        startDate: {
+          not: null,
+        },
+      },
+      select: {
+        id: true,
+        userId: true,
+        medicine: true,
+        startDate: true,
+        no_of_days: true,
+        totalQuantity: true,
+        takingQuantity: true,
+        timeInterval: true,
+        daysInterval: true,
+        timing: true,
+      },
+    });
+
+    // console.log({ getCompleteList });
+
+    const filteredList = [];
+
+    for (let i = 0; i < getCompleteList.length; i++) {
+      let medicine = getCompleteList[i];
+
+      if (!medicine.no_of_days) {
+        // Calculate the number of days if missing
+        const totalQuantity = parseInt(medicine.totalQuantity, 10) || 0;
+        console.log({totalQuantity})
+        const takingQuantity = parseInt(medicine.takingQuantity, 10) || 1;
+        console.log({takingQuantity})
+        
+        // const timingCount = medicine.timing ? Object.keys(medicine.timing).length : 1;
+        const timingCount = medicine.timing && medicine.timing.length > 0 
+        ? Object.keys(medicine.timing[0]).length 
+        : 1; 
+        console.log({timingCount})
+        if (totalQuantity > 0 && takingQuantity > 0 && timingCount > 0) {
+          medicine.no_of_days = String(Math.floor(totalQuantity / (takingQuantity * timingCount)));
+
+          // Update the database with calculated `no_of_days`
+          await prisma.medicine_timetable.update({
+            where: 
+            { id: medicine.id,
+               userId: userId 
+              },
+            data: 
+            { no_of_days: medicine.no_of_days
+
+             },
+          });
+        }
       }
-    },
-    select:{
-      id:true,
-      userId:true,
-      medicine:true,
-      startDate:true,
-      no_of_days:true
+
+      const startDateObj = new Date(medicine.startDate);
+      console.log({ startDateObj });
+
+      const numberOfDays = parseInt(medicine.no_of_days, 10);
+      console.log({ numberOfDays });
+
+      const endDate = new Date(startDateObj);
+      endDate.setDate(endDate.getDate() + numberOfDays);
+      console.log({ endDate });
+
+      const currentDate = new Date();
+      if (currentDate >= startDateObj && currentDate <= endDate) {
+        console.log(`Including medicine ID: ${medicine.id}`);
+        filteredList.push(medicine);
+      } else {
+        console.log(`Skipping medicine ID: ${medicine.id} as it is out of the active range`);
+      }
     }
-  })
-  console.log({getCompleteList})
-   const filteredList = []
-  for(let i=0;i<getCompleteList.length;i++){
 
-    const startDateObj = new Date(getCompleteList[i].startDate);
-    console.log({startDateObj})
-    const numberOfDays = parseInt(getCompleteList[i].no_of_days, 10);
-    console.log({numberOfDays})
-    const endDate = new Date(startDateObj);
-    endDate.setDate(endDate.getDate() + numberOfDays);
-    console.log({endDate})
+    console.log({ filteredList });
 
-
-    
-    const currentDate = new Date();
-    if (currentDate >= startDateObj && currentDate <= endDate) {
-      console.log(`Including medicine ID: ${getCompleteList[i].id}`);
-      filteredList.push(getCompleteList[i]); // Add the valid medicine to the filtered list
-    } else {
-      console.log(
-        `Skipping medicine ID: ${getCompleteList[i].id} as it is out of the active range`
-      );
+    if (filteredList.length === 0) {
+      return res.status(404).json({
+        error: true,
+        success: false,
+        message: "No medicine found.",
+      });
     }
-  
-  }
-    
-  console.log({filteredList})
 
-
-
-  if(getCompleteList.length === 0 ){
-    return res.status(404).json({
-      error:true,
-      success:false,
-      message:"No medicine found..........",
-   
-    })
-  }
-
-  return res.status(200).json({
-    error:false,
-    success:true,
-    message:"Successfull..........",
-    data:filteredList
-  })
-}catch (error) {
+    return res.status(200).json({
+      error: false,
+      success: true,
+      message: "Successful.",
+      data: filteredList,
+    });
+  } catch (error) {
     console.error({ error });
     res.status(500).json({ success: false, message: error.message });
-  } finally {
-    //await prisma.$disconnect();
   }
-}
+};
+
 
 module.exports = {addUserData,
   userLogin,
