@@ -1229,7 +1229,7 @@ const forgotPwd = async (request, response) => {
 
     let user = await prisma.doctor_details.findFirst({ where: { email } });
 
-    console.log({ user });
+   
     if (!user) {
       user = await prisma.hospital_details.findFirst({ where: { email } });
     }

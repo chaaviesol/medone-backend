@@ -33,7 +33,7 @@ const addcategory = async (request, response) => {
       }
 
       if (check.category !== upr_category) {
-        console.log("heyyyyyyyyy");
+       
         const checkcategory = await prisma.generic_product.findFirst({
           where: {
             category: {

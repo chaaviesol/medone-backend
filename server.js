@@ -122,7 +122,7 @@ server.post("/send-notification", async (req, res) => {
             notification.title,
             notification.message
           );
-          console.log("Successfully sent the notification ----->", response);
+         
 
           // Update the notification status to "Sent"
           await prisma.notification.update({

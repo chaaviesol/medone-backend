@@ -658,13 +658,13 @@ const salesorder = async (request, response) => {
         message: "Missing order_type field",
       });
     }
-    let location;
-    if (order_type != "prescription") {
-      location = delivery_location;
-    } else {
-      // location = JSON?.parse(delivery_location);//changed for flutter app
-      location = delivery_location;
-    }
+    // let location;
+    // if (order_type != "prescription") {
+    //   location = delivery_location;
+    // } else {
+    //   // location = JSON?.parse(delivery_location);//changed for flutter app
+    //   location = delivery_location;
+    // }
 
     await prisma.$transaction(async (prisma) => {
       const currentDate = new Date();
@@ -694,7 +694,12 @@ const salesorder = async (request, response) => {
       }
 
       const datetime = getCurrentDateInIST();
-
+      let location;
+      if (typeof delivery_location === "string") {
+        location = JSON.parse(location);
+      } else {
+        location = delivery_location;
+      }
       sales_order = await prisma.sales_order.create({
         data: {
           so_number: so_number,
@@ -1486,6 +1491,7 @@ const medicineadd = async (request, response) => {
 
 const getinvsalesorder = async (request, response) => {
   const secretKey = process.env.ENCRYPTION_KEY;
+  console.log("rrrrrrrrrrrrr")
   try {
     const sales_id = request.body.sales_id;
     if (!sales_id) {
@@ -1629,7 +1635,7 @@ const getinvsalesorder = async (request, response) => {
 //////for normal type salesorder////////////////////////
 
 const createinvoice = async (request, response) => {
-  console.log("cretttttt", request.body);
+  console.log("cretttttt============", request.body);
   try {
     const datetime = getCurrentDateInIST();
     const { sales_id, userId, doctor_name, total_amount } = request.body;
@@ -1757,12 +1763,13 @@ const createinvoice = async (request, response) => {
 ///////////for prescription salesorder/////////////////
 
 const prescriptioninvoice = async (request, response) => {
+  console.log("presssssssssss===============================", request.body);
   const datetime = getCurrentDateInIST();
   try {
     const { sales_id, sold_by, total_amount, userId, doctor_name } =
       request.body;
     const medication_details = request.body.medicine_details;
-
+console.log({medication_details})
     if (!sales_id || !medication_details || !userId) {
       return response.status(400).json({ error: "All fields are required" });
     }

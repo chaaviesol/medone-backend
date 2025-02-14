@@ -2101,7 +2101,7 @@ const getphelboassists = async (request, response) => {
         },
       },
     });
-    console.log({ find });
+    
     if (!find) {
       return response.status(404).json({
         error: true,

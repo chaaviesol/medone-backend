@@ -1467,7 +1467,7 @@ const hospital_searchdata = async (req, res) => {
         created_date: datetime,
       },
     });
-    console.log({ create });
+    
     if (create) {
       res.status(201).json({
         error: false,
