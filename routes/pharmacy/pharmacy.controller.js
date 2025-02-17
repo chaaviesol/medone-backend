@@ -658,13 +658,13 @@ const salesorder = async (request, response) => {
         message: "Missing order_type field",
       });
     }
-    // let location;
-    // if (order_type != "prescription") {
-    //   location = delivery_location;
-    // } else {
-    //   // location = JSON?.parse(delivery_location);//changed for flutter app
-    //   location = delivery_location;
-    // }
+    let location;
+    if (order_type != "prescription") {
+      location = delivery_location;
+    } else {
+      // location = JSON?.parse(delivery_location);//changed for flutter app
+      location = delivery_location;
+    }
 
     await prisma.$transaction(async (prisma) => {
       const currentDate = new Date();
@@ -694,12 +694,12 @@ const salesorder = async (request, response) => {
       }
 
       const datetime = getCurrentDateInIST();
-      let location;
-      if (typeof delivery_location === "string") {
-        location = JSON.parse(location);
-      } else {
-        location = delivery_location;
-      }
+      // let location;
+      // if (typeof delivery_location === "string") {
+      //   location = JSON.parse(location);
+      // } else {
+      //   location = delivery_location;
+      // }
       sales_order = await prisma.sales_order.create({
         data: {
           so_number: so_number,
