@@ -24,10 +24,17 @@ const labadd = async (request, response) => {
     } = request.body;
 
     // Check if required fields are present
-    if (!name || !address || !pincode) {
+    if (!name || !address || !pincode || !phone_no) {
       return response.status(400).json({
         message: "Required fields can't be null",
         error: true,
+      });
+    }
+    if (!test_ids || test_ids.length === 0) {
+      return response.status(400).json({
+        error: true,
+        success: false,
+        message: "Please add at least one lab test.",
       });
     }
     if (email) {
@@ -90,7 +97,11 @@ const labadd = async (request, response) => {
 
 const getlabs = async (request, response) => {
   try {
-    const getall = await prisma.lab_details.findMany();
+    const getall = await prisma.lab_details.findMany({
+      orderBy:{
+        name:"asc"
+      }
+    });
     if (getall.length > 0) {
       return response.status(200).json({
         data: getall,
@@ -199,7 +210,13 @@ const labupdate = async (request, response) => {
         error: true,
       });
     }
-
+    if (!test_ids || test_ids.length === 0) {
+      return response.status(400).json({
+        error: true,
+        success: false,
+        message: "Please add at least one lab test.",
+      });
+    }
     // // Check if email already exists
     // const checkEmail = await prisma.lab_details.findFirst({
     //   where: { email },
@@ -318,6 +335,13 @@ const labtestadd = async (request, response) => {
 
   const datetime = getCurrentDateInIST();
   try {
+    if (!name || !mrp || !description || !age_group) {
+      return response.status(400).json({
+        error: true,
+        success: false,
+        message: "mandatory fields can't be null",
+      });
+    }
     const lwrcase_name = name.toLowerCase();
     const lwrcase_description = description.trim().toLowerCase();
 
@@ -354,12 +378,13 @@ const labtestadd = async (request, response) => {
         created_date: datetime,
       },
     });
-
-    response.status(200).json({
-      error: false,
-      success: true,
-      message: "successfully created",
-    });
+    if (adddata) {
+      response.status(200).json({
+        error: false,
+        success: true,
+        message: "successfully created",
+      });
+    }
   } catch (err) {
     logger.error(
       `Internal server error: ${err.message} in labtest---labtestass api`
@@ -663,8 +688,27 @@ const labtestupdate = async (request, response) => {
 };
 ////////////////lab packages/////////////////
 const package_add = async (request, response) => {
+  console.log("dddddddddddd")
   const { package_name, price, created_date, status, labtest_ids, about } =
     request.body;
+  // Validate mandatory fields
+  if (!package_name || !price || !about) {
+    return response.status(400).json({
+      error: true,
+      success: false,
+      message: "Mandatory fields (package_name, price, about) cannot be null.",
+    });
+  }
+
+  // Validate labtest_ids
+  if (!labtest_ids || labtest_ids.length === 0) {
+    return response.status(400).json({
+      error: true,
+      success: false,
+      message: "Please add at least one lab test.",
+    });
+  }
+
   const datetime = getCurrentDateInIST();
   const lastTest = await prisma.lab_packages.findFirst({
     orderBy: {

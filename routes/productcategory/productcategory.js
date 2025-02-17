@@ -39,6 +39,7 @@ const addcategory = async (request, response) => {
             category: {
               array_contains: check.category,
             },
+            is_active:"Y"
           },
         });
         console.log({ checkcategory });
