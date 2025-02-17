@@ -1402,6 +1402,38 @@ const getassists = async (request, response) => {
 //     await prisma.$disconnect();
 //   }
 // };
+// const calculateDistanceWithGoogleMaps = async (
+//   originLat,
+//   originLon,
+//   destLat,
+//   destLon
+// ) => {
+//   const origin = `${originLat},${originLon}`;
+//   const destination = `${destLat},${destLon}`;
+//   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+
+//   // const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&mode=driving&key=${apiKey}`;
+//   const url = `https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${origin}&destinations=${destination}&key=${apiKey}`;
+
+//   try {
+//     const response = await axios.get(url);
+//     if (response.data.status === "OK") {
+//       const distance =
+//         response?.data?.rows[0]?.elements[0]?.distance?.value / 1000;
+//       console.log(response.data.rows[0].elements[0]);
+//       console.log("Calculated Distance (Google Maps):", distance);
+//       // const distance = response.data.routes[0].legs[0].distance.value / 1000;
+//       return distance;
+//     } else {
+//       throw new Error(`Google Maps API error: ${response.data.status}`);
+//     }
+//   } catch (error) {
+//     console.error("Error calculating distance with Google Maps API:", error);
+//     throw error;
+//   }
+// };
+
+
 const calculateDistanceWithGoogleMaps = async (
   originLat,
   originLon,
@@ -1412,23 +1444,20 @@ const calculateDistanceWithGoogleMaps = async (
   const destination = `${destLat},${destLon}`;
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
 
-  // const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&mode=driving&key=${apiKey}`;
   const url = `https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${origin}&destinations=${destination}&key=${apiKey}`;
 
   try {
     const response = await axios.get(url);
     if (response.data.status === "OK") {
-      const distance =
-        response?.data?.rows[0]?.elements[0]?.distance?.value / 1000;
-      console.log(response.data.rows[0].elements[0]);
+      const distance = response?.data?.rows[0]?.elements[0]?.distance?.value / 1000;
       console.log("Calculated Distance (Google Maps):", distance);
-      // const distance = response.data.routes[0].legs[0].distance.value / 1000;
       return distance;
     } else {
+      console.error("Google Maps API Error:", response.data);
       throw new Error(`Google Maps API error: ${response.data.status}`);
     }
   } catch (error) {
-    console.error("Error calculating distance with Google Maps API:", error);
+    console.error("Error calculating distance with Google Maps API:", error.response?.data || error.message);
     throw error;
   }
 };
@@ -1614,45 +1643,40 @@ const getorderdetails = async (request, response) => {
         });
       } else {
        
-        // let totalDistance = null;
-        // if (
-        //   Array.isArray(details.hospital_location) &&
-        //   details.hospital_location.length > 0 &&
-        //   Array.isArray(details.patient_location) &&
-        //   details.patient_location.length > 0
-        // ) {
-        //   const hospitalLocation = details?.hospital_location[0] ;
-        //   const patientLocation = details?.patient_location[0];
-        //   const hospitalLat = parseFloat(hospitalLocation.latitude);
-        //   const hospitalLon = parseFloat(hospitalLocation.longitude);
-        //   const patientLat = parseFloat(patientLocation.latitude);
-        //   const patientLon = parseFloat(patientLocation.longitude);
+        let totalDistance = null;
+        if (
+          Array.isArray(details.hospital_location) &&
+          details.hospital_location.length > 0 &&
+          Array.isArray(details.patient_location) &&
+          details.patient_location.length > 0
+        ) {
+          const hospitalLocation = details?.hospital_location[0] ;
+          const patientLocation = details?.patient_location[0];
+          const hospitalLat = parseFloat(hospitalLocation.latitude);
+          const hospitalLon = parseFloat(hospitalLocation.longitude);
+          const patientLat = parseFloat(patientLocation.latitude);
+          const patientLon = parseFloat(patientLocation.longitude);
     
-        //   const oneWayDistance = await calculateDistanceWithGoogleMaps(
-        //     patientLat,
-        //     patientLon,
-        //     hospitalLat,
-        //     hospitalLon
-        //   );
+          const oneWayDistance = await calculateDistanceWithGoogleMaps(
+            patientLat,
+            patientLon,
+            hospitalLat,
+            hospitalLon
+          );
     
-        //   if (details?.pickup_type === "door_to_door") {
-        //     totalDistance = oneWayDistance * 2;
-        //   } else {
-        //     totalDistance = oneWayDistance;
-        //   }
-        // }
-       
-
-        
-
-
-        const userName = details.users?.name
+          if (details?.pickup_type === "door_to_door") {
+            totalDistance = oneWayDistance * 2;
+          } else {
+            totalDistance = oneWayDistance;
+          }
+        }
+       const userName = details.users?.name
           ? decrypt(details.users.name, secretKey)
           : null;
 
         const responseBody = {
           ...details,
-          // totalDistance: totalDistance ,
+          totalDistance: totalDistance ,
           users: {
             name: userName,
           },
