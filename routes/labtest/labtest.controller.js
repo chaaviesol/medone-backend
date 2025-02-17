@@ -1010,7 +1010,6 @@ const getpackageswithauth = async (request, response) => {
 
 const packagedetail = async (request, response) => {
   try {
-    
     const { id } = request.body;
     const labPackage = await prisma.lab_packages.findFirst({
       where: { id },
@@ -1036,7 +1035,7 @@ const packagedetail = async (request, response) => {
           name: true,
           mrp: true,
           description: true,
-          home_collection:true
+          home_collection: true,
         },
       });
 
@@ -2101,7 +2100,7 @@ const getphelboassists = async (request, response) => {
         },
       },
     });
-    
+
     if (!find) {
       return response.status(404).json({
         error: true,
@@ -2468,6 +2467,109 @@ const prescriptionupload = async (request, response) => {
   }
 };
 
+//////////////create prescription order////////////////
+const prescriptionorder = async (request, response) => {
+  console.log("presssssssssss===============================", request.body);
+  const datetime = getCurrentDateInIST();
+  try {
+    const { order_id, total_amount, userId, doctor_name } = request.body;
+    const test_details = request.body.order_details;
+    console.log({ test_details });
+    if (!order_id || !test_details || !userId) {
+      return response.status(400).json({ error: "All fields are required" });
+    }
+
+    const total_amount_fixed = total_amount
+      ? parseFloat(total_amount).toFixed(2)
+      : null;
+
+    await prisma.$transaction(async (prisma) => {
+      const updatesales = await prisma.labtest_order.update({
+        where: {
+          order_id,
+        },
+        data: {
+          doctor_name,
+          status: "confirmed",
+          total_amount: total_amount_fixed,
+          updated_date: datetime,
+        },
+      });
+
+      for (const test of test_details) {
+        const { id, name, type, test_number, mrp } = test;
+
+        await prisma.labtest_list.create({
+          data: {
+            labtest_order: {
+              connect: {
+                order_id: order_id,
+              },
+            },
+            test_number: test_number,
+            created_date: datetime,
+          },
+        });
+      }
+    });
+
+    response.status(200).json({
+      message: "Successfully created",
+      success: true,
+    });
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in labtest-prescriptioninvoice API`
+    );
+    response.status(500).json("An error occurred");
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+const getprods = async (request, response) => {
+  try {
+    const alltests = await prisma.labtest_details.findMany({
+      where: {
+        is_active: true,
+      },
+    });
+
+    const testsWithType = alltests.map((test) => ({
+      ...test,
+      type: "test",
+    }));
+
+    const allpackages = await prisma.lab_packages.findMany({
+      where: {
+        is_active: true,
+      },
+    });
+
+    const packagesWithType = allpackages.map((pkg) => ({
+      ...pkg,
+      type: "package",
+    }));
+
+    const respdata = [...testsWithType, ...packagesWithType];
+
+    return response.status(200).json({
+      data: respdata,
+      success: true,
+    });
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in labtest-for inv getprods API`
+    );
+    return response.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
 module.exports = {
   labtestadd,
   getlabtests,
@@ -2501,4 +2603,6 @@ module.exports = {
   assignflebo,
   getphelboassists,
   prescriptionupload,
+  prescriptionorder,
+  getprods,
 };
