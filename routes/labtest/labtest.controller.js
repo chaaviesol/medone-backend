@@ -2616,7 +2616,7 @@ const getprods = async (request, response) => {
 
 
 const editOrderDetails = async(request,response)=>{
-  console.log("req",request)
+  console.log("req-------",request)
 try{
   const{id,
        name,
@@ -2633,7 +2633,8 @@ try{
       // status:"placed"
     },
     select: { 
-      patient_details: true 
+      patient_details: true ,
+      delivery_details:true
     }, 
   });
 
@@ -2647,7 +2648,11 @@ try{
   let updatePatient = existingOrder.patient_details || {}
   updatePatient.name = name || updatePatient.name 
   updatePatient.gender = gender || updatePatient.gender
- 
+
+
+
+  let deliveryLocation = existingOrder.delivery_details || {}
+  deliveryLocation.address = delivery_details ||deliveryLocation.address
 
   const editData = await prisma.labtest_order.update({
     where:{
@@ -2657,7 +2662,7 @@ try{
      contact_no:contact_no || existingOrder.contact_no,
      test_collection: test_collection || existingOrder.test_collection,
      total_amount:total_amount || existingOrder.total_amount,
-     delivery_details:delivery_details || existingOrder.delivery_details,
+     delivery_details:deliveryLocation,
      patient_details:updatePatient
     }
   })
