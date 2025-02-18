@@ -2616,8 +2616,9 @@ const getprods = async (request, response) => {
 
 
 const editOrderDetails = async(request,response)=>{
+  console.log("req",request)
 try{
-  const{orderId,
+  const{id,
        name,
        gender,
        contact_no,
@@ -2628,8 +2629,8 @@ try{
   
   const existingOrder = await prisma.labtest_order.findUnique({
     where: { 
-      order_id: orderId,
-      status:"placed"
+      order_id: id,
+      // status:"placed"
     },
     select: { 
       patient_details: true 
@@ -2650,13 +2651,13 @@ try{
 
   const editData = await prisma.labtest_order.update({
     where:{
-      order_id:orderId
+      order_id:id
     },
     data:{
-     contact_no,
-     test_collection,
-     total_amount,
-     delivery_details,
+     contact_no:contact_no || existingOrder.contact_no,
+     test_collection: test_collection || existingOrder.test_collection,
+     total_amount:total_amount || existingOrder.total_amount,
+     delivery_details:delivery_details || existingOrder.delivery_details,
      patient_details:updatePatient
     }
   })
@@ -2668,6 +2669,7 @@ try{
     message:"Successfully edited the data"
   })
 }catch (error) {
+  console.log({error})
     logger.error(
       `Internal server error: ${error.message} in labtest-for inv editOrderDetails API`
     );
