@@ -2614,6 +2614,74 @@ const getprods = async (request, response) => {
   }
 };
 
+
+const editOrderDetails = async(request,response)=>{
+try{
+  const{orderId,
+       name,
+       gender,
+       contact_no,
+       test_collection,
+       total_amount,
+       delivery_details
+  } = request.body
+  
+  const existingOrder = await prisma.labtest_order.findUnique({
+    where: { 
+      order_id: orderId,
+      status:"placed"
+    },
+    select: { 
+      patient_details: true 
+    }, 
+  });
+
+  if (!existingOrder) {
+    return response.status(404).json({
+      error: true,
+      message: "Order not found",
+    });
+  }
+
+  let updatePatient = existingOrder.patient_details || {}
+  updatePatient.name = name || updatePatient.name 
+  updatePatient.gender = gender || updatePatient.gender
+ 
+
+  const editData = await prisma.labtest_order.update({
+    where:{
+      order_id:orderId
+    },
+    data:{
+     contact_no,
+     test_collection,
+     total_amount,
+     delivery_details,
+     patient_details:updatePatient
+    }
+  })
+  console.log({editData})
+  response.status(200).json({
+    error:false,
+    success:true,
+    data:editData,
+    message:"Successfully edited the data"
+  })
+}catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in labtest-for inv editOrderDetails API`
+    );
+    return response.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+
+
 module.exports = {
   labtestadd,
   getlabtests,
@@ -2649,4 +2717,5 @@ module.exports = {
   prescriptionupload,
   prescriptionorder,
   getprods,
+  editOrderDetails
 };
