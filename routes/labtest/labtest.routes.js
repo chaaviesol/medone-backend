@@ -35,7 +35,9 @@ const {
   prescriptionupload,
   prescriptionorder,
   getprods,
-  editOrderDetails
+  editOrderDetails,
+  allprescriptionorders,
+  getprescriptionorder
 } = require("./labtest.controller");
 const LabtestRouter = express.Router();
 const auth = require("../../middleware/Auth/auth");
@@ -80,5 +82,6 @@ LabtestRouter.post(
 LabtestRouter.post("/prescriptionorder", prescriptionorder);
 LabtestRouter.get("/getprods", getprods);
 LabtestRouter.post("/editOrderDetails",editOrderDetails)
-
+LabtestRouter.get("/allprescriptionorders",allprescriptionorders)
+LabtestRouter.post("/getprescriptionorder",getprescriptionorder)
 module.exports = LabtestRouter;

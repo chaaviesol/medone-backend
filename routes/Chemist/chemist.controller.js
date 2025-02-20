@@ -4,17 +4,13 @@ const logDirectory = "./logs";
 const winston = require("winston");
 // const crypto = require('crypto');
 // const admin = require('../../firebase')
-const secondApp = require('../../firebase')
+const secondApp = require("../../firebase");
 const bcrypt = require("bcrypt");
 const { messaging } = require("firebase-admin");
-const nodemailer = require('nodemailer')
-const {getCurrentDateInIST,decrypt,encrypt} = require('../../utils');
+const nodemailer = require("nodemailer");
+const { getCurrentDateInIST, decrypt, encrypt } = require("../../utils");
 const { getLogger } = require("nodemailer/lib/shared");
 // const pharmacy_otp = require('../../views')
-
-
-
-
 
 const logger = winston.createLogger({
   level: "info",
@@ -31,158 +27,153 @@ const logger = winston.createLogger({
   ],
 });
 
-
 //////login for pharmacy/////
 const chemist_login = async (req, res) => {
-    const { userid, password } = req.body;
-    if (!userid || !password) {
-      res.status(400).json({
-        error: true,
-        message: "userid and password are required",
-      });
-    } else {
-      try {
-        let user;
-        let identifier;
-  
-        const emailformat = /^[^\s@]+@gmail\.com$/.test(userid);
-        if (emailformat) {
-          identifier = "email";
-        } else {
-          identifier = "mobile";
-        }
-        if (identifier === "email") {
-          user = await prisma.pharmacy_details.findFirst({
-            where: {
-              email: userid,
-            },
-          });
-        } else {
-          user = await prisma.pharmacy_details.findFirst({
-            where: {
-              phone_no: userid,
-            },
-          });
-        }
-        if (!user) {
-          res.status(400).json({
-            error: true,
-            message: "user not found",
-          });
-        } else {
-          const hashedpassword = user.password;
-          console.log({hashedpassword})
-          console.log({ password, hashedpassword });
+  const { userid, password } = req.body;
+  if (!userid || !password) {
+    res.status(400).json({
+      error: true,
+      message: "userid and password are required",
+    });
+  } else {
+    try {
+      let user;
+      let identifier;
 
-          bcrypt.compare(password, hashedpassword, function (err, result) {
-            if (err) {
-              res.status(500).json({
-                error: true,
-                message: "password hashing error",
-              });
-            } else {
-              if (!result) {
-                res.status(400).json({
-                  error: false,
-                  message: "invaild password",
-                });
-              } else {
-                res.status(200).json({
-                  error: false,
-                  success: true,
-                  message: "successfully logged in",
-                  data: user,
-                });
-              }
-            }
-          });
-        }
-      } catch (err) {
-        logger.error(
-          `Internal server error: ${err.message} in pharmacy_login api`
-        );
-        res.status(400).json({
-          error: true,
-          message: "internal server error",
+      const emailformat = /^[^\s@]+@gmail\.com$/.test(userid);
+      if (emailformat) {
+        identifier = "email";
+      } else {
+        identifier = "mobile";
+      }
+      if (identifier === "email") {
+        user = await prisma.pharmacy_details.findFirst({
+          where: {
+            email: userid,
+          },
+        });
+      } else {
+        user = await prisma.pharmacy_details.findFirst({
+          where: {
+            phone_no: userid,
+          },
         });
       }
+      if (!user) {
+        res.status(400).json({
+          error: true,
+          message: "user not found",
+        });
+      } else {
+        const hashedpassword = user.password;
+        console.log({ hashedpassword });
+        console.log({ password, hashedpassword });
+
+        bcrypt.compare(password, hashedpassword, function (err, result) {
+          if (err) {
+            res.status(500).json({
+              error: true,
+              message: "password hashing error",
+            });
+          } else {
+            if (!result) {
+              res.status(400).json({
+                error: false,
+                message: "invaild password",
+              });
+            } else {
+              res.status(200).json({
+                error: false,
+                success: true,
+                message: "successfully logged in",
+                data: user,
+              });
+            }
+          }
+        });
+      }
+    } catch (err) {
+      logger.error(
+        `Internal server error: ${err.message} in pharmacy_login api`
+      );
+      res.status(400).json({
+        error: true,
+        message: "internal server error",
+      });
     }
-  };
-
-
+  }
+};
 
 ///add chemist/////
-const addChemist = async(req,res)=>{
-  try{
+const addChemist = async (req, res) => {
+  try {
     const {
-      name ,                    
-      phone_no ,             
-      address ,                 
-      lisence_no ,             
-                    
-      email   ,                 
-      password ,               
-      pincode  ,               
-      created_by 
-    } = req.body
-    const date = new Date()
+      name,
+      phone_no,
+      address,
+      lisence_no,
+
+      email,
+      password,
+      pincode,
+      created_by,
+    } = req.body;
+    const date = new Date();
     const hashedpassword = await bcrypt.hash(password, 10);
     const chemist = await prisma.pharmacy_details.create({
-      data:{
-        name:name,
-        phone_no:phone_no,
-        address:address,
-        email:email,
-        password:hashedpassword,
-        pincode:pincode,
-        lisence_no:lisence_no,
-        created_by:created_by,
-        datetime:date
-      }
-    })
-    console.log({chemist})
+      data: {
+        name: name,
+        phone_no: phone_no,
+        address: address,
+        email: email,
+        password: hashedpassword,
+        pincode: pincode,
+        lisence_no: lisence_no,
+        created_by: created_by,
+        datetime: date,
+      },
+    });
+    console.log({ chemist });
     res.status(200).json({
-      error:false,
-      success:true,
-      message:Successfull,
-      data:chemist
-    })
+      error: false,
+      success: true,
+      message: Successfull,
+      data: chemist,
+    });
   } catch (err) {
-    logger.error(
-      `Internal server error: ${err.message} in addChemist api`
-    );
+    logger.error(`Internal server error: ${err.message} in addChemist api`);
     res.status(400).json({
       error: true,
       message: "internal server error",
     });
   }
-}
+};
 
 //////pharmacy profile////
-const chemist_profile = async(req,res)=>{
-  try{
-    const {chemistId} = req.body
-     if(!chemistId){
+const chemist_profile = async (req, res) => {
+  try {
+    const { chemistId } = req.body;
+    if (!chemistId) {
       return res.status(404).json({
-        error:true,
-        success:false,
-        message:"chemist id is required..........."
-      })
-     }
+        error: true,
+        success: false,
+        message: "chemist id is required...........",
+      });
+    }
     const findchemist = await prisma.pharmacy_details.findUnique({
-      where:{
-        id:chemistId
-      }
-    })
-    console.log({findchemist})
-   
+      where: {
+        id: chemistId,
+      },
+    });
+    console.log({ findchemist });
+
     return res.status(200).json({
-      error:false,
-      success:true,
-      message:"successfull.......",
-      data:findchemist
-    })
-  }catch (err) {
+      error: false,
+      success: true,
+      message: "successfull.......",
+      data: findchemist,
+    });
+  } catch (err) {
     logger.error(
       `Internal server error: ${err.message} in chemist_profile api`
     );
@@ -191,14 +182,14 @@ const chemist_profile = async(req,res)=>{
       message: "internal server error",
     });
   }
-}
+};
 
 /////get complete order////
 const getOrder = async (req, res) => {
   try {
     const { chemistId } = req.body;
     const secretKey = process.env.ENCRYPTION_KEY;
-    
+
     const safeDecrypt = (text, key) => {
       try {
         return decrypt(text, key);
@@ -206,7 +197,7 @@ const getOrder = async (req, res) => {
         return text;
       }
     };
-    
+
     if (!chemistId) {
       return res.status(200).json({
         error: true,
@@ -219,13 +210,12 @@ const getOrder = async (req, res) => {
       where: {
         pharmacy_id: chemistId,
         status: "requested",
-        
       },
-      orderBy:{
-        id:"asc"
-      }
+      orderBy: {
+        id: "asc",
+      },
     });
-    console.log({getCompleteOrder})
+    console.log({ getCompleteOrder });
     if (getCompleteOrder.length === 0) {
       return res.status(404).json({
         error: true,
@@ -235,7 +225,7 @@ const getOrder = async (req, res) => {
     }
 
     const order = [];
-    
+
     for (let i = 0; i < getCompleteOrder.length; i++) {
       const salesId = getCompleteOrder[i].sales_id;
 
@@ -244,15 +234,15 @@ const getOrder = async (req, res) => {
           sales_id: salesId,
         },
       });
-     ////get customerName////
-    //  const getCustomerName = await prisma.sales_order.findMany({
-    //   where:{
-    //     sales_id: salesId,
-    //   }
-    //  })
-    //  console.log({getCustomerName})
-    //  const getName = getCustomerName[0].patient_name
-    //  console.log({getName})
+      ////get customerName////
+      //  const getCustomerName = await prisma.sales_order.findMany({
+      //   where:{
+      //     sales_id: salesId,
+      //   }
+      //  })
+      //  console.log({getCustomerName})
+      //  const getName = getCustomerName[0].patient_name
+      //  console.log({getName})
       const productlist = [];
       for (let j = 0; j < getSaleslist.length; j++) {
         const productId = getSaleslist[j].product_id;
@@ -271,40 +261,40 @@ const getOrder = async (req, res) => {
         });
       }
 
-    ///get price of the order
+      ///get price of the order
       const getPrice = await prisma.sales_order.findMany({
-      where:{
-        sales_id:salesId
-      },
-      select:{
-        total_amount:true,
-        patient_name:true,
-        doctor_name:true,
-        customer_id:true
-      }
-     })
-     console.log({getPrice})
-     const price = getPrice[0].total_amount
-     console.log({price})
-    //  const userName = getPrice[0].patient_name
-     const doctor = getPrice[0].doctor_name
-     const customerName = getPrice[0].customer_id
-     console.log({customerName})
-     const getCustomerName = await prisma.user_details.findMany({
-      where:{
-        id:customerName
-      }
-     })
-     console.log({getCustomerName})
-     const decryptedname = safeDecrypt(getCustomerName[0].name, secretKey);
-     getCustomerName[0].name = decryptedname;
-      console.log({decryptedname})
+        where: {
+          sales_id: salesId,
+        },
+        select: {
+          total_amount: true,
+          patient_name: true,
+          doctor_name: true,
+          customer_id: true,
+        },
+      });
+      console.log({ getPrice });
+      const price = getPrice[0].total_amount;
+      console.log({ price });
+      //  const userName = getPrice[0].patient_name
+      const doctor = getPrice[0].doctor_name;
+      const customerName = getPrice[0].customer_id;
+      console.log({ customerName });
+      const getCustomerName = await prisma.user_details.findMany({
+        where: {
+          id: customerName,
+        },
+      });
+      console.log({ getCustomerName });
+      const decryptedname = safeDecrypt(getCustomerName[0].name, secretKey);
+      getCustomerName[0].name = decryptedname;
+      console.log({ decryptedname });
 
       order.push({
         ...getCompleteOrder[i],
-        product_amt:price,
-        user : decryptedname,
-        doctorName:doctor,
+        product_amt: price,
+        user: decryptedname,
+        doctorName: doctor,
         productlist, // Include the modified product list with product names
       });
     }
@@ -325,139 +315,133 @@ const getOrder = async (req, res) => {
   }
 };
 
-
 ///////order accept/reject /////
-const orderResponse = async(req,res)=>{
-  try{
-    const {quotationId,status} = req.body
-    const date = getCurrentDateInIST()
-   if(quotationId && status){
-    const addResponse = await prisma.pharmacy_assign.update({
-      where:{
-        id:quotationId
-      },
-      data:{
-        status:status,
-        Stmodified_date:date
-      }
-    })
-    console.log({addResponse})
-    
-    const addPackedStatus = await prisma.sales_order.updateMany({
-      where:{
-        sales_id:addResponse.sales_id
-      },
-      data:{
-        so_status:"packed"
-      }
-    })
-   console.log({addPackedStatus})
-
-   const findpackedOrder = await prisma.sales_order.findUnique({
-    where:{
-      sales_id:addResponse.sales_id
-    },
-    select:{
-      customer_id:true
-    }
-   })
-  console.log({findpackedOrder})
-
-   const userId = findpackedOrder.customer_id
-   console.log({userId})
-
-   //find user////
-   const findUserToken = await prisma.user_details.findFirst({
-    where:{
-      id:userId
-    },
-    select:{
-      token:true
-    }
-   })
-   const userToken = findUserToken.token
-   console.log({userToken})
-    ////delivery assign///
-    const salesData = await prisma.delivery_assign.findMany({
-      where:{
-        sales_id:addResponse.sales_id
-      },
-      select:{
-        deliverypartner_id:true
-      }
-    })
-    console.log({salesData})
-
-    const driverId = salesData[0].deliverypartner_id
-    console.log({driverId})
-
-    const findToken = await prisma.delivery_partner.findUnique({
-      where:{
-        id:driverId
-      },
-      select:{
-        fcmToken:true
-      }
-    })
-    console.log({findToken})
-   const fcmToken = findToken.fcmToken
-    if(addPackedStatus){
-      const message = {
-        notification:{
-          title:"Order Packed",
-          body:"New order packed.....❗",
-          // sound: "msgsound"
+const orderResponse = async (req, res) => {
+  try {
+    const { quotationId, status } = req.body;
+    const date = getCurrentDateInIST();
+    if (quotationId && status) {
+      const addResponse = await prisma.pharmacy_assign.update({
+        where: {
+          id: quotationId,
         },
-        token:fcmToken,
-        
-      }
-      const usermessage = {
-        notification:{
-          title:"Order Status",
-          body:"Your order hasbeen packed Successfully.....❗",
-          // sound: "msgsound"
+        data: {
+          status: status,
+          Stmodified_date: date,
         },
-        token:userToken,
-        
-      }
-    
-    try{
-      await secondApp.messaging().send(message)
-      await secondApp.messaging().send(usermessage)
-      console.log("Notification send Successfully")
-    }catch(err){
-      console.error({err})
-    }
-    }
-    return res.status(200).json({
-      error:false,
-      success:true,
-      message:"Successfull",
-      data:addResponse
-    })
-  }else{
-    return res.status(400).json({
-      error:true,
-      success:false,
-      message:"both quotation id and status are required"
-    })
-  }
+      });
+      console.log({ addResponse });
 
+      const addPackedStatus = await prisma.sales_order.updateMany({
+        where: {
+          sales_id: addResponse.sales_id,
+        },
+        data: {
+          so_status: "packed",
+        },
+      });
+      console.log({ addPackedStatus });
+
+      const findpackedOrder = await prisma.sales_order.findUnique({
+        where: {
+          sales_id: addResponse.sales_id,
+        },
+        select: {
+          customer_id: true,
+        },
+      });
+      console.log({ findpackedOrder });
+
+      const userId = findpackedOrder.customer_id;
+      console.log({ userId });
+
+      //find user////
+      const findUserToken = await prisma.user_details.findFirst({
+        where: {
+          id: userId,
+        },
+        select: {
+          token: true,
+        },
+      });
+      const userToken = findUserToken.token;
+      console.log({ userToken });
+      ////delivery assign///
+      const salesData = await prisma.delivery_assign.findMany({
+        where: {
+          sales_id: addResponse.sales_id,
+        },
+        select: {
+          deliverypartner_id: true,
+        },
+      });
+      console.log({ salesData });
+
+      const driverId = salesData[0].deliverypartner_id;
+      console.log({ driverId });
+
+      const findToken = await prisma.delivery_partner.findUnique({
+        where: {
+          id: driverId,
+        },
+        select: {
+          fcmToken: true,
+        },
+      });
+      console.log({ findToken });
+      const fcmToken = findToken.fcmToken;
+      if (addPackedStatus) {
+        const message = {
+          notification: {
+            title: "Order Packed",
+            body: "New order packed.....❗",
+            // sound: "msgsound"
+          },
+          token: fcmToken,
+        };
+        const usermessage = {
+          notification: {
+            title: "Order Status",
+            body: "Your order hasbeen packed Successfully.....❗",
+            // sound: "msgsound"
+          },
+          token: userToken,
+        };
+
+        try {
+          await secondApp.messaging().send(message);
+          await secondApp.messaging().send(usermessage);
+          console.log("Notification send Successfully");
+        } catch (err) {
+          console.error({ err });
+        }
+      }
+      return res.status(200).json({
+        error: false,
+        success: true,
+        message: "Successfull",
+        data: addResponse,
+      });
+    } else {
+      return res.status(400).json({
+        error: true,
+        success: false,
+        message: "both quotation id and status are required",
+      });
+    }
   } catch (err) {
-    logger.error(
-      `Internal server error: ${err.message} in getorder api`
-    );
+    logger.error(`Internal server error: ${err.message} in getorder api`);
     res.status(400).json({
       error: true,
       message: "internal server error",
     });
   }
-}
+};
 
 const getConfirmedOrder = async (req, res) => {
   try {
     const secretKey = process.env.ENCRYPTION_KEY;
-    
+
     const safeDecrypt = (text, key) => {
       try {
         return decrypt(text, key);
@@ -482,23 +466,23 @@ const getConfirmedOrder = async (req, res) => {
           in: ["packed", "Accepted", "ready to ship"],
         },
       },
-      orderBy:{
+      orderBy: {
         // Stmodified_date:"desc"
-        id:"desc"
-      }
+        id: "desc",
+      },
     });
-   const getPharm_name = await prisma.pharmacy_details.findFirst({
-    where:{
-      id:chemistId
-    },
-    select:{
-      name:true
-    }
-   })
-   console.log({getPharm_name})
-   const pharmacy = getPharm_name.name
-   console.log({pharmacy})
-   
+    const getPharm_name = await prisma.pharmacy_details.findFirst({
+      where: {
+        id: chemistId,
+      },
+      select: {
+        name: true,
+      },
+    });
+    console.log({ getPharm_name });
+    const pharmacy = getPharm_name.name;
+    console.log({ pharmacy });
+
     if (getorder.length === 0) {
       return res.status(404).json({
         error: true,
@@ -535,39 +519,39 @@ const getConfirmedOrder = async (req, res) => {
           productName: getProduct ? getProduct.name : null,
         });
       }
-      
+
       ////get net amount
       const getAmt = await prisma.sales_order.findFirst({
-        where:{
-          sales_id:salesId
+        where: {
+          sales_id: salesId,
         },
-        select:{
-          total_amount:true,
-          customer_id:true,
-          doctor_name:true
-        }
-      })
-      console.log({getAmt})
-      const price = getAmt.total_amount
-      console.log({price})
-      const doctor = getAmt.doctor_name
-      console.log({doctor})
+        select: {
+          total_amount: true,
+          customer_id: true,
+          doctor_name: true,
+        },
+      });
+      console.log({ getAmt });
+      const price = getAmt.total_amount;
+      console.log({ price });
+      const doctor = getAmt.doctor_name;
+      console.log({ doctor });
       const findCustomer = await prisma.user_details.findMany({
-        where:{
-          id:getAmt.customer_id
-        }
-      })
-      console.log({findCustomer})
+        where: {
+          id: getAmt.customer_id,
+        },
+      });
+      console.log({ findCustomer });
       const decryptedname = safeDecrypt(findCustomer[0].name, secretKey);
       findCustomer[0].name = decryptedname;
 
       orders.push({
         ...getorder[i],
-        price:price,
+        price: price,
         productlist, // Include the enhanced product list,
-        pharmacyName:pharmacy,
-        doctor_name:doctor,
-        userName:decryptedname
+        pharmacyName: pharmacy,
+        doctor_name: doctor,
+        userName: decryptedname,
       });
     }
 
@@ -576,10 +560,11 @@ const getConfirmedOrder = async (req, res) => {
       success: true,
       message: "Successful",
       data: orders,
-     
     });
   } catch (err) {
-    console.error(`Internal server error: ${err.message} in getConfirmedOrder API`);
+    console.error(
+      `Internal server error: ${err.message} in getConfirmedOrder API`
+    );
     res.status(500).json({
       error: true,
       success: false,
@@ -589,7 +574,7 @@ const getConfirmedOrder = async (req, res) => {
 };
 
 const getproductspharmacy = async (request, response) => {
-  console.log({request})
+  console.log({ request });
   try {
     const { pharmacy_id } = request.body;
 
@@ -610,9 +595,7 @@ const getproductspharmacy = async (request, response) => {
         created_date: true,
       },
     });
-    console.log({pharmacyMedicines})
-    
-
+    console.log({ pharmacyMedicines });
 
     if (!pharmacyMedicines) {
       return response.status(404).json({
@@ -631,13 +614,13 @@ const getproductspharmacy = async (request, response) => {
         where: {
           id: productId,
         },
-        select:{
-          name:true,
+        select: {
+          name: true,
           // categ ory:true
-        }
+        },
       });
 
-      console.log({product})
+      console.log({ product });
       if (product) {
         products.push(product);
       }
@@ -663,9 +646,8 @@ const getproductspharmacy = async (request, response) => {
   }
 };
 
-
 //getting notification while assinging the order
-const  assignpharmacy = async (request, response) => {
+const assignpharmacy = async (request, response) => {
   try {
     const { sales_id, pharmacy_id, status } = request.body;
     const datetime = getCurrentDateInIST();
@@ -692,16 +674,16 @@ const  assignpharmacy = async (request, response) => {
     }
     //////find pharmacy details/////
     const findPharmacy = await prisma.pharmacy_details.findUnique({
-      where:{
-        id:pharmacy_id
+      where: {
+        id: pharmacy_id,
       },
-      select:{
-        token:true
-      }
-    })
-    console.log({findPharmacy})
-    const fcmToken = findPharmacy.token
-    console.log({fcmToken})
+      select: {
+        token: true,
+      },
+    });
+    console.log({ findPharmacy });
+    const fcmToken = findPharmacy.token;
+    console.log({ fcmToken });
 
     /////for assigning pharmacy//////
     const add = await prisma.pharmacy_assign.create({
@@ -710,8 +692,7 @@ const  assignpharmacy = async (request, response) => {
         sales_id: sales_id,
         pharmacy_id: pharmacy_id,
         created_date: datetime,
-        // Stmodified_date: datetime,  
-        
+        // Stmodified_date: datetime,
       },
     });
     const update = await prisma.sales_order.update({
@@ -722,37 +703,35 @@ const  assignpharmacy = async (request, response) => {
         pharmacy_id: pharmacy_id,
       },
     });
-    
-    if(update){
-      // const messageNotification = 
+
+    if (update) {
+      // const messageNotification =
       const addNotification = await prisma.pharmacy_notification.create({
-    
-       data:{
-        pharmacyId:pharmacy_id,
-        message:"New order has been assigned",
-        created_date:datetime,
-        view_status:"Not seen"
-       }
-      })
-      console.log({addNotification})
+        data: {
+          pharmacyId: pharmacy_id,
+          message: "New order has been assigned",
+          created_date: datetime,
+          view_status: "Not seen",
+        },
+      });
+      console.log({ addNotification });
 
       const message = {
-        notification:{
-          title:"order received",
-          body:"New order received.....❗",
+        notification: {
+          title: "order received",
+          body: "New order received.....❗",
           // sound: "msgsound"
         },
-        token:fcmToken,
-        
+        token: fcmToken,
+      };
+
+      try {
+        await secondApp.messaging().send(message);
+        console.log("Notification send Successfully");
+      } catch (err) {
+        console.error({ err });
       }
-    
-    try{
-      await secondApp.messaging().send(message)
-      console.log("Notification send Successfully")
-    }catch(err){
-      console.error({err})
     }
-  }
     if (add) {
       return response.status(200).json({
         success: true,
@@ -761,97 +740,98 @@ const  assignpharmacy = async (request, response) => {
       });
     }
   } catch (error) {
-    logger.error(`Internal server error: ${error.message} in chemist-assignpharmacy API`);
-    console.log({error})
+    logger.error(
+      `Internal server error: ${error.message} in chemist-assignpharmacy API`
+    );
+    console.log({ error });
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
     //await prisma.$disconnect();
   }
 };
 
-
 //////add token for pharmacy/////
-const addTokenPh = async(req,res)=>{
-  try{
-    const {id,token} = req.body
-    if(id && token){
-    const addToken = await prisma.pharmacy_details.update({
-      where:{
-        id:id
-      },
-      data:{
-        token:token
-      }
-    })
-    console.log({addToken})
-    return res.status(200).json({
-      error:false,
-      success:true,
-      message:"Successfull..........",
-      data:addToken
-    })
-  }else{
-    return res.status(404).json({
-      error:true,
-      success:false,
-      message:"id and token are required........."
-    })
-  }
+const addTokenPh = async (req, res) => {
+  try {
+    const { id, token } = req.body;
+    if (id && token) {
+      const addToken = await prisma.pharmacy_details.update({
+        where: {
+          id: id,
+        },
+        data: {
+          token: token,
+        },
+      });
+      console.log({ addToken });
+      return res.status(200).json({
+        error: false,
+        success: true,
+        message: "Successfull..........",
+        data: addToken,
+      });
+    } else {
+      return res.status(404).json({
+        error: true,
+        success: false,
+        message: "id and token are required.........",
+      });
+    }
   } catch (error) {
-    logger.error(`Internal server error: ${error.message} in chemist-addTokenPh API`);
-    
+    logger.error(
+      `Internal server error: ${error.message} in chemist-addTokenPh API`
+    );
+
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
     //await prisma.$disconnect();
   }
-}
+};
 
 ////change password////
-const changePassword = async(req,res)=>{
-  try{
-    const {pharmacy_id,password} = req.body
-    if(pharmacy_id && password){
+const changePassword = async (req, res) => {
+  try {
+    const { pharmacy_id, password } = req.body;
+    if (pharmacy_id && password) {
       const findUser = await prisma.pharmacy_details.findFirst({
-        where:{
-          id:pharmacy_id
-        }
-      })
-      console.log({findUser})
-      if(findUser){
+        where: {
+          id: pharmacy_id,
+        },
+      });
+      console.log({ findUser });
+      if (findUser) {
         const hashedpassword = await bcrypt.hash(password, 10);
         const change_password = await prisma.pharmacy_details.update({
-          where:{
-            id:pharmacy_id
+          where: {
+            id: pharmacy_id,
           },
-          data:{
-            password:hashedpassword
-          }
-        })
-        console.log({change_password})
-      
-      return res.status(200).json({
-        error:false,
-        succes:true,
-        message:"Successfully changed the password............",
-        data:change_password
-      })
-    }else{
-      return res.status(404).json({
-        error:true,
-        succes:false,
-        message:"user not found............",
-      })
-    }
-     }else{
-      return res.status(200).json({
-        error:false,
-        succes:true,
-        message:"pharmacy id and password are required..............",
-      
-      })
-     }
+          data: {
+            password: hashedpassword,
+          },
+        });
+        console.log({ change_password });
 
-  }catch (error) {
+        return res.status(200).json({
+          error: false,
+          succes: true,
+          message: "Successfully changed the password............",
+          data: change_password,
+        });
+      } else {
+        return res.status(404).json({
+          error: true,
+          succes: false,
+          message: "user not found............",
+        });
+      }
+    } else {
+      return res.status(200).json({
+        error: false,
+        succes: true,
+        message: "pharmacy id and password are required..............",
+      });
+    }
+  } catch (error) {
     logger.error(
       `Internal server error: ${error.message} in chemist-changePassword API`
     );
@@ -860,19 +840,17 @@ const changePassword = async(req,res)=>{
   } finally {
     //await prisma.$disconnect();
   }
-}
+};
 
 ////forgot password//////
 const forgot_password = async (req, res) => {
-  const { email } = req.body
+  const { email } = req.body;
   try {
-
     const check_user = await prisma.pharmacy_details.findFirst({
       where: {
-        email: email
-      }
-
-    })
+        email: email,
+      },
+    });
     // console.log("check_user----",check_user)
     if (check_user) {
       // console.log("first")
@@ -886,14 +864,14 @@ const forgot_password = async (req, res) => {
       const randomOTP = generateOTP();
       console.log(randomOTP);
       const add_temOtp = await prisma.pharmacy_details.updateMany({
-        where:{
-          email:email
+        where: {
+          email: email,
         },
-        data:{
-          temp_otp:parseInt(randomOTP)
-        }
-      })
-      console.log({add_temOtp})
+        data: {
+          temp_otp: parseInt(randomOTP),
+        },
+      });
+      console.log({ add_temOtp });
       // const hashedPassword = await bcrypt.hash(randomOTP, 10)
 
       // await prisma.pharmacy_details.updateMany({
@@ -972,36 +950,34 @@ const forgot_password = async (req, res) => {
       const mailOptions = {
         from: "support@chaavie.com",
         to: email,
-        subject: 'new password',
-        html:mailTemplate
+        subject: "new password",
+        html: mailTemplate,
         // template: "pharmacy_otp", // Name of the Handlebars template
         // text: `Dear user ,\nYour new password:\nPassword: ${randomOTP}\n\nThank you.`,
-      }
+      };
       transpoter.sendMail(mailOptions, (error, info) => {
         if (error) {
           console.error("error sending in mail:-----", error);
           res.status(400).json({
             error: true,
             success: false,
-            meassage: "Error happend in sending the mail"
-          })
-
+            meassage: "Error happend in sending the mail",
+          });
         } else {
           res.status(200).json({
             error: false,
             success: true,
             message: "new password send successfully",
-           
-          })
+          });
         }
-      })
+      });
     } else {
-      console.log("user not found")
+      console.log("user not found");
       res.status(404).json({
         error: true,
         success: false,
-        message: "user with entered mail not found......."
-      })
+        message: "user with entered mail not found.......",
+      });
     }
   } catch (error) {
     logger.error(
@@ -1012,43 +988,41 @@ const forgot_password = async (req, res) => {
   } finally {
     //await prisma.$disconnect();
   }
-}
+};
 
 /////check otp////
-const verifyOtp = async(req,res)=>{
-  try{
-    const {pharmacyId,otp} = req.body
-    if(pharmacyId && otp){
-    const verify = await prisma.pharmacy_details.findUnique({
-      where:{
-        id:pharmacyId,
-        temp_otp:otp
+const verifyOtp = async (req, res) => {
+  try {
+    const { pharmacyId, otp } = req.body;
+    if (pharmacyId && otp) {
+      const verify = await prisma.pharmacy_details.findUnique({
+        where: {
+          id: pharmacyId,
+          temp_otp: otp,
+        },
+      });
+      console.log({ verify });
+      if (!verify) {
+        return res.status(404).json({
+          error: true,
+          success: false,
+          message: "check otp......",
+        });
       }
-    })
-    console.log({verify})
-    if(!verify){
+      return res.status(200).json({
+        error: false,
+        success: true,
+        message: "Successfull..........",
+        data: verify,
+      });
+    } else {
       return res.status(404).json({
-        error:true,
-        success:false,
-        message:"check otp......",
-       
-      })
+        error: true,
+        success: false,
+        message: "pharmacy id and otp are required...........",
+      });
     }
-    return res.status(200).json({
-      error:false,
-      success:true,
-      message:"Successfull..........",
-      data:verify
-    })
-  }else{
-    return res.status(404).json({
-      error:true,
-      success:false,
-      message:"pharmacy id and otp are required..........."
-    })
-  }
-
-  }catch (error) {
+  } catch (error) {
     logger.error(
       `Internal server error: ${error.message} in chemist-verifyOtp API`
     );
@@ -1057,32 +1031,32 @@ const verifyOtp = async(req,res)=>{
   } finally {
     //await prisma.$disconnect();
   }
-}
+};
 
 //get notification
-const get_notification = async(req,res)=>{
-  try{
-    const{pharmacyId} = req.body
-    if(!pharmacyId){
+const get_notification = async (req, res) => {
+  try {
+    const { pharmacyId } = req.body;
+    if (!pharmacyId) {
       return res.status(404).json({
-        error:true,
-        success:false,
-        message:"PharmacyId is required..............."
-      })
+        error: true,
+        success: false,
+        message: "PharmacyId is required...............",
+      });
     }
     const getNotification = await prisma.pharmacy_notification.findMany({
-      where:{
-        pharmacyId:pharmacyId
-      }
-    })
-    console.log({getNotification})
+      where: {
+        pharmacyId: pharmacyId,
+      },
+    });
+    console.log({ getNotification });
     return res.status(200).json({
-      error:false,
-      success:true,
-      message:"Successfull...............",
-      data:getNotification
-    })
-  }catch (error) {
+      error: false,
+      success: true,
+      message: "Successfull...............",
+      data: getNotification,
+    });
+  } catch (error) {
     logger.error(
       `Internal server error: ${error.message} in chemist-get_notification API`
     );
@@ -1091,37 +1065,37 @@ const get_notification = async(req,res)=>{
   } finally {
     //await prisma.$disconnect();
   }
-}
+};
 
 //add seen status
-const addSeenStatus = async(req,res)=>{
-  try{
-    const {pharmacyId,notificationId} = req.body
-    if(pharmacyId && notificationId){
-    const addStatus = await prisma.pharmacy_notification.update({
-      where:{
-        pharmacyId:pharmacyId,
-        id:notificationId
-      },
-      data:{
-        view_status:"Seen"
-      }
-    })
-   return res.status(200).json({
-      error:false,
-      success:true,
-      message:"Successfull.....",
-      data:addStatus
-    })
-  }else{
-    return res.status(400).json({
-      error:true,
-      success:false,
-      message:"pharmacyid and notificationId are required.....",
-      data:addStatus
-    })
-  }
-  }catch (error) {
+const addSeenStatus = async (req, res) => {
+  try {
+    const { pharmacyId, notificationId } = req.body;
+    if (pharmacyId && notificationId) {
+      const addStatus = await prisma.pharmacy_notification.update({
+        where: {
+          pharmacyId: pharmacyId,
+          id: notificationId,
+        },
+        data: {
+          view_status: "Seen",
+        },
+      });
+      return res.status(200).json({
+        error: false,
+        success: true,
+        message: "Successfull.....",
+        data: addStatus,
+      });
+    } else {
+      return res.status(400).json({
+        error: true,
+        success: false,
+        message: "pharmacyid and notificationId are required.....",
+        data: addStatus,
+      });
+    }
+  } catch (error) {
     logger.error(
       `Internal server error: ${error.message} in chemist-addSeenStatus API`
     );
@@ -1130,9 +1104,7 @@ const addSeenStatus = async(req,res)=>{
   } finally {
     //await prisma.$disconnect();
   }
-}
-
-
+};
 
 ////get order summary(3 month)
 // const orderSummery = async (req, res) => {
@@ -1225,8 +1197,6 @@ const addSeenStatus = async(req,res)=>{
 //     //await prisma.$disconnect();
 //   }
 // };
-
-
 
 // const orderSummery = async (req, res) => {
 //   try {
@@ -1450,7 +1420,7 @@ const addSeenStatus = async(req,res)=>{
 //     //await prisma.$disconnect();
 //   }
 // };
- 
+
 const orderSummery = async (req, res) => {
   try {
     const { chemistId } = req.body;
@@ -1491,14 +1461,18 @@ const orderSummery = async (req, res) => {
     console.log({ orders });
 
     if (!orders.length) {
-      return res.status(404).json({ message: "No orders found in the last 7 days." });
+      return res
+        .status(404)
+        .json({ message: "No orders found in the last 7 days." });
     }
 
     // Create a map to store daily totals
     const dailyTotals = {};
 
     for (const order of orders) {
-      const orderDate = new Date(order.Stmodified_date).toISOString().split("T")[0]; // Get YYYY-MM-DD format
+      const orderDate = new Date(order.Stmodified_date)
+        .toISOString()
+        .split("T")[0]; // Get YYYY-MM-DD format
 
       const findPrice = await prisma.sales_order.findMany({
         where: {
@@ -1520,17 +1494,21 @@ const orderSummery = async (req, res) => {
     }
 
     // Convert the dailyTotals map into an array of objects for response
-    const dayWiseResponse = Object.entries(dailyTotals).map(([date, totalAmount]) => ({
-      date,
-      totalAmount,
-    }));
+    const dayWiseResponse = Object.entries(dailyTotals).map(
+      ([date, totalAmount]) => ({
+        date,
+        totalAmount,
+      })
+    );
 
     res.status(200).json({
       success: true,
       dayWiseResponse,
     });
   } catch (error) {
-    console.error(`Internal server error: ${error.message} in chemist-orderSummery API`);
+    console.error(
+      `Internal server error: ${error.message} in chemist-orderSummery API`
+    );
     return res.status(500).json({ error: "Internal Server Error" });
   } finally {
     // await prisma.$disconnect();
@@ -1538,20 +1516,210 @@ const orderSummery = async (req, res) => {
 };
 
 /////track order
-const trackOrder = async(req,res)=>{
-  try{
-    const{order} = req.body
-
-  }catch (error) {
-    console.error(`Internal server error: ${error.message} in chemist-orderSummery API`);
+const trackOrder = async (req, res) => {
+  try {
+    const { order } = req.body;
+  } catch (error) {
+    console.error(
+      `Internal server error: ${error.message} in chemist-orderSummery API`
+    );
     return res.status(500).json({ error: "Internal Server Error" });
   } finally {
     //await prisma.$disconnect();
   }
-}
+};
 
-const request_delivery = async(req,res)=>{
-  console.log({req})
+// const request_delivery = async(req,res)=>{
+//   console.log({req})
+//   const secretKey = process.env.ENCRYPTION_KEY;
+//   const safeDecrypt = (text, key) => {
+//     try {
+//       return decrypt(text, key);
+//     } catch (err) {
+//       return text;
+//     }
+//   };
+//   try{
+//     const{
+//       name,
+//       deliverAddress,
+//       phone_no,
+//       // prescription = null,
+//       payment_type,
+//       total_amount,
+//       remarks,
+//       pincode,
+//       pharmacy_id
+//     } = req.body
+//    // Extract image file URLs from `req.files`
+//    const prescriptionImages = req.files?.map((file, index) => ({
+//     [`image${index + 1}`]: file.location,
+//   })) || [];
+
+//   // Convert array of objects into a single JSON object
+//   const prescription = prescriptionImages.length > 0 ? Object.assign({}, ...prescriptionImages) : null;
+
+//     function generateEmailAndPassword(name) {
+//       const domain = "gmail.com"; // Change to your required domain
+
+//       // Format name for email
+//       const formattedName = name.trim().toLowerCase().replace(/\s+/g, "");
+//       const randomNum = Math.floor(1000 + Math.random() * 9000); // 4-digit random number
+//       const email = `${formattedName}${randomNum}@${domain}`;
+
+//       // Generate a password
+//       const specialChars = "@";
+//       const randomChar = specialChars[Math.floor(Math.random() * specialChars.length)];
+//       const password = `${formattedName.charAt(0).toUpperCase()}${randomNum}${randomChar}`;
+
+//       return { email, password };
+//     }
+
+//     const userName = req.body.name || "Default Name";
+//     const { email, password } = generateEmailAndPassword(userName);
+//     console.log("Generated Email:", email);
+//     console.log("Generated Password:", password);
+
+//     const users = await prisma.user_details.findMany();
+//     const emaillowercase = email.toLowerCase();
+//     for (const user of users) {
+//       const decryptedEmail = safeDecrypt(user.email, secretKey);
+//       const decryptedPhone = safeDecrypt(user.phone_no, secretKey);
+
+//       if (decryptedEmail === email || decryptedEmail === emaillowercase) {
+//         return response.status(400).json({
+//           error: true,
+//           message: "Email address already exists",
+//           success: false,
+//         });
+//       } else if (decryptedPhone === phone_no) {
+//         return res.status(400).json({
+//           error: true,
+//           message: "Phone number already exists",
+//           success: false,
+//         });
+//       }
+//     }
+
+//      const date_time = getCurrentDateInIST();
+//      const hashedPass = await bcrypt.hash(password, 5);
+//      const emailencrypted = encrypt(String(emaillowercase || ""), secretKey);
+//      const phoneencrypted = encrypt(String(phone_no || ""), secretKey);
+
+//      const year = new Date().getFullYear();
+//      const lastTwoDigits = year.toString().slice(-2);
+//     const so_num = "SO";
+//     const startOfYear = new Date(new Date().getFullYear(), 0, 1);
+//     const endOfYear = new Date(new Date().getFullYear() + 1, 0, 1);
+
+//     const existingsalesOrders = await prisma.sales_order.findMany({
+//       where: {
+//         created_date: {
+//           gte: startOfYear, // Greater than or equal to Jan 1st
+//           lt: endOfYear,    // Less than Jan 1st of the next year
+//         },
+//       },
+//     });
+//     const newid = existingsalesOrders.length + 1;
+//     const formattedNewId = ("0000" + newid).slice(-4);
+//     const so_number = so_num + lastTwoDigits + formattedNewId;
+
+//     const datetime = getCurrentDateInIST();
+//     const otp = Math.floor(100000 + Math.random() * 900000);
+
+//     // add userDetails////
+//     const addUser = await prisma.user_details.create({
+//       data:{
+//         name:encrypt(name, secretKey),
+//         phone_no:phoneencrypted,
+//         email:emailencrypted,
+//         password:hashedPass,
+//         datetime:date_time,
+//         status:"Y"
+//       }
+
+//     })
+//     console.log({addUser})
+//     const userId = addUser.id
+//     console.log({userId})
+//     const requestData = await prisma.sales_order.create({
+//       data:{
+//         so_number:so_number,
+//         total_amount,
+//         so_status:"placed",
+//         order_type:"request_delivery",
+//         remarks,
+//         created_date:datetime,
+//         contact_no:phone_no,
+//         pincode,
+//         prescription_image: prescription ? JSON.stringify(prescription) : null,
+//         delivery_location:deliverAddress,
+//         otp:otp,
+//         payment_type:payment_type,
+//         customer_id:userId,
+//         pharmacy_id,
+//         patient_name:name,
+//         doctor_name:"RequestDelivery"
+//       }
+//     })
+
+//     console.log({requestData})
+//     const salesId = requestData.sales_id
+//     console.log({salesId})
+
+//     const findDriver = await prisma.delivery_partner.findMany({
+//       where:{
+//         pharmacy_ids:{
+//           array_contains: [pharmacy_id],
+//         }
+//       }
+//     })
+//     console.log({findDriver})
+//     const driverId = findDriver[0].id
+//     console.log({driverId})
+
+//     const deliveryAssign = await prisma.delivery_assign.create({
+//       data:{
+//        sales_id:salesId,
+//        deliverypartner_id:driverId,
+//        status:"assigned",
+//        assigned_date:datetime,
+//        payment_method:payment_type,
+
+//       }
+//     })
+//     console.log({deliveryAssign})
+
+//     const pharmacyAssign = await prisma.pharmacy_assign.create({
+//       data:{
+//       pharmacy_id:pharmacy_id,
+//       sales_id:salesId,
+//       status:"requested",
+//       created_date:datetime
+
+//       }
+//     })
+//     console.log({pharmacyAssign})
+
+//     return res.status(200).json({
+//       error:false,
+//       success:true,
+//       message:"Successfull......",
+//       data:findDriver
+//     })
+
+//   }catch (error) {
+//     console.log("error--------",error)
+//     console.error(`Internal server error: ${error.message} in chemist-request_delivery API`);
+//     return res.status(500).json({ error: "Internal Server Error" });
+//   } finally {
+//     //await prisma.$disconnect();
+//   }
+// }
+
+const request_delivery = async (req, res) => {
+  console.log("helooooooooooooo12", req.body.data);
+  // console.log({req})
   const secretKey = process.env.ENCRYPTION_KEY;
   const safeDecrypt = (text, key) => {
     try {
@@ -1560,46 +1728,55 @@ const request_delivery = async(req,res)=>{
       return text;
     }
   };
-  try{
-    const{
+  try {
+    const {
       name,
       deliverAddress,
+      deliverLocation,
       phone_no,
       // prescription = null,
       payment_type,
       total_amount,
       remarks,
       pincode,
-      pharmacy_id
-    } = req.body
-   // Extract image file URLs from `req.files`
-   const prescriptionImages = req.files?.map((file, index) => ({
-    [`image${index + 1}`]: file.location,
-  })) || [];
+      pharmacy_id,
+    } = JSON.parse(req.body.data);
+    // Extract image file URLs from req.files
+    const prescriptionImages =
+      req.files?.map((file, index) => ({
+        [`image${index + 1}`]: file.location,
+      })) || [];
 
-  // Convert array of objects into a single JSON object
-  const prescription = prescriptionImages.length > 0 ? Object.assign({}, ...prescriptionImages) : null;
+    // Convert array of objects into a single JSON object
+    const prescription =
+      prescriptionImages.length > 0
+        ? Object.assign({}, ...prescriptionImages)
+        : null;
 
     function generateEmailAndPassword(name) {
       const domain = "gmail.com"; // Change to your required domain
-    
+
       // Format name for email
       const formattedName = name.trim().toLowerCase().replace(/\s+/g, "");
       const randomNum = Math.floor(1000 + Math.random() * 9000); // 4-digit random number
       const email = `${formattedName}${randomNum}@${domain}`;
-    
+
       // Generate a password
       const specialChars = "@";
-      const randomChar = specialChars[Math.floor(Math.random() * specialChars.length)];
-      const password = `${formattedName.charAt(0).toUpperCase()}${randomNum}${randomChar}`;
-    
+      const randomChar =
+        specialChars[Math.floor(Math.random() * specialChars.length)];
+      const password = `${formattedName
+        .charAt(0)
+        .toUpperCase()}${randomNum}${randomChar}`;
+
       return { email, password };
     }
-    
-    const userName = req.body.name || "Default Name";
+
+    const userName = req.body.data.name || "Default Name";
     const { email, password } = generateEmailAndPassword(userName);
     console.log("Generated Email:", email);
     console.log("Generated Password:", password);
+    console.log("user name is :", req.body.data.name);
 
     const users = await prisma.user_details.findMany();
     const emaillowercase = email.toLowerCase();
@@ -1622,13 +1799,15 @@ const request_delivery = async(req,res)=>{
       }
     }
 
-     const date_time = getCurrentDateInIST();
-     const hashedPass = await bcrypt.hash(password, 5);
-     const emailencrypted = encrypt(String(emaillowercase || ""), secretKey);
-     const phoneencrypted = encrypt(String(phone_no || ""), secretKey);
-     
-     const year = new Date().getFullYear();
-     const lastTwoDigits = year.toString().slice(-2);
+    const date_time = getCurrentDateInIST();
+    const hashedPass = await bcrypt.hash(password, 5);
+    const emailencrypted = encrypt(String(emaillowercase || ""), secretKey);
+    const phoneencrypted = encrypt(String(phone_no || ""), secretKey);
+    console.log({ name });
+    const encryptedName = encrypt(name.toLowerCase(), secretKey);
+
+    const year = new Date().getFullYear();
+    const lastTwoDigits = year.toString().slice(-2);
     const so_num = "SO";
     const startOfYear = new Date(new Date().getFullYear(), 0, 1);
     const endOfYear = new Date(new Date().getFullYear() + 1, 0, 1);
@@ -1636,8 +1815,8 @@ const request_delivery = async(req,res)=>{
     const existingsalesOrders = await prisma.sales_order.findMany({
       where: {
         created_date: {
-          gte: startOfYear, // Greater than or equal to Jan 1st
-          lt: endOfYear,    // Less than Jan 1st of the next year
+          gte: startOfYear,
+          lt: endOfYear,
         },
       },
     });
@@ -1645,119 +1824,114 @@ const request_delivery = async(req,res)=>{
     const formattedNewId = ("0000" + newid).slice(-4);
     const so_number = so_num + lastTwoDigits + formattedNewId;
 
-    
     const datetime = getCurrentDateInIST();
     const otp = Math.floor(100000 + Math.random() * 900000);
 
     // add userDetails////
     const addUser = await prisma.user_details.create({
-      data:{
-        name:encrypt(name, secretKey),
-        phone_no:phoneencrypted,
-        email:emailencrypted,
-        password:hashedPass,
-        datetime:date_time,
-        status:"Y"
-      }
-      
-    })
-    console.log({addUser})
-    const userId = addUser.id
-    console.log({userId})
+      data: {
+        name: encryptedName,
+        phone_no: phoneencrypted,
+        email: emailencrypted,
+        password: hashedPass,
+        datetime: date_time,
+        status: "Y",
+      },
+    });
+    console.log({ addUser });
+    const userId = addUser.id;
+    console.log({ userId });
     const requestData = await prisma.sales_order.create({
-      data:{
-        so_number:so_number,
-        total_amount, 
-        so_status:"placed",
-        order_type:"request_delivery",
+      data: {
+        so_number: so_number,
+        total_amount,
+        so_status: "placed",
+        order_type: "request_delivery",
         remarks,
-        created_date:datetime,
-        contact_no:phone_no,
+        created_date: datetime,
+        contact_no: phone_no,
         pincode,
         prescription_image: prescription ? JSON.stringify(prescription) : null,
-        delivery_location:deliverAddress,
-        otp:otp,
-        payment_type:payment_type,
-        customer_id:userId,
+        delivery_location: deliverLocation,
+        delivery_address: deliverAddress,
+        otp: otp,
+        payment_type: payment_type,
+        customer_id: userId,
         pharmacy_id,
-        patient_name:name,
-        doctor_name:"RequestDelivery"
-      }
-    })
+        patient_name: name,
+        doctor_name: "RequestDelivery",
+      },
+    });
 
-    console.log({requestData})
-    const salesId = requestData.sales_id
-    console.log({salesId})
+    console.log({ requestData });
+    const salesId = requestData.sales_id;
+    console.log({ salesId });
 
     const findDriver = await prisma.delivery_partner.findMany({
-      where:{
-        pharmacy_ids:{
-          array_contains: [pharmacy_id], 
-        }
-      }
-    })
-    console.log({findDriver})
-    const driverId = findDriver[0].id
-    console.log({driverId})
+      where: {
+        pharmacy_ids: {
+          array_contains: [pharmacy_id],
+        },
+      },
+    });
+    console.log({ findDriver });
+    const driverId = findDriver[0].id;
+    console.log({ driverId });
 
     const deliveryAssign = await prisma.delivery_assign.create({
-      data:{
-       sales_id:salesId,
-       deliverypartner_id:driverId,
-       status:"assigned",
-       assigned_date:datetime,
-       payment_method:payment_type,
-
-      }
-    })
-    console.log({deliveryAssign})
+      data: {
+        sales_id: salesId,
+        deliverypartner_id: driverId,
+        status: "assigned",
+        assigned_date: datetime,
+        payment_method: payment_type,
+      },
+    });
+    console.log({ deliveryAssign });
 
     const pharmacyAssign = await prisma.pharmacy_assign.create({
-      data:{
-      pharmacy_id:pharmacy_id,
-      sales_id:salesId,
-      status:"requested",
-      created_date:datetime
-
-      }
-    })
-    console.log({pharmacyAssign})
-
-
+      data: {
+        pharmacy_id: pharmacy_id,
+        sales_id: salesId,
+        status: "requested",
+        created_date: datetime,
+      },
+    });
+    console.log({ pharmacyAssign });
 
     return res.status(200).json({
-      error:false,
-      success:true,
-      message:"Successfull......",
-      data:findDriver
-    })
-
-  }catch (error) {
-    console.log("error--------",error)
-    console.error(`Internal server error: ${error.message} in chemist-request_delivery API`);
+      error: false,
+      success: true,
+      message: "Successfull......",
+      data: findDriver,
+    });
+  } catch (error) {
+    console.log("error--------", error);
+    console.error(
+      `Internal server error: ${error.message} in chemist-request_delivery API`
+    );
     return res.status(500).json({ error: "Internal Server Error" });
   } finally {
     //await prisma.$disconnect();
   }
-}
-
+};
 
 module.exports = {
-    chemist_login,
-    addChemist,
-    chemist_profile,
-    getOrder,
-    orderResponse,
-    getConfirmedOrder,
-    getproductspharmacy,
-    assignpharmacy,
-    addTokenPh,
-    changePassword,
-    forgot_password,
-    get_notification,
-    addSeenStatus,
-    orderSummery,
-    verifyOtp,
-    trackOrder,
-    request_delivery
-}
+  chemist_login,
+  addChemist,
+  chemist_profile,
+  getOrder,
+  orderResponse,
+  getConfirmedOrder,
+  getproductspharmacy,
+  assignpharmacy,
+  addTokenPh,
+  changePassword,
+  forgot_password,
+  get_notification,
+  addSeenStatus,
+  orderSummery,
+  verifyOtp,
+  trackOrder,
+  request_delivery,
+};

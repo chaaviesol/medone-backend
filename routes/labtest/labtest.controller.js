@@ -98,9 +98,9 @@ const labadd = async (request, response) => {
 const getlabs = async (request, response) => {
   try {
     const getall = await prisma.lab_details.findMany({
-      orderBy:{
-        name:"asc"
-      }
+      orderBy: {
+        name: "asc",
+      },
     });
     if (getall.length > 0) {
       return response.status(200).json({
@@ -688,7 +688,7 @@ const labtestupdate = async (request, response) => {
 };
 ////////////////lab packages/////////////////
 const package_add = async (request, response) => {
-  console.log("dddddddddddd")
+  console.log("dddddddddddd");
   const { package_name, price, created_date, status, labtest_ids, about } =
     request.body;
   // Validate mandatory fields
@@ -2614,67 +2614,65 @@ const getprods = async (request, response) => {
   }
 };
 
+const editOrderDetails = async (request, response) => {
+  console.log("req-------", request);
+  try {
+    const {
+      id,
+      name,
+      gender,
+      contact_no,
+      test_collection,
+      total_amount,
+      delivery_details,
+    } = request.body;
 
-const editOrderDetails = async(request,response)=>{
-  console.log("req-------",request)
-try{
-  const{id,
-       name,
-       gender,
-       contact_no,
-       test_collection,
-       total_amount,
-       delivery_details
-  } = request.body
-  
-  const existingOrder = await prisma.labtest_order.findUnique({
-    where: { 
-      order_id: id,
-      // status:"placed"
-    },
-    select: { 
-      patient_details: true ,
-      delivery_details:true
-    }, 
-  });
-
-  if (!existingOrder) {
-    return response.status(404).json({
-      error: true,
-      message: "Order not found",
+    const existingOrder = await prisma.labtest_order.findUnique({
+      where: {
+        order_id: id,
+        // status:"placed"
+      },
+      select: {
+        patient_details: true,
+        delivery_details: true,
+      },
     });
-  }
 
-  let updatePatient = existingOrder.patient_details || {}
-  updatePatient.name = name || updatePatient.name 
-  updatePatient.gender = gender || updatePatient.gender
-
-
-
-  let deliveryLocation = existingOrder.delivery_details || {}
-  deliveryLocation.address = delivery_details ||deliveryLocation.address
-
-  const editData = await prisma.labtest_order.update({
-    where:{
-      order_id:id
-    },
-    data:{
-     contact_no:contact_no || existingOrder.contact_no,
-     test_collection: test_collection || existingOrder.test_collection,
-     total_amount:total_amount || existingOrder.total_amount,
-     delivery_details:deliveryLocation,
-     patient_details:updatePatient
+    if (!existingOrder) {
+      return response.status(404).json({
+        error: true,
+        message: "Order not found",
+      });
     }
-  })
-  console.log({editData})
-  response.status(200).json({
-    error:false,
-    success:true,
-    data:editData,
-    message:"Successfully edited the data"
-  })
-}catch (error) {
-  console.log({error})
+
+    let updatePatient = existingOrder.patient_details || {};
+    updatePatient.name = name || updatePatient.name;
+    updatePatient.gender = gender || updatePatient.gender;
+
+    let deliveryLocation = existingOrder.delivery_details || {};
+    deliveryLocation.address = delivery_details || deliveryLocation.address;
+
+    const editData = await prisma.labtest_order.update({
+      where: {
+        order_id: id,
+      },
+      data: {
+        contact_no: contact_no || existingOrder.contact_no,
+        test_collection: test_collection || existingOrder.test_collection,
+        total_amount: total_amount || existingOrder.total_amount,
+        delivery_details: deliveryLocation,
+        patient_details: updatePatient,
+      },
+    });
+    console.log({ editData });
+    response.status(200).json({
+      error: false,
+      success: true,
+      data: editData,
+      message: "Successfully edited the data",
+    });
+  } catch (error) {
+    console.log({ error });
     logger.error(
       `Internal server error: ${error.message} in labtest-for inv editOrderDetails API`
     );
@@ -2685,9 +2683,238 @@ try{
   } finally {
     await prisma.$disconnect();
   }
-}
+};
 
+////////////////prescription list/////////////////
 
+const allprescriptionorders = async (request, response) => {
+  const secretKey = process.env.ENCRYPTION_KEY;
+  try {
+    const all = await prisma.labtest_order.findMany({
+      where: {
+        order_type: "prescription",
+      },
+      select: {
+        order_id: true,
+        order_number: true,
+        total_amount: true,
+        status: true,
+        remarks: true,
+        delivery_details: true,
+        delivery_location: true,
+        patient_details: true,
+        created_date: true,
+        pincode: true,
+        doctor_name: true,
+        test_collection: true,
+        contact_no: true,
+        users: {
+          select: {
+            name: true,
+          },
+        },
+        labtest_list: {
+          select: {
+            order_id: true,
+            test_number: true,
+          },
+        },
+      },
+      orderBy: {
+        created_date: "desc",
+      },
+    });
+
+    if (all.length > 0) {
+      let requested = [];
+      let others = [];
+      let ofd = [];
+      let packed = [];
+      let delivered = [];
+      all.forEach((order) => {
+        if (order?.users?.name) {
+          const decryptedUsername = decrypt(order.users.name, secretKey);
+          order.users = decryptedUsername;
+        }
+        if (order.status === "Placed" || order.status === "placed") {
+          requested.push(order);
+        } else if (order.status === "Out for delivery") {
+          ofd.push(order);
+        } else if (order.status === "packed") {
+          packed.push(order);
+        } else if (order.status === "delivered") {
+          delivered.push(order);
+        } else {
+          others.push(order);
+        }
+      });
+
+      return response.status(200).json({
+        success: true,
+        data: all,
+        requestlength: requested.length,
+        packedlength: packed.length,
+        outfordelivery: ofd.length,
+        otherslength: others.length,
+        deliveredlength: delivered.length,
+      });
+    } else {
+      return response.status(404).json({
+        success: false,
+        message: "No test orders found.",
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in alltestlistorders API`
+    );
+    response.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+const getprescriptionorder = async (request, response) => {
+  const secretKey = process.env.ENCRYPTION_KEY;
+  console.log("Fetching invoice sales order...");
+
+  try {
+    const order_id = request.body.order_id;
+    if (!order_id) {
+      return response.status(400).json({
+        message: "order_id can't be null",
+        error: true,
+      });
+    }
+
+    const getdata = await prisma.labtest_order.findFirst({
+      where: {
+        order_id: order_id,
+        order_type: "prescription",
+      },
+      include: {
+        users: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        labtest_list: {
+          select: {
+            id: true,
+            order_id: true,
+            test_number: true,
+            created_date: true,
+          },
+        },
+      },
+    });
+console.log({getdata})
+    if (!getdata) {
+      return response.status(404).json({
+        message: "Order not found",
+        error: true,
+      });
+    }
+
+    // Decrypt the username
+    const decryptedUsername = decrypt(getdata.users.name, secretKey);
+    const userId = getdata.users.id;
+
+    // Fetch test details
+    const test_details = [];
+    for (const item of getdata.labtest_list || []) {
+      let testDetails = null;
+
+      if (item.test_number.includes("P")) {
+        testDetails = await prisma.lab_packages.findFirst({
+          where: {
+            test_number: item.test_number,
+          },
+          select:{
+            id:true,
+            package_name:true,
+            test_number:true,
+            price:true
+
+          }
+        });
+      } else if (item.test_number.includes("T")) {
+        testDetails = await prisma.labtest_details.findFirst({
+          where: {
+            test_number: item.test_number,
+          },
+          select:{
+            id:true,
+            test_number:true,
+            name:true,
+            mrp:true
+          }
+        });
+      }
+
+      if (testDetails) {
+        const mrp = testDetails.mrp || testDetails.price ||  0;
+        const selling_price = testDetails.selling_price || mrp;
+        const total_price = selling_price - (selling_price * 0.1); // 10% discount
+        const test_number=testDetails?.test_number
+
+        test_details.push({
+          id: testInfo.id || "",
+          name: testDetails.name || testDetails.package_name || "",
+          test_number: test_number,
+          mrp: mrp,
+          selling_price: selling_price,
+    
+          total: total_price,
+        });
+      }
+    }
+
+    // If no test details found, add a default entry
+    if (test_details.length === 0) {
+      test_details.push({
+        id: "",
+        name: "",
+        mrp: "",
+        test_number:"",
+        selling_price: "",
+        discount: 0,
+        total: "",
+      });
+    }
+
+    // Prepare the response data
+    const responseData = {
+      order_id: getdata.order_id,
+      contact_no: getdata.contact_no,
+      doctor_name: getdata.doctor_name,
+      order_type: getdata.order_type,
+      prescription_image: getdata.prescription_image || "",
+      username: decryptedUsername,
+      userId: userId,
+      delivery_address: getdata.delivery_details || "",  
+      test_details:test_details,   
+      total: test_details.reduce((sum, item) => sum + (item.total || 0), 0),
+    };
+
+    response.status(200).json({
+      success: true,
+      data: responseData,
+    });
+  } catch (error) {
+    console.error(`Internal server error: ${error.message} in getprescriptionorder API`);
+    response.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
 
 module.exports = {
   labtestadd,
@@ -2724,5 +2951,7 @@ module.exports = {
   prescriptionupload,
   prescriptionorder,
   getprods,
-  editOrderDetails
+  editOrderDetails,
+  allprescriptionorders,
+  getprescriptionorder
 };
