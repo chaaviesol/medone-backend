@@ -2513,16 +2513,28 @@ const prescriptionupload = async (request, response) => {
 
 //////////////create prescription order////////////////
 const prescriptionorder = async (request, response) => {
-  console.log("presssssssssss===============================", request.body);
+  console.log("presssssssssss===============================1", request.body);
   const datetime = getCurrentDateInIST();
   try {
     const { order_id, total_amount, userId, doctor_name } = request.body;
-    const test_details = request.body.order_details;
+    const test_details = request.body.test_details;
     console.log({ test_details });
     if (!order_id || !test_details || !userId) {
       return response.status(400).json({ error: "All fields are required" });
     }
-
+    const validTests = test_details.filter(
+      (test) => test.name && test.test_number
+    );
+    console.log({ validTests });
+    if (validTests.length === 0) {
+      return response.status(400).json({ message: "Add atleast one test" });
+    }
+    const test_collection = validTests.some(
+      (test) => test.home_collection === false
+    )
+      ? "center"
+      : "home";
+    console.log({ test_collection });
     const total_amount_fixed = total_amount
       ? parseFloat(total_amount).toFixed(2)
       : null;
@@ -2535,13 +2547,14 @@ const prescriptionorder = async (request, response) => {
         data: {
           doctor_name,
           status: "confirmed",
+          test_collection: test_collection,
           total_amount: total_amount_fixed,
           updated_date: datetime,
         },
       });
 
-      for (const test of test_details) {
-        const { id, name, type, test_number, mrp } = test;
+      for (const test of validTests) {
+        const { test_number } = test;
 
         await prisma.labtest_list.create({
           data: {
@@ -2581,6 +2594,7 @@ const getprods = async (request, response) => {
 
     const testsWithType = alltests.map((test) => ({
       ...test,
+      mrp: test.mrp,
       type: "test",
     }));
 
@@ -2592,6 +2606,8 @@ const getprods = async (request, response) => {
 
     const packagesWithType = allpackages.map((pkg) => ({
       ...pkg,
+      name: pkg.package_name,
+      mrp: pkg.price,
       type: "package",
     }));
 
@@ -2812,7 +2828,7 @@ const getprescriptionorder = async (request, response) => {
         },
       },
     });
-console.log({getdata})
+    console.log({ getdata });
     if (!getdata) {
       return response.status(404).json({
         message: "Order not found",
@@ -2834,33 +2850,34 @@ console.log({getdata})
           where: {
             test_number: item.test_number,
           },
-          select:{
-            id:true,
-            package_name:true,
-            test_number:true,
-            price:true
-
-          }
+          select: {
+            id: true,
+            package_name: true,
+            home_collection: true,
+            test_number: true,
+            price: true,
+          },
         });
       } else if (item.test_number.includes("T")) {
         testDetails = await prisma.labtest_details.findFirst({
           where: {
             test_number: item.test_number,
           },
-          select:{
-            id:true,
-            test_number:true,
-            name:true,
-            mrp:true
-          }
+          select: {
+            id: true,
+            test_number: true,
+            home_collection: true,
+            name: true,
+            mrp: true,
+          },
         });
       }
 
       if (testDetails) {
-        const mrp = testDetails.mrp || testDetails.price ||  0;
+        const mrp = testDetails.mrp || testDetails.price || 0;
         const selling_price = testDetails.selling_price || mrp;
-        const total_price = selling_price - (selling_price * 0.1); // 10% discount
-        const test_number=testDetails?.test_number
+        const total_price = selling_price - selling_price * 0.1; // 10% discount
+        const test_number = testDetails?.test_number;
 
         test_details.push({
           id: testInfo.id || "",
@@ -2868,7 +2885,7 @@ console.log({getdata})
           test_number: test_number,
           mrp: mrp,
           selling_price: selling_price,
-    
+          home_collection: testDetails.home_collection,
           total: total_price,
         });
       }
@@ -2880,8 +2897,9 @@ console.log({getdata})
         id: "",
         name: "",
         mrp: "",
-        test_number:"",
+        test_number: "",
         selling_price: "",
+        home_collection: "",
         discount: 0,
         total: "",
       });
@@ -2896,8 +2914,8 @@ console.log({getdata})
       prescription_image: getdata.prescription_image || "",
       username: decryptedUsername,
       userId: userId,
-      delivery_address: getdata.delivery_details || "",  
-      test_details:test_details,   
+      delivery_address: getdata.delivery_details || "",
+      test_details: test_details,
       total: test_details.reduce((sum, item) => sum + (item.total || 0), 0),
     };
 
@@ -2906,7 +2924,9 @@ console.log({getdata})
       data: responseData,
     });
   } catch (error) {
-    console.error(`Internal server error: ${error.message} in getprescriptionorder API`);
+    console.error(
+      `Internal server error: ${error.message} in getprescriptionorder API`
+    );
     response.status(500).json({
       error: true,
       message: "Internal server error",
@@ -2953,5 +2973,5 @@ module.exports = {
   getprods,
   editOrderDetails,
   allprescriptionorders,
-  getprescriptionorder
+  getprescriptionorder,
 };
