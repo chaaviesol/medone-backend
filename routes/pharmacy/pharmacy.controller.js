@@ -202,15 +202,20 @@ const productadd = async (request, response) => {
       hsn,
       prescription_required,
       unit_of_measurement,
-      medicine_unit,
       composition,
+      medicine_unit,
       product_type,
     } = JSON.parse(request.body.data);
+
+    let med_unit = medicine_unit;
     if (!name || !description || !mrp || !brand) {
       return response.status(400).json({ error: "All fields are required" });
     }
     if (category.length < 0) {
       return response.status(400).json({ error: "Category can't be null" });
+    }
+    if (unit_of_measurement === "piece") {
+      med_unit = null;
     }
 
     if (id) {
@@ -234,6 +239,7 @@ const productadd = async (request, response) => {
       const sellingPrice = isMedicineCategory
         ? null
         : parseInt(mrp) - parseInt(mrp) * 0.1;
+    
       const create = await prisma.generic_product.update({
         where: {
           id: id,
@@ -253,10 +259,11 @@ const productadd = async (request, response) => {
           prescription_required,
           composition,
           selling_price: sellingPrice,
-          medicine_unit: parseInt(medicine_unit),
+          medicine_unit: parseInt(med_unit),
           unit_of_measurement: unit_of_measurement,
         },
       });
+      console.log({create})
       if (create) {
         return response.status(200).json({
           message: "Successfully updated",
@@ -295,7 +302,7 @@ const productadd = async (request, response) => {
           prescription_required,
           composition,
           selling_price: sellingPrice,
-          medicine_unit: parseInt(medicine_unit),
+          medicine_unit: parseInt(med_unit),
           unit_of_measurement: unit_of_measurement,
         },
       });
@@ -1491,7 +1498,7 @@ const medicineadd = async (request, response) => {
 
 const getinvsalesorder = async (request, response) => {
   const secretKey = process.env.ENCRYPTION_KEY;
-  console.log("rrrrrrrrrrrrr")
+  console.log("rrrrrrrrrrrrr");
   try {
     const sales_id = request.body.sales_id;
     if (!sales_id) {
@@ -1769,7 +1776,7 @@ const prescriptioninvoice = async (request, response) => {
     const { sales_id, sold_by, total_amount, userId, doctor_name } =
       request.body;
     const medication_details = request.body.medicine_details;
-console.log({medication_details})
+    console.log({ medication_details });
     if (!sales_id || !medication_details || !userId) {
       return response.status(400).json({ error: "All fields are required" });
     }
