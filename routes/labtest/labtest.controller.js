@@ -1943,6 +1943,7 @@ const getlaboratories = async (request, response) => {
 
 /////////////get order detailss//////////
 const getorderdetails = async (request, response) => {
+  const secretKey = process.env.ENCRYPTION_KEY;
   try {
     const { order_id } = request.body;
     const getdetails = await prisma.labtest_order.findFirst({
@@ -1966,6 +1967,11 @@ const getorderdetails = async (request, response) => {
         patient_details: true,
         pincode: true,
         test_collection: true,
+        users: {
+          select: {
+            name: true,
+          },
+        },
       },
     });
     if (!getdetails) {
@@ -1974,11 +1980,15 @@ const getorderdetails = async (request, response) => {
         success: false,
       });
     }
-
+    if (getdetails?.users?.name) {
+      const decryptedUsername = decrypt(getdetails.users.name, secretKey);
+      getdetails.users.name = decryptedUsername; // Correctly modifying only the name property
+    }
     const testdata = getdetails?.labtest_list;
     const labtestDetails = [];
     for (const data of testdata) {
       let testDetail;
+
       if (data.test_number.includes("T")) {
         testDetail = await prisma.labtest_details.findFirst({
           where: {
