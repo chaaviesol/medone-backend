@@ -282,7 +282,14 @@ const getTask = async (req, res) => {
 
     console.log({ attendanceRecords });
 
-    const checkedTaskIds = new Set(attendanceRecords.map(record => record.task_id));
+    // Store task IDs based on check-in and check-out
+    const checkInTaskIds = new Set();
+    const checkOutTaskIds = new Set();
+
+    attendanceRecords.forEach(record => {
+      if (record.checkin) checkInTaskIds.add(record.task_id);
+      if (record.checkout) checkOutTaskIds.add(record.task_id);
+    });
 
     // Filtering tasks based on date conditions and attendance
     const filteredTasks = task.filter(t => {
@@ -300,9 +307,15 @@ const getTask = async (req, res) => {
         return false;
       }
 
-      // Include tasks that have a check-in or check-out record
-      if (checkedTaskIds.has(t.id)) {
-        console.log(`Including task ID ${t.id} due to check-in/check-out record`);
+      // Exclude tasks that have a checkout record
+      if (checkOutTaskIds.has(t.id)) {
+        console.log(`Skipping task ID ${t.id} due to checkout`);
+        return false;
+      }
+
+      // Include tasks that have a check-in but no checkout
+      if (checkInTaskIds.has(t.id)) {
+        console.log(`Including task ID ${t.id} due to check-in`);
         return true;
       }
 
@@ -328,6 +341,7 @@ const getTask = async (req, res) => {
     });
   }
 };
+
 
 
 
