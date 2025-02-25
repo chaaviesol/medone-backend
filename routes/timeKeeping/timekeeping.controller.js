@@ -144,6 +144,98 @@ const getAssist_profile = async(req,res)=>{
 
 
 /////get daily task/////////////
+// const getTask = async (req, res) => {
+//   try {
+//       const { assistId, type } = req.body;
+//       let task = [];
+
+//       if (type === "nurse") {
+//           const hospitalTask = await prisma.hospitalAssist_service.findMany({
+//               where: {
+//                   assist_id: assistId,
+//                   status: "confirmed"
+//               }
+//           });
+
+//           const homecareTask = await prisma.homeCare_Service.findMany({
+//               where: {
+//                   assist_id: assistId,
+//                   status: "confirmed"
+//               }
+//           });
+
+//           task = [...homecareTask, ...hospitalTask];
+//       } else {
+//           task = await prisma.physiotherapist_service.findMany({
+//               where: {
+//                   assist_id: assistId,
+//                   status: "confirmed"
+//               }
+//           });
+//       }
+
+//       console.log("Raw Task Data:", JSON.stringify(task, null, 2));
+
+//       const currentDate = moment().format('DD-MM-YYYY');
+
+//       // Function to generate all dates between start_date and end_date
+//       const getDatesInRange = (startDate, endDate) => {
+//           let dates = [];
+//           let current = moment(startDate, 'DD-MM-YYYY');
+//           let lastDate = moment(endDate, 'DD-MM-YYYY');
+
+//           while (current <= lastDate) {
+//               dates.push(current.format('DD-MM-YYYY'));
+//               current.add(1, 'days');
+//           }
+
+//           return dates;
+//       };
+
+//       // Filtering tasks based on the type condition
+//       const filteredTasks = task.filter(t => {
+//           if (!t.start_date) return false; // Ignore tasks without a start_date
+
+//           // Trim and validate date strings
+//           const startDateStr = t.start_date.toString().trim();
+//           const endDateStr = t.end_date ? t.end_date.toString().trim() : null;
+
+//           const startDate = moment(startDateStr, 'DD-MM-YYYY', true);
+//           const endDate = endDateStr ? moment(endDateStr, 'DD-MM-YYYY', true) : startDate;
+
+//           if (!startDate.isValid() || (endDateStr && !endDate.isValid())) {
+//               console.warn(`Invalid date format for task ID ${t.id}: ${startDateStr} - ${endDateStr}`);
+//               return false;
+//           }
+
+//           if (type === "nurse") {
+//               // Nurse: Check if current date falls within start_date to end_date range
+//               return moment(currentDate, 'DD-MM-YYYY').isBetween(startDate, endDate, null, '[]');
+//           } else {
+//               // Physiotherapist: Check only the start_date
+//               return startDate.format('DD-MM-YYYY') === currentDate;
+//           }
+//       });
+
+//       console.log("Filtered Tasks:", filteredTasks);
+
+//       res.status(200).json({
+//           error: false,
+//           success: true,
+//           message: "Successful",
+//           data: filteredTasks
+//       });
+
+//   } catch (err) {
+//       logger.error(`Internal server error: ${err.message} in getTask API`);
+//       console.error("Error in getTask API:", err);
+
+//       res.status(500).json({
+//           error: true,
+//           message: "Internal server error",
+//       });
+//   }
+// };
 const getTask = async (req, res) => {
   try {
       const { assistId, type } = req.body;
@@ -178,21 +270,23 @@ const getTask = async (req, res) => {
 
       const currentDate = moment().format('DD-MM-YYYY');
 
-      // Function to generate all dates between start_date and end_date
-      const getDatesInRange = (startDate, endDate) => {
-          let dates = [];
-          let current = moment(startDate, 'DD-MM-YYYY');
-          let lastDate = moment(endDate, 'DD-MM-YYYY');
-
-          while (current <= lastDate) {
-              dates.push(current.format('DD-MM-YYYY'));
-              current.add(1, 'days');
+      // Fetch all checkout records for the given assistId on the current date
+      const checkoutRecords = await prisma.assist_taskattendance.findMany({
+          where: {
+              assist_id: assistId,
+              checkout: {
+                  not: null
+              },
+              date: currentDate
+          },
+          select: {
+              task_id: true
           }
+      });
 
-          return dates;
-      };
+      const checkedOutTaskIds = new Set(checkoutRecords.map(record => record.task_id));
 
-      // Filtering tasks based on the type condition
+      // Filtering tasks based on date conditions and checkout status
       const filteredTasks = task.filter(t => {
           if (!t.start_date) return false; // Ignore tasks without a start_date
 
@@ -205,6 +299,12 @@ const getTask = async (req, res) => {
 
           if (!startDate.isValid() || (endDateStr && !endDate.isValid())) {
               console.warn(`Invalid date format for task ID ${t.id}: ${startDateStr} - ${endDateStr}`);
+              return false;
+          }
+
+          // Exclude tasks that have a checkout record for today
+          if (checkedOutTaskIds.has(t.id)) {
+              console.log(`Skipping task ID ${t.id} due to checkout`);
               return false;
           }
 
@@ -236,7 +336,6 @@ const getTask = async (req, res) => {
       });
   }
 };
-
 
 
 
