@@ -268,8 +268,8 @@ const getTask = async (req, res) => {
 
       console.log("Raw Task Data:", JSON.stringify(task, null, 2));
 
-      const currentDate = moment().format('DD-MM-YYYY');
-
+      const currentDate = moment().format('DD/MM/YYYY');
+      console.log({currentDate})
       // Fetch all checkout records for the given assistId on the current date
       const checkoutRecords = await prisma.assist_taskattendance.findMany({
           where: {
@@ -278,11 +278,12 @@ const getTask = async (req, res) => {
                   not: null
               },
               date: currentDate
-          },
+          },    
           select: {
               task_id: true
           }
       });
+      console.log({checkoutRecords})
 
       const checkedOutTaskIds = new Set(checkoutRecords.map(record => record.task_id));
 
