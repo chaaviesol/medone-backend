@@ -238,105 +238,97 @@ const getAssist_profile = async(req,res)=>{
 // };
 const getTask = async (req, res) => {
   try {
-      const { assistId, type } = req.body;
-      let task = [];
+    const { assistId, type } = req.body;
+    let task = [];
 
-      if (type === "nurse") {
-          const hospitalTask = await prisma.hospitalAssist_service.findMany({
-              where: {
-                  assist_id: assistId,
-                  status: "confirmed"
-              }
-          });
+    // Fetch tasks based on type (nurse includes hospital & homecare)
+    const hospitalTask = await prisma.hospitalAssist_service.findMany({
+      where: { assist_id: assistId, status: "confirmed" }
+    });
 
-          const homecareTask = await prisma.homeCare_Service.findMany({
-              where: {
-                  assist_id: assistId,
-                  status: "confirmed"
-              }
-          });
+    const homecareTask = await prisma.homeCare_Service.findMany({
+      where: { assist_id: assistId, status: "confirmed" }
+    });
 
-          task = [...homecareTask, ...hospitalTask];
-      } else {
-          task = await prisma.physiotherapist_service.findMany({
-              where: {
-                  assist_id: assistId,
-                  status: "confirmed"
-              }
-          });
+    const physiotherapyTask = await prisma.physiotherapist_service.findMany({
+      where: { assist_id: assistId, status: "confirmed" }
+    });
+
+    if (type === "nurse") {
+      task = [...homecareTask, ...hospitalTask];
+    } else if (type === "physiotherapist") {
+      task = physiotherapyTask;
+    } else {
+      task = [...homecareTask, ...hospitalTask, ...physiotherapyTask]; // Include both nurse and physiotherapy tasks
+    }
+
+    console.log("Raw Task Data:", JSON.stringify(task, null, 2));
+
+    const currentDate = moment().format('DD/MM/YYYY');
+    console.log({ currentDate });
+
+    // Fetch check-in & check-out records
+    const attendanceRecords = await prisma.assist_taskattendance.findMany({
+      where: {
+        assist_id: assistId,
+        date: currentDate
+      },
+      select: {
+        task_id: true,
+        checkin: true,
+        checkout: true
+      }
+    });
+
+    console.log({ attendanceRecords });
+
+    const checkedTaskIds = new Set(attendanceRecords.map(record => record.task_id));
+
+    // Filtering tasks based on date conditions and attendance
+    const filteredTasks = task.filter(t => {
+      if (!t.start_date) return false;
+
+      // Trim and validate date strings
+      const startDateStr = t.start_date.toString().trim();
+      const endDateStr = t.end_date ? t.end_date.toString().trim() : null;
+
+      const startDate = moment(startDateStr, 'DD-MM-YYYY', true);
+      const endDate = endDateStr ? moment(endDateStr, 'DD-MM-YYYY', true) : startDate;
+
+      if (!startDate.isValid() || (endDateStr && !endDate.isValid())) {
+        console.warn(`Invalid date format for task ID ${t.id}: ${startDateStr} - ${endDateStr}`);
+        return false;
       }
 
-      console.log("Raw Task Data:", JSON.stringify(task, null, 2));
+      // Include tasks that have a check-in or check-out record
+      if (checkedTaskIds.has(t.id)) {
+        console.log(`Including task ID ${t.id} due to check-in/check-out record`);
+        return true;
+      }
 
-      const currentDate = moment().format('DD/MM/YYYY');
-      console.log({currentDate})
-      // Fetch all checkout records for the given assistId on the current date
-      const checkoutRecords = await prisma.assist_taskattendance.findMany({
-          where: {
-              assist_id: assistId,
-              checkout: {
-                  not: null
-              },
-              date: currentDate
-          },    
-          select: {
-              task_id: true
-          }
-      });
-      console.log({checkoutRecords})
+      return moment(currentDate, 'DD-MM-YYYY').isBetween(startDate, endDate, null, '[]');
+    });
 
-      const checkedOutTaskIds = new Set(checkoutRecords.map(record => record.task_id));
+    console.log("Filtered Tasks:", filteredTasks);
 
-      // Filtering tasks based on date conditions and checkout status
-      const filteredTasks = task.filter(t => {
-          if (!t.start_date) return false; // Ignore tasks without a start_date
-
-          // Trim and validate date strings
-          const startDateStr = t.start_date.toString().trim();
-          const endDateStr = t.end_date ? t.end_date.toString().trim() : null;
-
-          const startDate = moment(startDateStr, 'DD-MM-YYYY', true);
-          const endDate = endDateStr ? moment(endDateStr, 'DD-MM-YYYY', true) : startDate;
-
-          if (!startDate.isValid() || (endDateStr && !endDate.isValid())) {
-              console.warn(`Invalid date format for task ID ${t.id}: ${startDateStr} - ${endDateStr}`);
-              return false;
-          }
-
-          // Exclude tasks that have a checkout record for today
-          if (checkedOutTaskIds.has(t.id)) {
-              console.log(`Skipping task ID ${t.id} due to checkout`);
-              return false;
-          }
-
-          if (type === "nurse") {
-              // Nurse: Check if current date falls within start_date to end_date range
-              return moment(currentDate, 'DD-MM-YYYY').isBetween(startDate, endDate, null, '[]');
-          } else {
-              // Physiotherapist: Check only the start_date
-              return startDate.format('DD-MM-YYYY') === currentDate;
-          }
-      });
-
-      console.log("Filtered Tasks:", filteredTasks);
-
-      res.status(200).json({
-          error: false,
-          success: true,
-          message: "Successful",
-          data: filteredTasks
-      });
+    res.status(200).json({
+      error: false,
+      success: true,
+      message: "Successful",
+      data: filteredTasks
+    });
 
   } catch (err) {
-      logger.error(`Internal server error: ${err.message} in getTask API`);
-      console.error("Error in getTask API:", err);
+    logger.error(`Internal server error: ${err.message} in getTask API`);
+    console.error("Error in getTask API:", err);
 
-      res.status(500).json({
-          error: true,
-          message: "Internal server error",
-      });
+    res.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
   }
 };
+
 
 
 
