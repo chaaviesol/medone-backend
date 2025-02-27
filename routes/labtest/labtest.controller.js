@@ -1960,6 +1960,7 @@ const getorderdetails = async (request, response) => {
         remarks: true,
         delivery_details: true,
         delivery_location: true,
+        doctor_name: true,
         created_date: true,
         updated_date: true,
         contact_no: true,
@@ -2651,6 +2652,7 @@ const editOrderDetails = async (request, response) => {
       test_collection,
       total_amount,
       delivery_details,
+      doctor_name,
     } = request.body;
 
     const existingOrder = await prisma.labtest_order.findUnique({
@@ -2686,6 +2688,7 @@ const editOrderDetails = async (request, response) => {
         contact_no: contact_no || existingOrder.contact_no,
         test_collection: test_collection || existingOrder.test_collection,
         total_amount: total_amount || existingOrder.total_amount,
+        doctor_name: doctor_name || existingOrder.doctor_name,
         delivery_details: deliveryLocation,
         patient_details: updatePatient,
       },

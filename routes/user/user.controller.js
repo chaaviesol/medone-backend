@@ -1461,6 +1461,104 @@ const profilecompleted = async (request, response) => {
   }
 };
 
+
+const googlesignin = async (request, response) => {
+  const secretKey = process.env.ENCRYPTION_KEY;
+
+  // Helper function to safely decrypt data
+  const safeDecrypt = (text, key) => {
+    try {
+      return decrypt(text, key);
+    } catch (err) {
+      return text;
+    }
+  };
+
+  // Helper function to validate email format
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Helper function to get the current date in IST
+  const getCurrentDateInIST = () => {
+    return new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+  };
+
+  try {
+    const { name, googleId, email, image } = request.body;
+
+    // Check if all required fields are present
+    if (!name || !googleId || !email) {
+      logger.error("All fields are mandatory in googlesignin api");
+      return response.status(400).json({
+        error: true,
+        success: false,
+        message: "All fields are mandatory",
+      });
+    }
+
+    // Validate email format
+    if (!validateEmail(email)) {
+      logger.error("Invalid email address");
+      return response.status(400).json({
+        error: true,
+        success: false,
+        message: "Invalid email address",
+      });
+    }
+
+    const emaillowercase = email.toLowerCase();
+
+    // Check if the user already exists
+    const users = await prisma.user_details.findMany();
+    let userExists = false;
+
+    for (const user of users) {
+      const decryptedEmail = safeDecrypt(user.email, secretKey);
+
+      if (decryptedEmail === emaillowercase) {
+        userExists = true;
+        return response.status(200).json({
+          success: true,
+          data: user,
+        });
+      }
+    }
+
+    // If the user does not exist, create a new user
+    if (!userExists) {
+      const datetime = getCurrentDateInIST();
+      const emailencrypted = encrypt(emaillowercase, secretKey);
+
+      const newUser = await prisma.user_details.create({
+        data: {
+          name: encrypt(name, secretKey),
+          googleId: googleId,
+          email: emailencrypted,
+          datetime: datetime,
+          image: image,
+          status: "Y",
+        },
+      });
+
+      return response.status(200).json({
+        success: true,
+        message: "Registered successfully",
+        data: newUser,
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    logger.error(`Internal server error: ${error.message} in googlesignin api`);
+    return response.status(500).json({
+      error: true,
+      success: false,
+      message: "An error occurred",
+    });
+  } 
+};
+
 module.exports = {
   addUsers,
   userLogin,
@@ -1477,4 +1575,5 @@ module.exports = {
   UserforgotPwd,
   userresetpassword,
   userotpLogin,
+  googlesignin
 };

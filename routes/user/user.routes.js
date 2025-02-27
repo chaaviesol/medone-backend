@@ -13,6 +13,7 @@ const {
   userresetpassword,
   userotpLogin,
   csvupload,
+  googlesignin
 } = require("./user.controller");
 
 const auth = require("../../middleware/Auth/auth");
@@ -40,7 +41,7 @@ UserRouter.route("/userdisable").post(userdisable);
 
 UserRouter.post("/getprofile", getprofile);
 UserRouter.post("/profilecompleted", auth, profilecompleted); //to check if the user has completed their profile or not
-
+UserRouter.post("/googlesignin",googlesignin)
 ///testing/////////////
 // UserRouter.post("/decrypt", decryptEmails);
 // UserRouter.route("/emailencryption").post(emailencryption);
